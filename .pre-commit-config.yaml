@@ -1,0 +1,73 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-json
+    -   id: check-added-large-files
+    -   id: check-merge-conflict
+    -   id: check-toml
+    -   id: debug-statements
+    -   id: requirements-txt-fixer
+    -   id: mixed-line-ending
+        args: [--fix=lf]
+
+-   repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+    -   id: black
+        language_version: python3.10
+        args: [--line-length=88]
+
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        name: isort (python)
+        args: [--profile=black, --filter-files]
+        language_version: python3.10
+
+-   repo: https://github.com/pycqa/pylint
+    rev: v2.17.5
+    hooks:
+    -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args: [--max-line-length=88, --ignore-patterns=test_.*\.py]
+        additional_dependencies: [pylint-pytest]
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+    -   id: mypy
+        additional_dependencies: [types-requests, types-python-dateutil]
+        args: [--ignore-missing-imports, --disallow-untyped-defs, --strict]
+        language_version: python3.10
+
+-   repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.34.0
+    hooks:
+    -   id: markdownlint
+        args: [--fix, --ignore .github/ISSUE_TEMPLATE/]
+        additional_dependencies: ['markdownlint-cli2@0.8.0']
+
+-   repo: https://github.com/detailyang/pre-commit-shell
+    rev: 1.0.2
+    hooks:
+    -   id: shell-lint
+        files: ".*\\.(sh|bash|zsh)$"
+        args: [-x]
+
+-   repo: local
+    hooks:
+    -   id: requirements
+        name: Check requirements
+        entry: bash -c 'pip freeze > requirements.txt && git diff --exit-code requirements.txt'
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit-msg]
