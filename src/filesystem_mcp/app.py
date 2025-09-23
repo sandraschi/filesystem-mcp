@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, HTTPException, status
-from mcp import Application, FastMCP, FastMCPConfig
+from fastmcp import FastMCP, FastMCPConfig
 from pydantic import BaseModel, Field
 
 # Configure logging
@@ -116,8 +116,8 @@ async def global_exception_handler(request, exc):
     )
 
 # Import and register tools
-from .tools import register_tools  # noqa
-register_tools(app)
+from .tools import register_all_tools  # noqa
+register_all_tools(app)
 
 # Add startup event handler
 @fastapi_app.on_event("startup")

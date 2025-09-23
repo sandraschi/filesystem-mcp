@@ -1,0 +1,149 @@
+{
+  "dxt_version": "0.2",
+  "name": "filesystem-mcp",
+  "version": "2.0.0",
+  "description": "Comprehensive MCP server for file system, Git repository, and Docker container operations",
+  "long_description": "A professional MCP server built with FastMCP 2.12 that provides comprehensive file system operations, Git repository management, and Docker container tools. Features include secure path handling, structured logging, and modern Python patterns.",
+  "author": {
+    "name": "Sandra Schimanovich",
+    "email": "sandra@sandraschi.dev",
+    "url": "https://github.com/sandraschi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/filesystem-mcp"
+  },
+  "homepage": "https://github.com/sandraschi/filesystem-mcp",
+  "documentation": "https://github.com/sandraschi/filesystem-mcp/blob/main/README.md",
+  "support": "https://github.com/sandraschi/filesystem-mcp/issues",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "filesystem",
+    "git",
+    "docker",
+    "fastmcp",
+    "file-operations",
+    "repository-management",
+    "container-management"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/filesystem_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "filesystem_mcp"],
+      "env": {
+        "PYTHONPATH": "src",
+        "PYTHONUNBUFFERED": "1",
+        "FASTMCP_LOG_LEVEL": "INFO"
+      }
+    }
+  },
+  "user_config": {
+    "working_directory": {
+      "type": "directory",
+      "title": "Working Directory",
+      "description": "Default directory for file operations and Git repositories",
+      "required": true,
+      "default": "${HOME}/Documents/FilesystemMCP"
+    },
+    "git_username": {
+      "type": "string",
+      "title": "Git Username",
+      "description": "Default username for Git operations (optional)",
+      "required": false,
+      "default": "${USER}"
+    },
+    "git_email": {
+      "type": "string",
+      "title": "Git Email",
+      "description": "Default email for Git operations (optional)",
+      "required": false
+    },
+    "enable_docker_tools": {
+      "type": "boolean",
+      "title": "Enable Docker Tools",
+      "description": "Enable Docker container management tools (requires Docker)",
+      "required": false,
+      "default": true
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Logging level for the server (DEBUG, INFO, WARNING, ERROR)",
+      "required": false,
+      "default": "INFO"
+    }
+  },
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read the contents of a file with comprehensive error handling and metadata"
+    },
+    {
+      "name": "write_file",
+      "description": "Write content to a file with proper validation and error handling"
+    },
+    {
+      "name": "list_directory",
+      "description": "List directory contents with detailed metadata and filtering options"
+    },
+    {
+      "name": "file_exists",
+      "description": "Check if a file or directory exists with detailed status information"
+    },
+    {
+      "name": "get_file_info",
+      "description": "Get comprehensive information about files and directories"
+    },
+    {
+      "name": "edit_file",
+      "description": "Edit files by replacing text content with atomic operations and backup"
+    },
+    {
+      "name": "clone_repo",
+      "description": "Clone Git repositories with advanced options and branch control"
+    },
+    {
+      "name": "get_repo_status",
+      "description": "Get detailed Git repository status including staged, unstaged, and untracked files"
+    },
+    {
+      "name": "list_branches",
+      "description": "List Git branches with tracking status and detailed branch information"
+    },
+    {
+      "name": "commit_changes",
+      "description": "Commit changes to Git repositories with detailed options and validation"
+    },
+    {
+      "name": "read_repository",
+      "description": "Read and explore repository contents with comprehensive file analysis"
+    },
+    {
+      "name": "list_containers",
+      "description": "List Docker containers with detailed information and filtering options"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "analyze_project",
+      "description": "Analyze project structure and provide comprehensive insights",
+      "arguments": ["project_path", "analysis_type"],
+      "text": "Analyze the project at {{project_path}} with {{analysis_type}} level analysis. Provide comprehensive insights about the project structure, dependencies, and potential improvements."
+    },
+    {
+      "name": "file_operations_guide",
+      "description": "Guide for performing file operations safely and efficiently",
+      "arguments": ["operation_type"],
+      "text": "Provide a comprehensive guide for {{operation_type}} file operations. Include best practices, security considerations, and common pitfalls to avoid."
+    }
+  ],
+  "tools_generated": true,
+  "prompts_generated": true,
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python_version": ">=3.9.0"
+  }
+}

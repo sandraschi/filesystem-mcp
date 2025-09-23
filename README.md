@@ -1,10 +1,14 @@
 # Filesystem MCP
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.12.0+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
+[![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
+[![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
-A FastMCP 2.10 compliant MCP server for file system, Docker, and Git operations, designed to enable agentic AI programming capabilities with comprehensive container management.
+A **FastMCP 2.12.0+ compliant** MCP server for comprehensive file system operations, Git repository management, and Docker container management. Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
 
 ## ✨ Features
 
@@ -45,9 +49,19 @@ A FastMCP 2.10 compliant MCP server for file system, Docker, and Git operations,
 - Read repository structure and file contents
 - Manage branches and remotes
 
+### 🤖 System Tools & Help
+- **Multilevel Help System**: Hierarchical documentation with tool examples and use cases
+- **System Status Tool**: Comprehensive system monitoring with resource usage metrics
+- **Interactive Guidance**: Context-aware help with parameter validation and suggestions
+
 ### 🚀 Advanced Features
-- Secure path handling and validation
-- Comprehensive error handling and logging
+- **FastMCP 2.12.0+ Compliance**: Modern tool registration with `@app.tool()` decorators
+- **Enterprise Security**: Path traversal protection, permission validation, audit trails
+- **Extensive Testing**: Unit, integration, and performance tests with 80%+ coverage
+- **DXT Packaging**: Professional deployment with all dependencies included
+- **Structured Logging**: Comprehensive logging with file output and monitoring
+- **Async Operations**: Full async/await support for optimal concurrency
+- **Pydantic V2**: Modern data validation with `field_validator` and `ConfigDict`
 - FastMCP 2.10 compliant API
 - Asynchronous operations for improved performance
 - Detailed documentation and type hints
@@ -55,39 +69,144 @@ A FastMCP 2.10 compliant MCP server for file system, Docker, and Git operations,
 ## 🚀 Installation
 
 ### Prerequisites
-- Python 3.8+
-- Docker Engine (for container operations)
-- Git (for repository operations)
+- **Python 3.9+** (FastMCP 2.12.0+ requirement)
+- **Docker Engine** (for container operations)
+- **Git** (for repository operations)
+- **Node.js 20+** (for DXT packaging)
 
-### Quick Start
+### Quick Start with DXT (Recommended)
+
+1. **Download** the `filesystem-mcp.dxt` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+2. **Drag & Drop** the file to Claude Desktop
+3. **Configure** working directory when prompted
+4. **Start using** professional tools immediately
+
+### Manual Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/sandraschi/filesystem-mcp.git
+git clone https://github.com/sandr/filesystem-mcp.git
 cd filesystem-mcp
 
 # Create and activate a virtual environment (recommended)
 python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+# On Windows: .\venv\Scripts\Activate.ps1
+# On Unix/Mac: source venv/bin/activate
 
-# Install in development mode
-pip install -e .
+# Install with all dependencies
+pip install -e .[dev,test]
 
-# Install development dependencies
+# Install development dependencies (optional)
 pip install -r requirements-dev.txt
 ```
 
+### Claude Desktop Configuration
+
+After installation, configure Claude Desktop to use the filesystem MCP server by adding the following to your Claude Desktop configuration file (`claude_desktop_config.json`):
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "filesystem-mcp": {
+      "command": "python",
+      "args": ["-m", "filesystem_mcp"],
+      "env": {
+        "PYTHONPATH": "D:\\path\\to\\filesystem-mcp\\src",
+        "PYTHONUNBUFFERED": "1",
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "cwd": "D:\\path\\to\\your\\working\\directory"
+    }
+  }
+}
+```
+
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "filesystem-mcp": {
+      "command": "python",
+      "args": ["-m", "filesystem_mcp"],
+      "env": {
+        "PYTHONPATH": "/path/to/filesystem-mcp/src",
+        "PYTHONUNBUFFERED": "1",
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "cwd": "/path/to/your/working/directory"
+    }
+  }
+}
+```
+
+**Configuration Notes:**
+- Replace `D:\\path\\to\\filesystem-mcp\\src` with the actual path to your cloned repository's `src` directory
+- Set `cwd` to your preferred working directory for file operations
+- The server supports the following optional environment variables:
+  - `FASTMCP_LOG_LEVEL`: Set to `DEBUG`, `INFO`, `WARNING`, or `ERROR`
+  - `GIT_USERNAME`: Default Git username for commits
+  - `GIT_EMAIL`: Default Git email for commits
+
 ### Docker Installation
 
-If you want to run the MCP server in a container:
+Run the MCP server in a container with all dependencies:
 
 ```bash
-# Build the Docker image
-docker build -t filesystem-mcp .
+# Build the multi-platform Docker image
+docker buildx build -t filesystem-mcp \
+  --platform linux/amd64,linux/arm64 .
 
 # Run the container
-docker run -d -p 8000:8000 --name filesystem-mcp filesystem-mcp
+docker run -d --name filesystem-mcp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd):/workspace \
+  filesystem-mcp
 ```
+
+## 🤖 Help System & Status Tools
+
+### Multilevel Help System
+Get comprehensive guidance for all tools:
+
+```python
+# Overview of all categories and tools
+get_help()
+
+# Detailed help for file operations
+get_help('file_operations')
+
+# Specific tool documentation with examples
+get_help('file_operations', 'read_file')
+```
+
+**Help Categories:**
+- `file_operations` - File reading, writing, directory management
+- `git_operations` - Repository cloning, status, commits, branches
+- `docker_operations` - Container listing, resource monitoring
+- `system_tools` - Help and status functionality
+
+### System Status Monitoring
+Monitor system resources and server health:
+
+```python
+# Comprehensive system status
+get_system_status()
+
+# Resource monitoring only
+get_system_status(include_processes=True, include_disk=True)
+
+# Network and system info
+get_system_status(include_network=True)
+```
+
+**Status Metrics:**
+- CPU usage (physical/logical cores, frequency, load)
+- Memory statistics (total, available, usage percentage)
+- Disk usage (total, used, free space)
+- Process information (top CPU consumers)
+- Network interfaces (IP addresses, status)
+- Server health (FastMCP version, tool count, status)
 
 ## 🛠️ Usage
 

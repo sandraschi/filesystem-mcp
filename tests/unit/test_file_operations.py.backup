@@ -1,0 +1,335 @@
+"""
+Unit tests for file operations.
+
+Tests all file operation functions with proper mocking and edge case coverage.
+"""
+
+import pytest
+import asyncio
+import os
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock, patch, MagicMock
+from datetime import datetime
+
+from filesystem_mcp.tools.file_operations import (
+    read_file,
+    write_file,
+    list_directory,
+    file_exists,
+    get_file_info,
+    _edit_file_plain as edit_file,
+    _get_file_permissions,
+    _safe_resolve_path
+})\nclass TestSafeResolvePath:
+    """Test the _safe_resolve_path function."""
+
+    def test_resolve_absolute_path(self, temp_dir):
+        """Test resolving absolute paths."""
+        test_path = temp_dir / "test.txt"
+        result = _safe_resolve_path(str(test_path)})\n        assert result == test_path.resolve(})\n    def test_resolve_relative_path(self, temp_dir):
+        """Test resolving relative paths."""
+        original_cwd = Path.cwd(})\n        try:
+            os.chdir(temp_dir})\n            result = _safe_resolve_path("test.txt"})\n            assert result == (temp_dir / "test.txt").resolve(})\n        finally:
+            os.chdir(original_cwd})\n    def test_resolve_parent_directory_traversal(self, temp_dir):
+        """Test that parent directory traversal is prevented."""
+        test_path = temp_dir / ".." / "outside.txt"
+        result = _safe_resolve_path(str(test_path)})\n        # Should resolve to something within temp_dir
+        assert temp_dir in result.parents or result == temp_dir
+
+    def test_resolve_nonexistent_path(self, temp_dir):
+        """Test resolving paths that don't exist."""
+        nonexistent = temp_dir / "nonexistent" / "file.txt"
+        result = _safe_resolve_path(str(nonexistent)})\n        assert result == nonexistent.resolve(})\nclass TestFilePermissions:
+    """Test the _get_file_permissions function."""
+
+    def test_get_file_permissions_readable(self, temp_file):
+        """Test getting permissions for a readable file."""
+        permissions = _get_file_permissions(temp_file})\n        assert "readable" in permissions
+        assert permissions["readable"] is True
+
+    def test_get_file_permissions_writable(self, temp_file):
+        """Test getting permissions for a writable file."""
+        permissions = _get_file_permissions(temp_file})\n        assert "writable" in permissions
+        assert permissions["writable"] is True
+
+    def test_get_file_permissions_executable(self, temp_file):
+        """Test getting permissions for executable file."""
+        permissions = _get_file_permissions(temp_file})\n        assert "executable" in permissions
+
+
+class TestReadFile:
+    """Test the read_file function."""
+
+    @pytest.mark.asyncio
+    async def test_read_file_success(self, temp_file):
+        """Test successful file reading."""
+        result = await read_file.run({"file_path": str(temp_file)}})\n        assert result.content["success"] is True
+        assert result.content["content"] == "Test content"
+        assert result.content["path"] == str(temp_file})\n        assert "size" in result.content
+        assert "encoding" in result.content
+
+    @pytest.mark.asyncio
+    async def test_read_file_not_found(self, temp_dir):
+        """Test reading a non-existent file."""
+        nonexistent = temp_dir / "nonexistent.txt"
+        result = await read_file.run({str(nonexistent)})\n        assert result.content["success"] is False
+        assert "not found" in result.content["error"].lower(})\n    @pytest.mark.asyncio
+    async def test_read_file_encoding_error(self, temp_file):
+        """Test reading file with wrong encoding."""
+        # Write binary data
+        temp_file.write_bytes(b'\xff\xfe\xfd'})\n        result = await read_file.run({str(temp_file), encoding="utf-8"})\n        assert result.content["success"] is False
+        assert "decode" in result.content["error"].lower(})\n    @pytest.mark.asyncio
+    async def test_read_file_no_read_permission(self, temp_file):
+        """Test reading file without read permission."""
+        # Make file unreadable (if possible on this platform})\n        try:
+            temp_file.chmod(0o000})\n            result = await read_file.run({str(temp_file)})\n            assert result.content["success"] is False
+            assert "permission" in result.content["error"].lower(})\n        finally:
+            # Restore permissions for cleanup
+            try:
+                temp_file.chmod(0o644})\n            except:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_read_directory_as_file(self, temp_dir):
+        """Test attempting to read a directory as a file."""
+        result = await read_file.run({str(temp_dir)})\n        assert result.content["success"] is False
+        assert "directory" in result.content["error"].lower(})\nclass TestWriteFile:
+    """Test the write_file function."""
+
+    @pytest.mark.asyncio
+    async def test_write_file_success(self, temp_dir):
+        """Test successful file writing."""
+        test_path = temp_dir / "new_file.txt"
+        content = "Hello, World!"
+
+        result = await write_file.run({str(test_path), content})\n        assert result.content["success"] is True
+        assert test_path.exists(})\n        assert test_path.read_text() == content
+
+    @pytest.mark.asyncio
+    async def test_write_file_create_parent_dirs(self, temp_dir):
+        """Test writing file with parent directory creation."""
+        nested_path = temp_dir / "nested" / "dir" / "file.txt"
+        content = "Nested content"
+
+        result = await write_file.run({str(nested_path), content, create_parents=True})\n        assert result.content["success"] is True
+        assert nested_path.exists(})\n        assert nested_path.read_text() == content
+
+    @pytest.mark.asyncio
+    async def test_write_file_no_parent_creation(self, temp_dir):
+        """Test writing file without parent directory creation."""
+        nested_path = temp_dir / "nested" / "file.txt"
+
+        result = await write_file.run({str(nested_path), "content", create_parents=False})\n        assert result.content["success"] is False
+        assert "parent" in result.content["error"].lower(})\n    @pytest.mark.asyncio
+    async def test_write_file_encoding(self, temp_dir):
+        """Test writing file with specific encoding."""
+        test_path = temp_dir / "encoded_file.txt"
+        content = "Hello, 世界!"
+
+        result = await write_file.run({str(test_path), content, encoding="utf-16"})\n        assert result.content["success"] is True
+        # Read back with same encoding
+        assert test_path.read_text(encoding="utf-16") == content
+
+
+class TestListDirectory:
+    """Test the list_directory function."""
+
+    @pytest.mark.asyncio
+    async def test_list_directory_basic(self, temp_dir):
+        """Test basic directory listing."""
+        # Create some test files
+        (temp_dir / "file1.txt").write_text("content1"})\n        (temp_dir / "file2.txt").write_text("content2"})\n        (temp_dir / "subdir").mkdir(})\n        (temp_dir / "subdir" / "nested.txt").write_text("nested"})\n        result = await list_directory.run({str(temp_dir)})\n        assert result.content["success"] is True
+        assert "contents" in result
+        assert len(result.content["contents"]) == 3  # 2 files + 1 directory
+
+        # Check that all items are present
+        names = [item["name"] for item in result.content["contents"]]
+        assert "file1.txt" in names
+        assert "file2.txt" in names
+        assert "subdir" in names
+
+    @pytest.mark.asyncio
+    async def test_list_directory_recursive(self, temp_dir):
+        """Test recursive directory listing."""
+        # Create nested structure
+        (temp_dir / "file1.txt").write_text("content1"})\n        (temp_dir / "subdir").mkdir(})\n        (temp_dir / "subdir" / "file2.txt").write_text("content2"})\n        (temp_dir / "subdir" / "nested").mkdir(})\n        (temp_dir / "subdir" / "nested" / "file3.txt").write_text("content3"})\n        result = await list_directory.run({str(temp_dir), recursive=True})\n        assert result.content["success"] is True
+        assert "contents" in result
+
+        # Should find all files and directories
+        all_paths = []
+        def collect_paths(items, current_path=""):
+            for item in items:
+                full_path = f"{current_path}/{item['name']}" if current_path else item['name']
+                all_paths.append(full_path})\n                if item.get("is_directory") and "contents" in item:
+                    collect_paths(item["contents"], full_path})\n        collect_paths(result.content["contents"]})\n        assert "file1.txt" in all_paths
+        assert "subdir/file2.txt" in all_paths
+        assert "subdir/nested/file3.txt" in all_paths
+
+    @pytest.mark.asyncio
+    async def test_list_directory_hidden_files(self, temp_dir):
+        """Test listing directory with hidden files."""
+        (temp_dir / "visible.txt").write_text("visible"})\n        (temp_dir / ".hidden.txt").write_text("hidden"})\n        result = await list_directory.run({str(temp_dir), include_hidden=True})\n        assert result.content["success"] is True
+        names = [item["name"] for item in result.content["contents"]]
+        assert "visible.txt" in names
+        assert ".hidden.txt" in names
+
+    @pytest.mark.asyncio
+    async def test_list_directory_no_hidden_files(self, temp_dir):
+        """Test listing directory without hidden files."""
+        (temp_dir / "visible.txt").write_text("visible"})\n        (temp_dir / ".hidden.txt").write_text("hidden"})\n        result = await list_directory.run({str(temp_dir), include_hidden=False})\n        assert result.content["success"] is True
+        names = [item["name"] for item in result.content["contents"]]
+        assert "visible.txt" in names
+        assert ".hidden.txt" not in names
+
+
+class TestFileExists:
+    """Test the file_exists function."""
+
+    @pytest.mark.asyncio
+    async def test_file_exists_file(self, temp_file):
+        """Test checking existence of a file."""
+        result = await file_exists.run({str(temp_file)})\n        assert result.content["success"] is True
+        assert result.content["exists"] is True
+        assert result.content["type"] == "file"
+
+    @pytest.mark.asyncio
+    async def test_file_exists_directory(self, temp_dir):
+        """Test checking existence of a directory."""
+        result = await file_exists.run({str(temp_dir)})\n        assert result.content["success"] is True
+        assert result.content["exists"] is True
+        assert result.content["type"] == "directory"
+
+    @pytest.mark.asyncio
+    async def test_file_exists_nonexistent(self, temp_dir):
+        """Test checking existence of non-existent path."""
+        nonexistent = temp_dir / "nonexistent.txt"
+        result = await file_exists.run({str(nonexistent)})\n        assert result.content["success"] is True
+        assert result.content["exists"] is False
+        assert result.content["type"] is None
+
+
+class TestGetFileInfo:
+    """Test the get_file_info function."""
+
+    @pytest.mark.asyncio
+    async def test_get_file_info_basic(self, temp_file):
+        """Test getting basic file information."""
+        result = await get_file_info.run({str(temp_file)})\n        assert result.content["success"] is True
+        assert result.content["path"] == str(temp_file})\n        assert result.content["name"] == temp_file.name
+        assert result.content["size"] == len("Test content"})\n        assert result.content["is_file"] is True
+        assert result.content["is_directory"] is False
+        assert "permissions" in result
+        assert "created" in result
+        assert "modified" in result
+
+    @pytest.mark.asyncio
+    async def test_get_file_info_directory(self, temp_dir):
+        """Test getting directory information."""
+        result = await get_file_info.run({str(temp_dir)})\n        assert result.content["success"] is True
+        assert result.content["is_file"] is False
+        assert result.content["is_directory"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_file_info_with_content(self, temp_file):
+        """Test getting file info with content."""
+        result = await get_file_info.run({str(temp_file), include_content=True})\n        assert result.content["success"] is True
+        assert result.content["content"] == "Test content"
+
+    @pytest.mark.asyncio
+    async def test_get_file_info_large_file_no_content(self, temp_file):
+        """Test that large files don't include content by default."""
+        # Create a larger file
+        large_content = "x" * 10000
+        temp_file.write_text(large_content})\n        result = await get_file_info.run({str(temp_file)})\n        assert result.content["success"] is True
+        assert result.content["size"] == 10000
+        assert "content" not in result  # Should not include large content
+
+    @pytest.mark.asyncio
+    async def test_get_file_info_nonexistent(self, temp_dir):
+        """Test getting info for non-existent file."""
+        nonexistent = temp_dir / "nonexistent.txt"
+        result = await get_file_info.run({str(nonexistent)})\n        assert result.content["success"] is False
+        assert "not found" in result.content["error"].lower(})\nclass TestEditFile:
+    """Test the edit_file function."""
+
+    @pytest.mark.asyncio
+    async def test_edit_file_success(self, temp_file):
+        """Test successful file editing."""
+        original_content = "Hello, World!\nThis is a test file."
+        temp_file.write_text(original_content})\n        result = await edit_file.run({str(temp_file), "World", "Universe"})\n        assert result.content["success"] is True
+        assert "Successfully edited file" in result.content["message"]
+        assert result.content["occurrences_replaced"] == 1
+        assert result.content["file_size_before"] == len(original_content})\n        # Check the file content was actually changed
+        new_content = temp_file.read_text(})\n        assert "Hello, Universe!" in new_content
+        assert "World" not in new_content
+
+    @pytest.mark.asyncio
+    async def test_edit_file_multiple_occurrences(self, temp_file):
+        """Test editing file with multiple occurrences of the same text."""
+        original_content = "test test test"
+        temp_file.write_text(original_content})\n        result = await edit_file.run({str(temp_file), "test", "example"})\n        assert result.content["success"] is True
+        assert result.content["occurrences_replaced"] == 3
+
+        new_content = temp_file.read_text(})\n        assert new_content == "example example example"
+
+    @pytest.mark.asyncio
+    async def test_edit_file_empty_replacement(self, temp_file):
+        """Test editing file with empty replacement (deletion)."""
+        original_content = "Hello, World!\nThis is a test."
+        temp_file.write_text(original_content})\n        result = await edit_file.run({str(temp_file), "World!\n", ""})\n        assert result.content["success"] is True
+        assert result.content["occurrences_replaced"] == 1
+
+        new_content = temp_file.read_text(})\n        assert new_content == "Hello, This is a test."
+
+    @pytest.mark.asyncio
+    async def test_edit_file_not_found(self, temp_dir):
+        """Test editing a non-existent file."""
+        nonexistent = temp_dir / "nonexistent.txt"
+
+        result = await edit_file.run({str(nonexistent), "old", "new"})\n        assert result.content["success"] is False
+        assert "not found" in result.content["error"]
+
+    @pytest.mark.asyncio
+    async def test_edit_file_directory_as_file(self, temp_dir):
+        """Test attempting to edit a directory as a file."""
+        result = await edit_file.run({str(temp_dir), "old", "new"})\n        assert result.content["success"] is False
+        assert "not a file" in result.content["error"]
+
+    @pytest.mark.asyncio
+    async def test_edit_file_empty_old_string(self, temp_file):
+        """Test editing with empty old_string."""
+        temp_file.write_text("content"})\n        result = await edit_file.run({str(temp_file), "", "new"})\n        assert result.content["success"] is False
+        assert "old_string cannot be empty" in result.content["error"]
+
+    @pytest.mark.asyncio
+    async def test_edit_file_text_not_found(self, temp_file):
+        """Test editing when the text to replace is not found."""
+        temp_file.write_text("Hello, World!"})\n        result = await edit_file.run({str(temp_file), "Universe", "Galaxy"})\n        assert result.content["success"] is False
+        assert "not found in file" in result.content["error"]
+
+    @pytest.mark.asyncio
+    async def test_edit_file_binary_content(self, temp_file):
+        """Test attempting to edit a binary file."""
+        # Write binary data
+        temp_file.write_bytes(b'\xff\xfe\xfd\xfc'})\n        result = await edit_file.run({str(temp_file), "old", "new"})\n        assert result.content["success"] is False
+        assert "not valid UTF-8 text" in result.content["error"]
+
+    @pytest.mark.asyncio
+    async def test_edit_file_backup_creation(self, temp_file):
+        """Test that backup files are created during editing."""
+        original_content = "Original content"
+        temp_file.write_text(original_content})\n        result = await edit_file.run({str(temp_file), "Original", "Modified"})\n        assert result.content["success"] is True
+        # Backup should be cleaned up after successful edit
+        backup_path = temp_file.with_suffix(temp_file.suffix + '.backup'})\n        assert not backup_path.exists()  # Should be cleaned up
+
+    @pytest.mark.asyncio
+    async def test_edit_file_no_changes(self, temp_file):
+        """Test editing with identical old and new strings."""
+        original_content = "test content"
+        temp_file.write_text(original_content})\n        result = await edit_file.run({str(temp_file), "test", "test"})\n        assert result.content["success"] is True
+        assert result.content["occurrences_replaced"] == 1
+
+        # Content should be unchanged
+        new_content = temp_file.read_text(})\n        assert new_content == original_content
+

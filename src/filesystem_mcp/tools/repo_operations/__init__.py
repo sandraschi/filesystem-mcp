@@ -1,31 +1,36 @@
 """
-Repository operations for the Filesystem MCP.
+Repository operations for the Filesystem MCP - FastMCP 2.12 compliant.
 
-This module provides Git repository operations like clone, status, commit, etc.
+This module provides comprehensive Git repository operations using FastMCP 2.12 patterns.
+All tools are registered using the @_get_app().tool() decorator pattern for maximum compatibility.
 """
 
 import os
 import shutil
 import logging
+import sys
+import fnmatch
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union, Literal
 from datetime import datetime
 from enum import Enum
 
 import git
-from pydantic import BaseModel, Field, HttpUrl, validator
-from fastapi import HTTPException, status
-from mcp import tool
-from mcp.server import FastMCP
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 
-# Configure logging
+# Configure structured logging for this module
 logger = logging.getLogger(__name__)
 
-# Initialize FastMCP app
-app = FastMCP()
+# Import app locally in functions to avoid circular imports
+def _get_app():
+    """Get the app instance locally to avoid circular imports."""
+    from ... import app
+    return app
 
 class CloneRepoRequest(BaseModel):
-    """Request model for cloning a Git repository."""
+    """Request model for cloning a Git repository - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     repo_url: HttpUrl = Field(
         ...,
         description="URL of the Git repository to clone"
@@ -51,8 +56,9 @@ class CloneRepoRequest(BaseModel):
         False,
         description="Don't checkout the working directory after cloning"
     )
-    
-    @validator('target_dir')
+
+    @field_validator('target_dir')
+    @classmethod
     def validate_target_dir(cls, v):
         if v is not None:
             try:
@@ -71,7 +77,9 @@ class CloneRepoRequest(BaseModel):
 
 
 class RepoStatusRequest(BaseModel):
-    """Request model for getting repository status."""
+    """Request model for getting repository status - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     repo_path: str = Field(
         ".",
         description="Path to the Git repository (default: current directory)"
@@ -92,8 +100,9 @@ class RepoStatusRequest(BaseModel):
         False,
         description="Include information about remote repository status"
     )
-    
-    @validator('repo_path')
+
+    @field_validator('repo_path')
+    @classmethod
     def validate_repo_path(cls, v):
         try:
             path = Path(v).expanduser().absolute()
@@ -103,93 +112,97 @@ class RepoStatusRequest(BaseModel):
         except Exception as e:
             raise ValueError(f"Invalid repository path: {e}")
 
-@tool(
-    name="clone_repo",
-    description="Clone a Git repository with advanced options",
-    response_model=Dict[str, Any]
-)
+@_get_app().tool()
 async def clone_repo(
-    request: CloneRepoRequest
-) -> Dict[str, Any]:
-    """
-    Clone a Git repository with advanced options.
-    
-    This function clones a Git repository with support for shallow cloning,
+    repo_url: str,
+    target_dir: Optional[str] = None,
+    branch: Optional[str] = None,
+    depth: Optional[int] = None,
+    single_branch: bool = True,
+    no_checkout: bool = False
+) -> dict:
+    """Clone a Git repository with advanced options and comprehensive error handling.
+
+    This tool clones a Git repository with support for shallow cloning,
     single branch cloning, and other advanced Git options. It provides
-    detailed status information about the cloned repository.
-    
+    detailed status information about the cloned repository with proper
+    error handling and structured logging for debugging.
+
     Args:
-        request: CloneRepoRequest object containing:
-            - repo_url: URL of the Git repository to clone
-            - target_dir: Directory to clone into (default: current directory)
-            - branch: Branch to clone (default: default branch)
-            - depth: Create a shallow clone with history truncated to this many commits
-            - single_branch: Clone only the history leading to the tip of a single branch
-            - no_checkout: Don't checkout the working directory after cloning
-    
+        repo_url: URL of the Git repository to clone
+        target_dir: Directory to clone into (default: current directory)
+        branch: Branch to clone (default: default branch)
+        depth: Create a shallow clone with history truncated to this many commits
+        single_branch: Clone only the history leading to a single branch (default: True)
+        no_checkout: Clone without checking out any branch (default: False)
+
     Returns:
-        Dict containing status and metadata about the cloned repository.
-        
-    Raises:
-        HTTPException: If there's an error cloning the repository.
+        Dictionary containing clone operation results and repository information
+
+    Error Handling:
+        Returns error information if clone fails, directory access denied, or other issues
     """
     try:
+        logger.info(f"Cloning repository from {repo_url} to {target_dir}")
+
         # Determine target directory
-        if request.target_dir is None:
+        if target_dir is None:
             # Default to a directory named after the repo in the current directory
-            repo_name = str(request.repo_url).split('/')[-1]
+            repo_name = str(repo_url).split('/')[-1]
             if repo_name.endswith('.git'):
                 repo_name = repo_name[:-4]
             target_dir = str(Path.cwd() / repo_name)
-        else:
-            target_dir = request.target_dir
-        
+
         # Resolve and validate target path
         target_path = Path(target_dir).expanduser().absolute()
-        
+
         # Check if target directory exists and is empty
         if target_path.exists():
             if any(target_path.iterdir()):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Target directory is not empty: {target_dir}"
-                )
+                logger.error(f"Target directory is not empty: {target_dir}")
+                return {
+                    "success": False,
+                    "error": f"Target directory is not empty: {target_dir}",
+                    "repo_url": repo_url
+                }
         else:
             # Ensure parent directory exists and is writable
             target_path.parent.mkdir(parents=True, exist_ok=True)
             if not os.access(target_path.parent, os.W_OK):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"No write permission in directory: {target_path.parent}"
-                )
-        
+                logger.error(f"No write permission in directory: {target_path.parent}")
+                return {
+                    "success": False,
+                    "error": f"No write permission in directory: {target_path.parent}",
+                    "repo_url": repo_url
+                }
+
         # Prepare clone options
         clone_kwargs = {
-            'single_branch': request.single_branch,
-            'no_checkout': request.no_checkout
+            'single_branch': single_branch,
+            'no_checkout': no_checkout
         }
-        
-        if request.branch:
-            clone_kwargs['branch'] = request.branch
-        if request.depth:
-            clone_kwargs['depth'] = request.depth
-        
-        logger.info(f"Cloning repository from {request.repo_url} to {target_dir}")
-        
+
+        if branch:
+            clone_kwargs['branch'] = branch
+        if depth:
+            clone_kwargs['depth'] = depth
+
         # Perform the clone
         try:
             repo = git.Repo.clone_from(
-                str(request.repo_url),
+                str(repo_url),
                 str(target_path),
                 **clone_kwargs
             )
         except git.exc.GitCommandError as e:
             logger.error(f"Git command error while cloning repository: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Failed to clone repository: {str(e)}"
-            )
-        
+            return {
+                "success": False,
+                "error": f"Failed to clone repository: {str(e)}",
+                "repo_url": repo_url,
+                "target_dir": target_dir
+            }
+
         # Get repository information
         head_info = {}
         if repo.head.is_valid():
@@ -201,11 +214,11 @@ async def clone_repo(
                 'commit_date': repo.head.commit.committed_datetime.isoformat(),
                 'is_detached': repo.head.is_detached
             }
-        
+
         # Prepare response
         response = {
-            'status': 'success',
-            'message': f'Successfully cloned {request.repo_url} to {target_dir}',
+            'success': True,
+            'message': f'Successfully cloned {repo_url} to {target_dir}',
             'repo_path': str(target_path),
             'git_dir': str(Path(repo.git_dir).relative_to(target_path) if repo.git_dir else None),
             'is_bare': repo.bare,
@@ -215,19 +228,17 @@ async def clone_repo(
                 'url': list(remote.urls)[0] if remote.urls else None
             } for remote in repo.remotes]
         }
-        
+
         logger.info(f"Successfully cloned repository to {target_dir}")
         return response
-        
-    except HTTPException:
-        raise
-        
+
     except Exception as e:
-        logger.exception(f"Unexpected error while cloning repository: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+        logger.error(f"Unexpected error while cloning repository: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"An unexpected error occurred: {str(e)}",
+            "repo_url": repo_url
+        }
 
 class CommitInfo(BaseModel):
     """Model for commit information."""
@@ -268,7 +279,9 @@ class RepoStatusResponse(BaseModel):
 
 
 class CommitChangesRequest(BaseModel):
-    """Request model for committing changes to a Git repository."""
+    """Request model for committing changes to a Git repository - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     repo_path: str = Field(
         ".",
         description="Path to the Git repository (default: current directory)"
@@ -294,8 +307,9 @@ class CommitChangesRequest(BaseModel):
         False,
         description="Skip git commit hooks (default: False)"
     )
-    
-    @validator('repo_path')
+
+    @field_validator('repo_path')
+    @classmethod
     def validate_repo_path(cls, v):
         try:
             path = Path(v).expanduser().absolute()
@@ -334,7 +348,9 @@ class RepoItemType(str, Enum):
 
 
 class RepoItem(BaseModel):
-    """Model for a repository item (file or directory)."""
+    """Model for a repository item (file or directory) - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     path: str = Field(..., description="Relative path from repository root")
     name: str = Field(..., description="Name of the item")
     type: RepoItemType = Field(..., description="Type of the item")
@@ -349,14 +365,11 @@ class RepoItem(BaseModel):
     modified: Optional[float] = Field(None, description="Last modification timestamp")
     mode: Optional[int] = Field(None, description="File mode/permissions")
 
-    class Config:
-        json_encoders = {
-            RepoItemType: lambda v: v.value
-        }
-
 
 class ReadRepoRequest(BaseModel):
-    """Request model for reading repository contents."""
+    """Request model for reading repository contents - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     repo_path: str = Field(
         ".",
         description="Path to the Git repository (default: current directory)"
@@ -388,8 +401,9 @@ class ReadRepoRequest(BaseModel):
         None,
         description="Pattern to filter files by (e.g., '*.py' for Python files)"
     )
-    
-    @validator('repo_path')
+
+    @field_validator('repo_path')
+    @classmethod
     def validate_repo_path(cls, v):
         try:
             path = Path(v).expanduser().absolute()
@@ -431,7 +445,9 @@ class BranchInfo(BaseModel):
 
 
 class ListBranchesRequest(BaseModel):
-    """Request model for listing Git branches."""
+    """Request model for listing Git branches - FastMCP 2.12 compliant."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     repo_path: str = Field(
         ".",
         description="Path to the Git repository (default: current directory)"
@@ -448,8 +464,9 @@ class ListBranchesRequest(BaseModel):
         True,
         description="Whether to include remote tracking status (default: True)"
     )
-    
-    @validator('repo_path')
+
+    @field_validator('repo_path')
+    @classmethod
     def validate_repo_path(cls, v):
         try:
             path = Path(v).expanduser().absolute()
@@ -472,81 +489,86 @@ class ListBranchesResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if status is 'error'")
 
 
-@tool(
-    name="get_repo_status",
-    description="Get detailed status of a Git repository",
-    response_model=RepoStatusResponse
-)
+@_get_app().tool()
 async def get_repo_status(
-    request: RepoStatusRequest
-) -> RepoStatusResponse:
-    """
-    Get detailed status of a Git repository.
-    
-    This function provides comprehensive information about the current state of a
+    repo_path: str = ".",
+    include_staged: bool = True,
+    include_unstaged: bool = True,
+    include_untracked: bool = True,
+    include_remote: bool = False
+) -> dict:
+    """Get detailed status of a Git repository with comprehensive information.
+
+    This tool provides comprehensive information about the current state of a
     Git repository, including staged and unstaged changes, untracked files, and
-    remote synchronization status.
-    
+    remote synchronization status. It includes proper error handling and
+    structured logging for debugging and monitoring.
+
     Args:
-        request: RepoStatusRequest object containing:
-            - repo_path: Path to the Git repository (default: current directory)
-            - include_staged: Include information about staged changes
-            - include_unstaged: Include information about unstaged changes
-            - include_untracked: Include information about untracked files
-            - include_remote: Include information about remote repository status
-    
+        repo_path: Path to the Git repository (default: current directory)
+        include_staged: Include information about staged changes (default: True)
+        include_unstaged: Include information about unstaged changes (default: True)
+        include_untracked: Include information about untracked files (default: True)
+        include_remote: Include information about remote repository status (default: False)
+
     Returns:
-        RepoStatusResponse: Detailed repository status information.
-        
-    Raises:
-        HTTPException: If there's an error accessing the repository.
+        Dictionary containing comprehensive repository status information
+
+    Error Handling:
+        Returns error information if repository access fails or Git commands fail
     """
     try:
+        logger.info(f"Getting repository status for: {repo_path}")
+
         # Resolve repository path
-        repo_path = Path(request.repo_path).expanduser().absolute()
-        
-        # Initialize response
-        response = RepoStatusResponse(
-            status="success",
-            repo_path=str(repo_path),
-            is_dirty=False,
-            active_branch=None,
-            head_commit=None,
-            staged_changes=[],
-            unstaged_changes=[],
-            untracked_files=[],
-            remote_status=None,
-            message="Repository status retrieved successfully"
-        )
+        repo_path_obj = Path(repo_path).expanduser().absolute()
+
+        # Check if path exists and is a valid repository
+        if not repo_path_obj.exists():
+            logger.warning(f"Repository path does not exist: {repo_path}")
+            return {
+                "success": False,
+                "error": f"Repository path does not exist: {repo_path}",
+                "repo_path": repo_path
+            }
         
         try:
             # Open the repository
-            repo = git.Repo(repo_path, search_parent_directories=True)
-            
+            repo = git.Repo(repo_path_obj, search_parent_directories=True)
+
+            # Initialize response data
+            active_branch = None
+            head_commit = None
+            is_dirty = False
+
             # Get branch info
             try:
-                response.active_branch = str(repo.active_branch)
-                response.is_dirty = repo.is_dirty()
+                active_branch = str(repo.active_branch)
+                is_dirty = repo.is_dirty()
             except (TypeError, ValueError):
-                response.active_branch = None  # Detached HEAD
-                response.is_dirty = repo.is_dirty()
-            
+                active_branch = None  # Detached HEAD
+                is_dirty = repo.is_dirty()
+
             # Get commit info if HEAD exists
             if not repo.bare and repo.head.is_valid():
                 commit = repo.head.commit
-                response.head_commit = CommitInfo(
-                    hexsha=commit.hexsha,
-                    message=commit.message.strip(),
-                    summary=commit.summary,
-                    author=f"{commit.author.name} <{commit.author.email}>" if commit.author else "Unknown",
-                    authored_date=datetime.fromtimestamp(commit.authored_date).isoformat(),
-                    committed_date=datetime.fromtimestamp(commit.committed_date).isoformat(),
-                    parents=[p.hexsha for p in commit.parents]
-                )
-            
+                head_commit = {
+                    "hexsha": commit.hexsha,
+                    "message": commit.message.strip(),
+                    "summary": commit.summary,
+                    "author": f"{commit.author.name} <{commit.author.email}>" if commit.author else "Unknown",
+                    "authored_date": datetime.fromtimestamp(commit.authored_date).isoformat(),
+                    "committed_date": datetime.fromtimestamp(commit.committed_date).isoformat(),
+                    "parents": [p.hexsha for p in commit.parents]
+                }
+
             # Get status
-            if request.include_staged:
-                response.staged_changes = [
+            staged_changes = []
+            unstaged_changes = []
+            untracked_files = []
+
+            if include_staged:
+                staged_changes = [
                     {
                         'change_type': item.change_type,
                         'a_path': item.a_path,
@@ -559,9 +581,9 @@ async def get_repo_status(
                     }
                     for item in repo.index.diff('HEAD')  # Staged changes
                 ]
-            
-            if request.include_unstaged:
-                response.unstaged_changes = [
+
+            if include_unstaged:
+                unstaged_changes = [
                     {
                         'change_type': item.change_type,
                         'a_path': item.a_path,
@@ -574,13 +596,13 @@ async def get_repo_status(
                     }
                     for item in repo.index.diff(None)  # Unstaged changes
                 ]
-            
-            if request.include_untracked:
-                response.untracked_files = [str(p) for p in repo.untracked_files]
+
+            if include_untracked:
+                untracked_files = [str(p) for p in repo.untracked_files]
             
             # Get remote status if requested
-            if request.include_remote and repo.remotes:
-                remote_status = {}
+            remote_status = {}
+            if include_remote and repo.remotes:
                 for remote in repo.remotes:
                     try:
                         remote_status[remote.name] = {
@@ -601,40 +623,55 @@ async def get_repo_status(
                             'error': str(e),
                             'url': next(iter(remote.urls), None)
                         }
-                response.remote_status = remote_status
-            
-            return response
-            
-        except git.InvalidGitRepositoryError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Not a valid Git repository: {repo_path}"
-            )
-        except git.NoSuchPathError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Repository not found: {repo_path}"
-            )
-        except git.GitCommandError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Git command failed: {str(e)}"
-            )
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception(f"Error getting repository status for {request.repo_path}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get repository status: {str(e)}"
-        )
 
-@tool(
-    name="list_branches",
-    description="List Git branches with detailed information and tracking status",
-    response_model=ListBranchesResponse
-)
+            # Build the response
+            response = {
+                "success": True,
+                "repo_path": str(repo_path_obj),
+                "is_dirty": is_dirty,
+                "active_branch": active_branch,
+                "head_commit": head_commit,
+                "staged_changes": staged_changes,
+                "unstaged_changes": unstaged_changes,
+                "untracked_files": untracked_files,
+                "remote_status": remote_status if include_remote else None,
+                "message": "Repository status retrieved successfully"
+            }
+
+            logger.info(f"Successfully retrieved status for repository: {repo_path_obj}")
+            return response
+
+        except git.InvalidGitRepositoryError as e:
+            logger.error(f"Not a valid Git repository: {repo_path_obj}")
+            return {
+                "success": False,
+                "error": f"Not a valid Git repository: {repo_path_obj}",
+                "repo_path": repo_path
+            }
+        except git.NoSuchPathError as e:
+            logger.error(f"Repository not found: {repo_path_obj}")
+            return {
+                "success": False,
+                "error": f"Repository not found: {repo_path_obj}",
+                "repo_path": repo_path
+            }
+        except git.GitCommandError as e:
+            logger.error(f"Git command failed: {e}")
+            return {
+                "success": False,
+                "error": f"Git command failed: {str(e)}",
+                "repo_path": repo_path
+            }
+
+    except Exception as e:
+        logger.error(f"Unexpected error getting repository status for {repo_path}: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Failed to get repository status: {str(e)}",
+            "repo_path": repo_path
+        }
+
+@_get_app().tool()
 async def list_branches(
     request: ListBranchesRequest
 ) -> ListBranchesResponse:
@@ -654,8 +691,8 @@ async def list_branches(
     Returns:
         ListBranchesResponse: Detailed information about branches.
         
-    Raises:
-        HTTPException: If there's an error accessing the repository.
+    Returns:
+        ListBranchesResponse with error details if repository access fails.
     """
     try:
         # Initialize response
@@ -670,9 +707,11 @@ async def list_branches(
             repo = git.Repo(request.repo_path, search_parent_directories=True)
             response.current_branch = str(repo.active_branch) if not repo.head.is_detached else None
         except git.InvalidGitRepositoryError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Not a valid Git repository: {request.repo_path}"
+            logger.warning(f"Not a valid Git repository: {request.repo_path}")
+            return ListBranchesResponse(
+                status="error",
+                repo_path=request.repo_path,
+                error=f"Not a valid Git repository: {request.repo_path}"
             )
         
         # Get the current branch if not in detached HEAD state
@@ -732,16 +771,14 @@ async def list_branches(
         
         logger.info(f"Listed {len(response.branches)} branches from repository: {request.repo_path}")
         return response
-        
-    except HTTPException:
-        raise
-        
+
     except Exception as e:
         error_msg = f"Unexpected error while listing branches: {str(e)}"
         logger.exception(error_msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=error_msg
+        return ListBranchesResponse(
+            status="error",
+            repo_path=request.repo_path,
+            error=error_msg
         )
 
 
@@ -816,11 +853,7 @@ def _get_branch_info(
     )
 
 
-@tool(
-    name="commit_changes",
-    description="Commit changes to a Git repository with detailed options",
-    response_model=CommitResponse
-)
+@_get_app().tool()
 async def commit_changes(
     request: CommitChangesRequest
 ) -> CommitResponse:
@@ -842,8 +875,8 @@ async def commit_changes(
     Returns:
         CommitResponse: Detailed information about the created commit.
         
-    Raises:
-        HTTPException: If there's an error committing changes.
+    Returns:
+        CommitResponse with error details if commit operation fails.
     """
     try:
         # Initialize response
@@ -858,9 +891,11 @@ async def commit_changes(
             repo = git.Repo(request.repo_path, search_parent_directories=True)
             response.branch = str(repo.active_branch) if not repo.head.is_detached else None
         except git.InvalidGitRepositoryError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Not a valid Git repository: {request.repo_path}"
+            logger.warning(f"Not a valid Git repository: {request.repo_path}")
+            return CommitResponse(
+                status="error",
+                repo_path=request.repo_path,
+                error=f"Not a valid Git repository: {request.repo_path}"
             )
         
         # Stage changes if needed
@@ -924,27 +959,22 @@ async def commit_changes(
         except git.GitCommandError as e:
             error_msg = f"Failed to create commit: {str(e)}"
             logger.error(error_msg)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_msg
+            return CommitResponse(
+                status="error",
+                repo_path=request.repo_path,
+                error=error_msg
             )
-    
-    except HTTPException:
-        raise
-        
+
     except Exception as e:
         error_msg = f"Unexpected error while committing changes: {str(e)}"
         logger.exception(error_msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=error_msg
+        return CommitResponse(
+            status="error",
+            repo_path=request.repo_path,
+            error=error_msg
         )
 
-@tool(
-    name="read_repository",
-    description="Read and explore repository contents with detailed options",
-    response_model=RepoContentResponse
-)
+@_get_app().tool()
 async def read_repo(
     request: ReadRepoRequest
 ) -> RepoContentResponse:
@@ -967,8 +997,8 @@ async def read_repo(
     Returns:
         RepoContentResponse: Structured repository contents.
         
-    Raises:
-        HTTPException: If there's an error reading the repository.
+    Returns:
+        RepoContentResponse with error details if repository access fails.
     """
     try:
         # Initialize response
@@ -983,9 +1013,12 @@ async def read_repo(
         try:
             repo = git.Repo(request.repo_path, search_parent_directories=True)
         except git.InvalidGitRepositoryError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Not a valid Git repository: {request.repo_path}"
+            logger.warning(f"Not a valid Git repository: {request.repo_path}")
+            return RepoContentResponse(
+                status="error",
+                repo_path=request.repo_path,
+                path=request.path,
+                error=f"Not a valid Git repository: {request.repo_path}"
             )
         
         # Normalize path and ensure it's relative to the repo root
@@ -1004,14 +1037,21 @@ async def read_repo(
                     try:
                         tree = tree[part]
                     except KeyError:
-                        raise HTTPException(
-                            status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Path not found in repository: {rel_path}"
+                        logger.warning(f"Path not found in repository: {rel_path}")
+                        return RepoContentResponse(
+                            status="error",
+                            repo_path=request.repo_path,
+                            path=request.path,
+                            error=f"Path not found in repository: {rel_path}"
                         )
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error accessing repository path {rel_path}: {str(e)}"
+            error_msg = f"Error accessing repository path {rel_path}: {str(e)}"
+            logger.error(error_msg)
+            return RepoContentResponse(
+                status="error",
+                repo_path=request.repo_path,
+                path=request.path,
+                error=error_msg
             )
         
         # Process each item in the current tree
@@ -1071,14 +1111,13 @@ async def read_repo(
         
         logger.info(f"Read {len(response.items)} items from repository: {request.repo_path}")
         return response
-        
-    except HTTPException:
-        raise
-        
+
     except Exception as e:
         error_msg = f"Unexpected error while reading repository: {str(e)}"
         logger.exception(error_msg)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=error_msg
+        return RepoContentResponse(
+            status="error",
+            repo_path=request.repo_path,
+            path=request.path,
+            error=error_msg
         )
