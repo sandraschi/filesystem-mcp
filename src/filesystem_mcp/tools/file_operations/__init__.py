@@ -361,32 +361,45 @@ async def list_directory(
         # Check if path exists
         if not path.exists():
             logger.warning(f"Directory not found: {directory_path}")
-            return {
+            return [{
                 "success": False,
                 "error": f"Directory not found: {directory_path}",
-                "path": directory_path
-            }
+                "path": directory_path,
+                "type": "error"
+            }]
 
         # Check if path is a directory
         if not path.is_dir():
             logger.warning(f"Path is not a directory: {directory_path}")
-            return {
+            return [{
                 "success": False,
                 "error": f"Path is not a directory: {directory_path}",
-                "path": directory_path
-            }
+                "path": directory_path,
+                "type": "error"
+            }]
 
         # Check read permissions
         if not os.access(path, os.R_OK):
             logger.warning(f"Read permission denied: {directory_path}")
-            return {
+            return [{
                 "success": False,
                 "error": f"Read permission denied: {directory_path}",
-                "path": directory_path
-            }
+                "path": directory_path,
+                "type": "error"
+            }]
 
         # Internal function for recursive listing
-        def _list_dir(current_path: Path, current_depth: int = 0) -> List[dict]:
+        def _list_dir(current_path: Path, current_depth: int = 0, visited: set = None) -> List[dict]:
+            if visited is None:
+                visited = set()
+
+            # Prevent infinite loops by tracking visited directories
+            resolved_path = current_path.resolve()
+            if resolved_path in visited:
+                logger.warning(f"Skipping already visited directory: {current_path}")
+                return []
+            visited.add(resolved_path)
+
             results = []
 
             try:
@@ -422,10 +435,10 @@ async def list_directory(
 
                         results.append(file_info)
 
-                        # Recurse into subdirectories if requested
+                        # Recurse into subdirectories if requested and depth allows
                         if (recursive and is_dir and not is_symlink and
-                            (max_depth is None or current_depth < max_depth - 1)):
-                            results.extend(_list_dir(item, current_depth + 1))
+                            (max_depth is None or current_depth < max_depth)):
+                            results.extend(_list_dir(item, current_depth + 1, visited))
 
                     except (PermissionError, OSError) as e:
                         logger.warning(f"Skipping inaccessible item {item}: {e}")
@@ -443,11 +456,12 @@ async def list_directory(
 
     except Exception as e:
         logger.error(f"Unexpected error listing directory {directory_path}: {e}", exc_info=True)
-        return {
+        return [{
             "success": False,
             "error": f"Failed to list directory: {str(e)}",
-            "path": directory_path
-        }
+            "path": directory_path,
+            "type": "error"
+        }]
 
 class FileExistsRequest(BaseModel):
     """Request model for file existence check - FastMCP 2.12 compliant."""
