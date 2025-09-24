@@ -1,0 +1,42 @@
+name: "Dependency Review"
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          config-file: '.github/dependency-review-config.yml'
+
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Licenses
+        run: |
+          # Install license checker
+          pip install pip-license-checker
+
+          # Check for incompatible licenses
+          pip-license-checker --fail --format json > license_report.json || true
+
+          # Display results
+          if [ -f license_report.json ]; then
+            echo "License Report:"
+            cat license_report.json | python -m json.tool
+          fi

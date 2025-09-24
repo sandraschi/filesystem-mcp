@@ -1,0 +1,179 @@
+name: "Issue Management"
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, edited]
+  pull_request:
+    types: [opened, labeled, unlabeled, edited]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  issue-management:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add issue labels
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const title = issue.title || '';
+
+            const labels = [];
+
+            // Priority labels based on keywords
+            if (body.includes('urgent') || body.includes('critical') || title.includes('urgent') || title.includes('critical')) {
+              labels.push('priority-high');
+            }
+
+            // Type labels based on content
+            if (body.includes('bug') || body.includes('error') || body.includes('crash') || body.includes('fail')) {
+              labels.push('bug');
+            }
+            if (body.includes('feature') || body.includes('enhancement') || body.includes('add')) {
+              labels.push('enhancement');
+            }
+            if (body.includes('question') || body.includes('help') || body.includes('how')) {
+              labels.push('question');
+            }
+            if (body.includes('security') || body.includes('vulnerability') || title.includes('security')) {
+              labels.push('security');
+            }
+            if (body.includes('documentation') || body.includes('docs') || title.includes('docs')) {
+              labels.push('documentation');
+            }
+
+            // Area labels based on content
+            if (body.includes('docker') || body.includes('container')) {
+              labels.push('docker');
+            }
+            if (body.includes('git') || body.includes('repository')) {
+              labels.push('git');
+            }
+            if (body.includes('file') || body.includes('filesystem')) {
+              labels.push('filesystem');
+            }
+            if (body.includes('mcp') || body.includes('protocol')) {
+              labels.push('mcp');
+            }
+
+            // Add labels if any were identified
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              });
+            }
+
+      - name: Welcome new contributors
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Check if this is the user's first issue
+            const { data: userIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: issue.user.login,
+              state: 'all',
+              per_page: 2
+            });
+
+            // If this is their first issue (only one returned, which is the current one)
+            if (userIssues.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `👋 Welcome @${issue.user.login}! 
+
+Thank you for your first contribution to the Filesystem MCP project! We're excited to have you here.
+
+**Quick Start:**
+- 📖 Check our [README](https://github.com/sandr/filesystem-mcp/blob/main/README.md) for setup instructions
+- 🐛 For bug reports, please include reproduction steps and environment details
+- 💡 For feature requests, describe the use case and expected behavior
+- 🤝 See our [Contributing Guide](https://github.com/sandr/filesystem-mcp/blob/main/CONTRIBUTING.md)
+
+Our community maintainers will review your issue soon. In the meantime, feel free to ask questions!`
+              });
+            }
+
+      - name: Acknowledge security reports
+        if: github.event_name == 'issues' && github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'security')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🔒 **Security Report Acknowledged**
+
+Thank you for responsibly disclosing this security concern. Our security team has been notified and will investigate this report within 24 hours.
+
+**Next Steps:**
+1. Our security team will assess the vulnerability
+2. We'll provide regular updates on our investigation
+3. We'll coordinate disclosure timing if this affects other users
+
+Please check our [Security Policy](https://github.com/sandr/filesystem-mcp/blob/main/.github/SECURITY.md) for more information about our security process.
+
+*This issue has been marked as confidential and will be handled according to our security procedures.*`
+            });
+
+      - name: PR size check
+        if: github.event_name == 'pull_request' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+
+            let size = 'small';
+            let sizeLabel = 'size-small';
+
+            if (additions + deletions > 1000) {
+              size = 'large';
+              sizeLabel = 'size-large';
+            } else if (additions + deletions > 100) {
+              size = 'medium';
+              sizeLabel = 'size-medium';
+            }
+
+            // Add size label
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [sizeLabel]
+            });
+
+            // Comment on large PRs
+            if (size === 'large') {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `📊 **Large Pull Request Detected**
+
+This PR has ${additions} additions and ${deletions} deletions, which makes it a **large change**. 
+
+**Consider:**
+- Breaking this into smaller, focused PRs
+- Adding more detailed commit messages
+- Ensuring comprehensive testing
+- Requesting thorough review
+
+Large PRs can be harder to review effectively. Thank you for considering the reviewer's experience!`
+              });
+            }

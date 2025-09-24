@@ -95,6 +95,11 @@ Use this checklist to audit any MCP server repo before marking it production-rea
 **Completed:** 60 / 60
 **Coverage:** 100%
 
+**Tool Count Update:**
+- **Previous:** 14 core tools
+- **Current:** 15 tools (14 core + 1 unified developer_tool with 10 sub-commands)
+- **Total Functionality:** 23 distinct operations (14 + 10 - 1 for unified tool)
+
 **Auditor:** AI Assistant (automated audit)
 **Date:** September 23, 2025
 **Repo:** filesystem-mcp

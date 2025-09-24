@@ -278,6 +278,38 @@ python -m filesystem_mcp --debug
 | `commit_changes` | Commit changes to repository | `repo_path`, `message`, `add_all`, `paths` |
 | `read_repo` | Read repository structure | `repo_path`, `max_depth`, `include_files`, `include_dirs` |
 
+#### 🛠️ Developer Tools
+
+**Unified Developer Toolkit** - One tool with 10 specialized commands:
+
+| Command | Description | Key Parameters |
+|---------|-------------|----------------|
+| `analyze_dependencies` | Analyze project dependencies from package managers | `path` |
+| `analyze_imports` | Analyze Python import statements and dependencies | `path`, `recursive`, `max_results` |
+| `analyze_project` | Detect project type, frameworks, and structure | `path`, `output_format` |
+| `check_file_sizes` | Analyze file sizes and identify large files | `path`, `recursive`, `max_results` |
+| `detect_duplicates` | Find duplicate files by content hash | `path`, `recursive`, `max_results` |
+| `find_symbols` | Search for function/class definitions and usages | `path`, `pattern`, `recursive` |
+| `find_todos` | Find TODO/FIXME comments in codebase | `path`, `recursive`, `max_results` |
+| `run_linter` | Execute code linting (ruff, flake8, eslint) | `path`, `fix`, `encoding` |
+| `validate_config` | Validate configuration files (JSON/YAML/TOML/INI) | `path` |
+| `validate_json` | Parse and validate JSON files with structure analysis | `path` |
+
+**Usage:**
+```python
+# Analyze project structure
+result = developer_tool('analyze_project', path='.')
+
+# Find all TODO comments
+todos = developer_tool('find_todos', path='src', recursive=True)
+
+# Run linting with auto-fix
+lint_result = developer_tool('run_linter', path='src/', fix=True)
+
+# Find function definitions
+symbols = developer_tool('find_symbols', pattern='auth', recursive=True)
+```
+
 ### Example Usage
 
 ```python

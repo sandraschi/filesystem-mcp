@@ -1,0 +1,19 @@
+fail_on_severity: 'moderate'
+
+allow_licenses:
+  - 'MIT'
+  - 'Apache-2.0'
+  - 'BSD-2-Clause'
+  - 'BSD-3-Clause'
+  - 'ISC'
+  - 'CC0-1.0'
+  - 'Unlicense'
+
+deny_licenses:
+  - 'MS-PL'
+  - 'WTFPL'
+
+vulnerability_check: true
+license_check: true
+base_ref: 'main'
+head_ref: 'HEAD'

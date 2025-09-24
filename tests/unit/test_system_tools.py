@@ -29,8 +29,9 @@ class TestGetHelp:
         result = await get_help.run({})
 
         data = parse_tool_result(result)
-        assert "categories" in data
-        assert len(data["categories"]) == 4
+        assert data["success"] is True
+        assert "categories" in data["help_info"]
+        assert len(data["help_info"]["categories"]) == 4
 
     @pytest.mark.asyncio
     async def test_get_help_category(self):
@@ -38,8 +39,10 @@ class TestGetHelp:
         result = await get_help.run({"category": "file_operations"})
 
         data = parse_tool_result(result)
-        assert data["category"] == "file_operations"
-        assert "tools" in data
+        assert data["success"] is True
+        assert "help_info" in data
+        assert data["help_info"]["category"] == "file_operations"
+        assert "tools" in data["help_info"]
 
     @pytest.mark.asyncio
     async def test_get_help_tool(self):
@@ -50,9 +53,11 @@ class TestGetHelp:
         })
 
         data = parse_tool_result(result)
-        assert data["name"] == "file_operations.read_file"
-        assert "description" in data
-        assert "parameters" in data
+        assert data["success"] is True
+        assert "help_info" in data
+        assert data["help_info"]["name"] == "file_operations.read_file"
+        assert "description" in data["help_info"]
+        assert "parameters" in data["help_info"]
 
     @pytest.mark.asyncio
     async def test_get_help_invalid_category(self):
@@ -60,6 +65,7 @@ class TestGetHelp:
         result = await get_help.run({"category": "invalid_category"})
 
         data = parse_tool_result(result)
+        assert data["success"] is False
         assert "error" in data
         assert "not found" in data["error"]
 
@@ -72,6 +78,7 @@ class TestGetHelp:
         })
 
         data = parse_tool_result(result)
+        assert data["success"] is False
         assert "error" in data
         assert "not found" in data["error"]
 

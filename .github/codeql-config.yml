@@ -1,0 +1,17 @@
+name: "CodeQL Configuration"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-and-quality
+  - uses: security-experimental
+
+paths-ignore:
+  - "tests/"
+  - "docs/"
+  - "*.md"
+  - "scripts/"
+  - ".github/"
+
+paths:
+  - "src/"

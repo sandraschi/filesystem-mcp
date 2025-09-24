@@ -1,0 +1,21 @@
+# Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - approve all changes
+* @sandr
+
+# Security-related files
+.github/SECURITY.md @sandr
+.github/workflows/codeql.yml @sandr
+.github/workflows/security* @sandr
+
+# CI/CD and release files
+.github/workflows/ @sandr
+scripts/ @sandr
+
+# Core MCP server code
+src/filesystem_mcp/ @sandr
+
+# Documentation
+README.md @sandr
+docs/ @sandr

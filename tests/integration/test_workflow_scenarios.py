@@ -8,9 +8,10 @@ import pytest
 import asyncio
 import json
 from pathlib import Path
+from datetime import datetime
 from unittest.mock import Mock, patch
 
-from filesystem_mcp.tools.file_operations import read_file, write_file, list_directory
+from filesystem_mcp.tools.file_operations import read_file, write_file, list_directory, get_file_info
 from filesystem_mcp.tools.repo_operations import clone_repo, get_repo_status
 from filesystem_mcp.tools.system_tools import get_help, get_system_status
 
@@ -44,11 +45,11 @@ description = "A sample project"
         readme_content = "# My Project\n\nThis is a sample project.\n"
 
         # Create files
-        result1 = await write_file(str(src_dir / "__init__.py"), "")
-        result2 = await write_file(str(tests_dir / "__init__.py"), "")
-        result3 = await write_file(str(docs_dir / "README.md"), "Documentation")
-        result4 = await write_file(str(project_dir / "pyproject.toml"), pyproject_content)
-        result5 = await write_file(str(project_dir / "README.md"), readme_content)
+        result1 = await write_file.run({"file_path": str(src_dir / "__init__.py"), "content": ""})
+        result2 = await write_file.run({"file_path": str(tests_dir / "__init__.py"), "content": ""})
+        result3 = await write_file.run({"file_path": str(docs_dir / "README.md"), "content": "Documentation"})
+        result4 = await write_file.run({"file_path": str(project_dir / "pyproject.toml"), "content": pyproject_content})
+        result5 = await write_file.run({"file_path": str(project_dir / "README.md"), "content": readme_content})
 
         # Verify all operations succeeded
         assert result1["success"] is True
@@ -58,17 +59,15 @@ description = "A sample project"
         assert result5["success"] is True
 
         # Verify directory structure
-        result = await list_directory(str(project_dir), recursive=True)
-        assert result["success"] is True
+        result = await list_directory.run({"directory_path": str(project_dir), "recursive": True})
+        data = parse_tool_result(result)
+        assert "files" in data
 
         # Check that all expected files exist
         created_files = []
-        def collect_files(items, current_path=""):
-            for item in items:
-                if item["is_file"]:
-                    created_files.append(item["name"])
-
-        collect_files(result["contents"])
+        for item in data["files"]:
+            if item["type"] == "file":
+                created_files.append(item["name"])
 
         assert "pyproject.toml" in created_files
         assert "README.md" in created_files
@@ -82,30 +81,33 @@ description = "A sample project"
         project_dir.mkdir()
 
         # Create various file types
-        await write_file(str(project_dir / "main.py"), "print('Hello, World!')")
-        await write_file(str(project_dir / "config.json"), '{"debug": true, "port": 8080}')
-        await write_file(str(project_dir / "README.md"), "# Analysis Project")
-        await write_file(str(project_dir / ".gitignore"), "*.pyc\n__pycache__/")
+        await write_file.run({"file_path": str(project_dir / "main.py"), "content": "print('Hello, World!')"})
+        await write_file.run({"file_path": str(project_dir / "config.json"), "content": '{"debug": true, "port": 8080}'})
+        await write_file.run({"file_path": str(project_dir / "README.md"), "content": "# Analysis Project"})
+        await write_file.run({"file_path": str(project_dir / ".gitignore"), "content": "*.pyc\n__pycache__/"})
 
         # Create subdirectory
         src_dir = project_dir / "src"
         src_dir.mkdir()
-        await write_file(str(src_dir / "utils.py"), "def helper(): pass")
+        await write_file.run({"file_path": str(src_dir / "utils.py"), "content": "def helper(): pass"})
 
         # Analyze the project
-        result = await list_directory(str(project_dir), recursive=True, include_hidden=True)
-        assert result["success"] is True
+        result = await list_directory.run({"directory_path": str(project_dir), "recursive": True, "include_hidden": True})
+        data = parse_tool_result(result)
+        assert "files" in data
 
         # Read and analyze key files
-        pyproject_result = await read_file(str(project_dir / "config.json"))
-        assert pyproject_result["success"] is True
+        pyproject_result = await read_file.run({"file_path": str(project_dir / "config.json")})
+        pyproject_data = parse_tool_result(pyproject_result)
+        assert pyproject_data["success"] is True
 
-        config_data = json.loads(pyproject_result["content"])
+        config_data = json.loads(pyproject_data["content"])
         assert config_data["debug"] is True
         assert config_data["port"] == 8080
 
         # Check file info for main script
-        main_info = await get_file_info(str(project_dir / "main.py"))
+        main_info_result = await get_file_info.run({"file_path": str(project_dir / "main.py")})
+        main_info = parse_tool_result(main_info_result)
         assert main_info["success"] is True
         assert main_info["size"] > 0
         assert main_info["is_file"] is True
@@ -134,17 +136,19 @@ class TestRepositoryWorkflow:
         mock_clone.return_value = mock_repo
 
         # Clone repository
-        clone_result = await clone_repo(
-            repo_url="https://github.com/test/repo.git",
-            target_dir=str(temp_dir / "repo")
-        )
-        assert clone_result["success"] is True
+        clone_result = await clone_repo.run({
+            "repo_url": "https://github.com/test/repo.git",
+            "target_dir": str(temp_dir / "repo")
+        })
+        clone_data = parse_tool_result(clone_result)
+        assert clone_data["success"] is True
 
         # Get repository status
-        status_result = await get_repo_status(str(temp_dir / "repo"))
-        assert status_result["success"] is True
-        assert status_result["active_branch"] == "main"
-        assert "head_commit" in status_result
+        status_result = await get_repo_status.run({"repo_path": str(temp_dir / "repo")})
+        status_data = parse_tool_result(status_result)
+        assert status_data["success"] is True
+        assert status_data["active_branch"] == "main"
+        assert "head_commit" in status_data
 
 
 class TestHelpAndStatusWorkflow:
@@ -274,7 +278,7 @@ class TestComplexWorkflow:
 
         # "Backup" by copying files (simplified)
         source_list = await list_directory(str(source_dir), recursive=True)
-        assert source_list["success"] is True
+        assert "files" in source_list
 
         # Create backup script
         backup_script = f"""
@@ -325,9 +329,9 @@ This project contains the following files:
 """
         # Get directory listing for documentation
         dir_result = await list_directory(str(project_dir))
-        if dir_result["success"]:
-            for item in dir_result["contents"]:
-                if item["is_file"]:
+        if "files" in dir_result:
+            for item in dir_result["files"]:
+                if item["type"] == "file" and item["size"] is not None:
                     readme_content += f"- `{item['name']}` ({item['size']} bytes)\n"
 
         readme_content += "\n## Usage\n\nRun `python main.py` to execute the main function."
@@ -368,8 +372,8 @@ class TestPerformanceWorkflow:
 
         # Verify files exist
         list_result = await list_directory(str(bulk_dir))
-        assert list_result["success"] is True
-        assert len(list_result["contents"]) == file_count
+        assert "files" in list_result
+        assert len(list_result["files"]) == file_count
 
     @pytest.mark.asyncio
     async def test_large_file_handling(self, temp_dir):
