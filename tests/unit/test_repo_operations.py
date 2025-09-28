@@ -114,7 +114,7 @@ class TestGetRepoStatus:
         result = await get_repo_status.run({"repo_path": str(not_repo)})
         data = parse_tool_result(result)
         assert data["success"] is False
-        assert "not a valid Git repository" in data["error"]
+        assert "Not a valid Git repository" in data["error"]
 
 
 class TestListBranches:

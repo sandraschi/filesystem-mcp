@@ -1,8 +1,8 @@
 # DXT Extension Building - Complete Guide for MCP Servers
 
-**Version:** 3.0.0  
-**Date:** 2025-08-22  
-**Applies to:** ALL MCP server repositories  
+**Version:** 3.1.0
+**Date:** 2025-01-24
+**Applies to:** ALL MCP server repositories
 **AI Tools:** Windsurf, Cursor, Claude Code  
 
 ## 🌟 What is DXT?
@@ -223,8 +223,8 @@ For consistent builds, use the provided PowerShell build script:
 .\scripts\build-mcp-package.ps1 -OutputDir "C:\builds"
 ```
 
-**Version:** 3.0.0  
-**Date:** 2025-08-22  
+**Version:** 3.1.0  
+**Date:** 2025-01-24  
 **Applies to:** ALL MCP server repositories  
 **AI Tools:** Windsurf, Cursor, Claude Code  
 
@@ -482,12 +482,18 @@ For now, you can safely ignore any signing-related steps in the DXT documentatio
 
 ```text
 your-mcp/
-   ├── dxt.json           # DXT configuration
-   ├── pyproject.toml     # Python project metadata
-   ├── src/               # Source code
-   │   └── your_package/  # Your Python package
-   ├── tests/             # Test files
-   └── dist/              # Output directory for packages
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml               # GitHub Actions
+├── dxt/
+│   ├── manifest.json              # DXT manifest
+│   └── assets/                    # Static assets
+├── src/                           # Source code (development)
+│   └── your_package/              # Your Python package
+├── tests/                         # Test files
+├── dist/                          # Output directory for packages
+├── build_dxt.ps1                  # DXT build script
+└── requirements.txt               # Python dependencies
 ```
 
 ## ⚙️ SERVER CONFIGURATION
@@ -550,12 +556,12 @@ your-mcp/
 {
   "server": {
     "type": "python",
-    "entry_point": "src/your_mcp/server.py",
+    "entry_point": "your_mcp/server.py",
     "mcp_config": {
       "command": "python",
       "args": ["-m", "your_mcp.server"],
       "env": {
-        "PYTHONPATH": "${PWD}",  // ⭐ CRITICAL: Use ${PWD} to reference the package root
+        "PYTHONPATH": ".",  // ⭐ CRITICAL: Use "." to reference the package root (where manifest.json is located)
         "PYTHONUNBUFFERED": "1"
       }
     }
@@ -569,25 +575,22 @@ your-mcp/
 your-extension.dxt/
 ├── manifest.json
 ├── requirements.txt
-├── src/                           // ⭐ Python modules here
-│   └── your_mcp/
-│       ├── __init__.py
-│       ├── server.py              // Entry point
-│       └── ...
-└── lib/                           // Dependencies here
-    ├── fastmcp/
-    └── ...
+├── your_mcp/                      // ⭐ Python package at root level
+│   ├── __init__.py
+│   ├── server.py                  // Entry point
+│   └── ...
+└── assets/                        // Static assets
 ```
 
 ## 📝 PROMPTS CONFIGURATION
 
 ### Prompt Files Structure
 
-DXT supports three types of prompt files that should be placed in a `prompts/` directory:
+DXT supports three types of prompt files that should be placed in a `dxt/prompts/` directory:
 
 ```
 your-extension.dxt/
-├── prompts/
+├── dxt/prompts/
 │   ├── system.md     # System prompt (required)
 │   ├── user.md       # User prompt template (required)
 │   └── examples.json # Example interactions (optional)
@@ -634,9 +637,9 @@ Add a `prompts` section to your manifest.json:
   "name": "your-mcp-server",
   "version": "1.0.0",
   "prompts": {
-    "system": "prompts/system.md",
-    "user": "prompts/user.md",
-    "examples": "prompts/examples.json"
+    "system": "dxt/prompts/system.md",
+    "user": "dxt/prompts/user.md",
+    "examples": "dxt/prompts/examples.json"
   },
   "server": {
     "type": "python",
@@ -1076,6 +1079,8 @@ httpx>=0.24.0
     "httpx>=0.25.0",
     "loguru>=0.7.0"
   ]
+
+  **Note:** The `dependencies` field is shown for documentation purposes but may not be supported by all DXT tools (like mcpb). Dependencies are typically managed through requirements.txt and installed by the runtime environment.
 }
 ```
 
@@ -1109,7 +1114,7 @@ your-mcp-server/
 │       └── handlers/              # Tool handlers
 ├── docs/
 │   └── DXT_BUILDING_GUIDE.md      # This file
-├── requirements.txt               # Python dependencies (fastmcp>=2.10.1)
+├── requirements.txt               # Python dependencies (fastmcp>=2.12.0)
 ├── build_github.py               # CI/CD build script
 └── README.md
 ```
@@ -1118,8 +1123,8 @@ your-mcp-server/
 
 ```bash
 # 1. AI-generate manifest.json (place in dxt/manifest.json)
-# ENSURE: fastmcp>=2.10.1 in requirements.txt
-# ENSURE: cwd: "src" and PYTHONPATH: "src" in mcp_config
+# ENSURE: fastmcp>=2.12.0 in requirements.txt
+# ENSURE: PYTHONPATH: "." in mcp_config (Note: mcpb doesn't support cwd field)
 
 # 2. Validate manifest
 cd dxt
@@ -1494,7 +1499,7 @@ jobs:
           4. Restart Claude Desktop
           
           ### Dependencies
-          - FastMCP 2.10.1+ (bundled)
+          - FastMCP 2.12.0+ (bundled)
           - Python 3.8+ (built into Claude Desktop)
           
           ### What's New
@@ -1638,7 +1643,7 @@ dxt pack . ../package.dxt
 - [ ] Use fastmcp>=2.12.0,<3.0.0 in requirements.txt
 - [ ] Structure Python modules in `src/your_mcp/` directory
 - [ ] Create comprehensive manifest.json with AI
-- [ ] Include `cwd: "src"` and `PYTHONPATH: "src"` in mcp_config
+- [ ] Include `PYTHONPATH: "."` in mcp_config (Note: cwd not supported by mcpb)
 - [ ] Implement runtime detection fallbacks in Python
 - [ ] Add proper error handling for missing dependencies
 
@@ -1770,8 +1775,28 @@ dxt pack . ../package.dxt
 ### Migration Guide
 
 1. Update `requirements.txt`: `fastmcp>=2.12.0,<3.0.0`
-2. Add to manifest `mcp_config`: `"cwd": "src"` and `"PYTHONPATH": "src"`
+2. Add to manifest `mcp_config`: `"PYTHONPATH": "."` (Note: cwd not supported by mcpb)
 3. Rebuild DXT package: `dxt pack . ../dist/updated-package.dxt`
 4. Test installation and fallback to manual MCP if needed
 
 This guide provides everything needed to build professional DXT extensions that work reliably across all platforms and installations with the latest FastMCP improvements and Python path fixes. Follow these patterns for consistent, high-quality MCP server packaging that actually works in production.
+
+## 📋 CHANGELOG
+
+### Version 3.1.0 (2025-01-24)
+- **CRITICAL**: Updated FastMCP requirement from 2.10.1 to 2.12.0+
+- **CRITICAL**: Fixed PYTHONPATH configuration for Claude Desktop DXT runtime
+- **CRITICAL**: Fixed DXT package structure - Python packages must be at root level, not in src/
+- Fixed all outdated version references throughout the guide
+- Updated CI/CD examples to use correct FastMCP version
+- Updated project structure diagrams and examples
+- **IMPORTANT**: Added clarification that `dependencies` field in manifest may not be supported by all DXT tools
+- **IMPORTANT**: Added note that `cwd` field is not supported by mcpb - use PYTHONPATH: "." instead
+- Dependencies should be managed through requirements.txt for mcpb compatibility
+
+### Version 3.0.0 (2025-01-15)
+- Major rewrite with updated FastMCP 2.12.0 requirements
+- Added comprehensive Python path fixes for DXT extensions
+- Enhanced troubleshooting section for Claude Desktop path bugs
+- Improved CI/CD pipeline examples with proper dependency handling
+- Added migration guide for existing MCP servers

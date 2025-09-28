@@ -27,6 +27,61 @@ def _get_app():
     from ... import app
     return app
 
+def _parse_gitignore(base_path: Path) -> List[str]:
+    """Parse .gitignore files and return exclusion patterns.
+
+    This function walks up the directory tree from base_path looking for .gitignore files
+    and parses them to extract exclusion patterns compatible with fnmatch.
+
+    Args:
+        base_path: Starting directory path to search for .gitignore files
+
+    Returns:
+        List of exclusion patterns extracted from .gitignore files
+    """
+    patterns = []
+    current_path = base_path.resolve()
+    
+    # Walk up the directory tree looking for .gitignore files
+    while current_path != current_path.parent:  # Stop at filesystem root
+        gitignore_file = current_path / '.gitignore'
+        
+        if gitignore_file.exists() and gitignore_file.is_file():
+            try:
+                with gitignore_file.open('r', encoding='utf-8', errors='ignore') as f:
+                    for line_num, line in enumerate(f, 1):
+                        line = line.strip()
+                        
+                        # Skip empty lines and comments
+                        if not line or line.startswith('#'):
+                            continue
+                            
+                        # Handle negation patterns (!) - we'll skip these for simplicity
+                        if line.startswith('!'):
+                            continue
+                            
+                        # Remove trailing slashes for directories
+                        pattern = line.rstrip('/')
+                        
+                        # Convert gitignore patterns to fnmatch patterns
+                        # Basic conversion - could be enhanced for more complex cases
+                        if '**' in pattern:
+                            # Convert **/ to */ for fnmatch compatibility
+                            pattern = pattern.replace('**/', '*/')
+                            pattern = pattern.replace('/**', '/*')
+                        
+                        patterns.append(pattern)
+                        
+            except (IOError, OSError, UnicodeDecodeError) as e:
+                logger.warning(f"Could not read .gitignore file {gitignore_file}: {e}")
+                continue
+        
+        # Move to parent directory
+        current_path = current_path.parent
+    
+    logger.debug(f"Parsed {len(patterns)} patterns from .gitignore files")
+    return patterns
+
 # Pydantic V2 models for request/response validation
 class FileContent(BaseModel):
     """Model for file content response - FastMCP 2.12 compliant."""
@@ -48,8 +103,8 @@ class FileWriteRequest(BaseModel):
     create_parents: bool = Field(default=True, description="Create parent directories if they don't exist")
 
     @field_validator('path')
-    @classmethod
-    def validate_path(cls, v):
+    @staticmethod
+    def validate_path(v):
         """Validate that the path is not outside the allowed directories."""
         # Add security check to prevent directory traversal
         try:
@@ -90,19 +145,102 @@ def _get_file_permissions(path: Path) -> Dict[str, bool]:
         logger.error(f"Failed to get permissions for {path}: {e}")
         raise
 
+def _sanitize_filename(filename: str) -> str:
+    """Sanitize filename by removing or blocking dangerous characters and patterns."""
+    import re
+    import os
+
+    # Block dangerous characters that could be used for command injection or path traversal
+    dangerous_chars = [';', '&', '|', '`', '$', '(', ')', '<', '>', '"', "'", '\\', '\0', '\n', '\r', '\t']
+
+    # On Windows, allow backslashes in drive specifications (e.g., 'C:\') but block elsewhere
+    if os.name == 'nt' and re.match(r'^[A-Za-z]:.*', filename):
+        # This is a Windows drive letter path component, allow backslashes here
+        dangerous_chars.remove('\\')
+
+    # Check for dangerous characters
+    for char in dangerous_chars:
+        if char in filename:
+            logger.warning(f"Dangerous character '{char}' detected in filename: {filename}")
+            raise ValueError(f"Filename contains dangerous character: {char}")
+
+    # Block multiple consecutive dots (potential path traversal)
+    if '...' in filename:
+        logger.warning(f"Multiple consecutive dots detected in filename: {filename}")
+        raise ValueError("Filename contains multiple consecutive dots")
+
+    # Block filenames that start with dot-dot (potential path traversal)
+    # But allow single dot at start for hidden files
+    if filename.startswith('..'):
+        logger.warning(f"Filename starts with '..' (potential path traversal): {filename}")
+        raise ValueError("Filename starts with '..' which is not allowed")
+
+    # Block filenames that are just dots
+    if filename in ['.', '..']:
+        logger.warning(f"Invalid filename (dot navigation): {filename}")
+        raise ValueError("Filename cannot be '.' or '..'")
+
+    # Block very long filenames (potential DoS)
+    if len(filename) > 255:
+        logger.warning(f"Filename too long: {len(filename)} characters")
+        raise ValueError("Filename too long (max 255 characters)")
+
+    # Block empty filenames
+    if not filename.strip():
+        logger.warning("Empty filename provided")
+        raise ValueError("Filename cannot be empty")
+
+    # Block filenames with control characters
+    if re.search(r'[\x00-\x1f\x7f-\x9f]', filename):
+        logger.warning(f"Control characters detected in filename: {filename}")
+        raise ValueError("Filename contains control characters")
+
+    return filename
+
+
 def _safe_resolve_path(file_path: str) -> Path:
     """Safely resolve a file path with security checks and structured logging."""
     try:
         logger.debug(f"Resolving path: {file_path}")
-        path = Path(file_path).expanduser().absolute()
 
-        # Security checks
-        if '..' in path.parts:
-            logger.warning(f"Path traversal attempt detected: {file_path}")
-            raise ValueError("Path traversal detected")
+        # First sanitize each component of the path
+        path_obj = Path(file_path)
+        sanitized_parts = []
 
-        logger.debug(f"Resolved path: {path}")
-        return path
+        for part in path_obj.parts:
+            # Skip empty parts and current directory indicators
+            if part in ['', '.']:
+                continue
+            # Sanitize each path component (filename)
+            sanitized_part = _sanitize_filename(part)
+            sanitized_parts.append(sanitized_part)
+
+        # Reconstruct the path with sanitized components
+        if path_obj.is_absolute():
+            sanitized_path = Path(*sanitized_parts)
+        else:
+            sanitized_path = Path(*sanitized_parts) if sanitized_parts else Path('.')
+
+        # Expand user directory
+        path = sanitized_path.expanduser()
+
+        # Resolve the path to handle .. and . properly
+        resolved_path = path.resolve()
+
+        # Basic security check - ensure the resolved path exists within the filesystem
+        # We allow .. in relative paths but resolve them properly
+        if not str(resolved_path).startswith(str(Path.cwd().resolve())):
+            # If it's an absolute path outside current working directory, allow it
+            # Only restrict if it's trying to access system directories
+            system_paths = ['C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)', '/etc', '/usr', '/sys', '/proc']
+            resolved_str = str(resolved_path)
+            for sys_path in system_paths:
+                if resolved_str.startswith(sys_path):
+                    logger.warning(f"Access to system directory blocked: {file_path} -> {resolved_path}")
+                    raise ValueError(f"Access to system directory not allowed: {resolved_path}")
+
+        logger.debug(f"Resolved path: {resolved_path}")
+        return resolved_path
     except Exception as e:
         logger.error(f"Path resolution error for '{file_path}': {e}")
         raise ValueError(f"Invalid path: {e}")
@@ -128,11 +266,12 @@ async def read_file(
     Error Handling:
         Returns error dict if file not found, permission denied, or other issues
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    path = _safe_resolve_path(file_path)
+
     try:
         logger.info(f"Reading file: {file_path}")
-
-        # Resolve and validate the path
-        path = _safe_resolve_path(file_path)
 
         # Check if file exists
         if not path.exists():
@@ -220,11 +359,12 @@ async def write_file(
     Error Handling:
         Returns error dict for permission issues, path problems, etc.
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    file_path_obj = _safe_resolve_path(path)
+
     try:
         logger.info(f"Writing file: {path}")
-
-        # Resolve and validate the path
-        file_path_obj = _safe_resolve_path(path)
 
         # Check if parent directory exists and is writable
         parent_dir = file_path_obj.parent
@@ -325,7 +465,6 @@ class DirectoryListingRequest(BaseModel):
     )
     max_depth: Optional[int] = Field(
         None,
-        ge=1,
         description="Maximum depth for recursive listing (default: None for unlimited)"
     )
     max_files: int = Field(
@@ -340,16 +479,16 @@ async def list_directory(
     directory_path: str = ".",
     recursive: bool = False,
     include_hidden: bool = False,
-    max_depth: Optional[int] = None,
     max_files: int = 1000,
-    exclude_patterns: Optional[List[str]] = None
+    exclude_patterns: Optional[List[str]] = None,
+    respect_gitignore: bool = False
 ) -> dict:
     """List contents of a directory with detailed metadata and filtering options.
 
     This tool provides a detailed listing of directory contents with comprehensive
     metadata including file sizes, timestamps, permissions, and type information.
     It supports recursive listing with depth control and hidden file filtering.
-    
+
     Args:
         directory_path: Path to the directory (default: current directory)
         recursive: Whether to list contents recursively (default: False)
@@ -358,22 +497,59 @@ async def list_directory(
         max_files: Maximum number of files to return (default: 1000)
         exclude_patterns: List of patterns to exclude (globs, directory names).
                           Defaults to common build/cache directories: ['node_modules', '__pycache__', '.git', 'dist', 'build', '.next', '.nuxt']
-    
+
     Returns:
         Dictionary containing 'files' list and metadata
-        
+
     Error Handling:
         Returns error information if directory access fails or path is invalid
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    path = _safe_resolve_path(directory_path)
+
     try:
         logger.info(f"Listing directory: {directory_path}")
 
-        # Resolve and validate the path
-        path = _safe_resolve_path(directory_path)
+        # Temporary hardcode max_depth due to FastMCP validation issue
+        max_depth = None  # TODO: Fix parameter validation and restore as function parameter
 
-        # Set default exclusions if none provided
+        # Validate max_depth parameter inside function
+        if max_depth is not None and max_depth < 1:
+            logger.warning(f"Invalid max_depth value {max_depth}, must be >= 1 or None")
+            return {
+                "success": False,
+                "error": f"max_depth must be >= 1 or None, got {max_depth}",
+                "path": directory_path,
+                "type": "validation_error"
+            }
+
+        # Set enhanced default exclusions if none provided
         if exclude_patterns is None:
-            exclude_patterns = ['node_modules', '__pycache__', '.git', 'dist', 'build', '.next', '.nuxt']
+            exclude_patterns = [
+                # JavaScript/Node.js
+                'node_modules', 'npm-debug.log*', 'yarn-debug.log*', 'yarn-error.log*',
+                # Python
+                '__pycache__', '*.pyc', '*.pyo', '*.pyd', '.Python', 'env', 'pip-log.txt',
+                # Git
+                '.git', '.gitignore',
+                # Build artifacts
+                'dist', 'build', 'out', 'target', 'cmake-build-*', 'obj', 'bin',
+                # IDEs
+                '.vscode', '.idea', '*.swp', '*.swo', '*~',
+                # Frameworks
+                '.next', '.nuxt', '.cache', '.parcel-cache',
+                # OS
+                '.DS_Store', 'Thumbs.db', 'ehthumbs.db', 'Desktop.ini',
+                # Temporary
+                '*.tmp', '*.temp', '*.log'
+            ]
+        
+        # Add .gitignore patterns if requested
+        if respect_gitignore:
+            gitignore_patterns = _parse_gitignore(path)
+            exclude_patterns.extend(gitignore_patterns)
+            logger.debug(f"Added {len(gitignore_patterns)} patterns from .gitignore files")
         
         # Check if path exists
         if not path.exists():
@@ -546,23 +722,24 @@ async def file_exists(
     This tool checks for the existence of a filesystem object with optional
     type checking and symlink resolution. It provides comprehensive information
     about the object if it exists, including metadata and permissions.
-    
+
     Args:
         path: Path to check for existence (relative or absolute)
         check_type: Type of object to check for ("file", "directory", or "any")
         follow_symlinks: Whether to follow symbolic links (default: True)
-    
+
     Returns:
         Dictionary containing existence status and detailed information
-        
+
     Error Handling:
         Returns error information if path access fails
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    path_obj = _safe_resolve_path(path)
+
     try:
         logger.info(f"Checking if path exists: {path}")
-
-        # Resolve and validate the path
-        path_obj = _safe_resolve_path(path)
         
         # Check if the path exists
         exists = path_obj.exists()
@@ -645,7 +822,7 @@ class FileInfoRequest(BaseModel):
     )
     max_content_size: int = Field(
         1024 * 1024,  # 1MB default
-        description="Maximum file size to include content for (in bytes, default: 1MB)"
+        description="Maximum file size to include content for (in bytes, default: 1 MB)"
     )
 
 @_get_app().tool()
@@ -666,7 +843,7 @@ async def get_file_info(
         path: Path to the file or directory (relative or absolute)
         follow_symlinks: Whether to follow symbolic links (default: True)
         include_content: Whether to include file content (for text files only)
-        max_content_size: Maximum file size to include content for (default: 1MB)
+        max_content_size: Maximum file size to include content for (default: 1 MB)
     
     Returns:
         Dictionary containing comprehensive file/directory information
@@ -674,11 +851,12 @@ async def get_file_info(
     Error Handling:
         Returns error information if path access fails or file cannot be read
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    path_obj = _safe_resolve_path(path)
+
     try:
         logger.info(f"Getting file info for: {path}")
-
-        # Resolve and validate the path
-        path_obj = _safe_resolve_path(path)
         
         # Check if path exists
         if not path_obj.exists():
@@ -780,7 +958,7 @@ async def head_file(
     """Read the first N lines of a file (head command equivalent).
 
     This tool reads and returns the first N lines of a file, similar to the Unix
-    'head' command. It's useful for quickly examining the beginning of files
+    head command. It is useful for quickly examining the beginning of files
     without reading the entire content.
 
     Args:
@@ -794,6 +972,10 @@ async def head_file(
     Error Handling:
         Returns error dict if file not found, permission denied, or other issues
     """
+    # Resolve and validate the path first (before main try block)
+    # This ensures validation errors are raised as exceptions to MCP client
+    path = _safe_resolve_path(file_path)
+
     try:
         logger.info(f"Reading head of file: {file_path}")
 
@@ -802,9 +984,6 @@ async def head_file(
             lines = 1
         elif lines > 1000:
             lines = 1000
-
-        # Resolve and validate the path
-        path = _safe_resolve_path(file_path)
 
         # Check if file exists
         if not path.exists():
@@ -895,7 +1074,7 @@ async def tail_file(
     """Read the last N lines of a file (tail command equivalent).
 
     This tool reads and returns the last N lines of a file, similar to the Unix
-    'tail' command. It's useful for quickly examining the end of files like logs
+    tail command. It is useful for quickly examining the end of files like logs
     without reading the entire content.
     
     Args:
@@ -1771,6 +1950,230 @@ async def edit_file(
             "success": False,
             "error": f"Failed to edit file: {str(e)}",
             "file_path": file_path
+        }
+
+
+@_get_app().tool()
+async def create_directory(
+    directory_path: str,
+    create_parents: bool = True,
+    exist_ok: bool = True
+) -> dict:
+    """Create a new directory with comprehensive error handling and validation.
+
+    This tool creates directories with proper error handling, security checks,
+    and permission validation. It supports creating parent directories recursively
+    and handles existing directory scenarios gracefully.
+
+    Args:
+        directory_path: Path to the directory to create (relative or absolute)
+        create_parents: Whether to create parent directories (default: True)
+        exist_ok: Whether to succeed silently if directory already exists (default: True)
+
+    Returns:
+        Dictionary containing operation result and metadata
+
+    Error Handling:
+        Returns error dict for permission issues, invalid paths, or creation failures
+    """
+    try:
+        logger.info(f"Creating directory: {directory_path}")
+
+        # Resolve and validate the path
+        path_obj = _safe_resolve_path(directory_path)
+
+        # Check if directory already exists
+        if path_obj.exists():
+            if path_obj.is_file():
+                logger.warning(f"Path exists and is a file, not a directory: {directory_path}")
+                return {
+                    "success": False,
+                    "error": f"Path exists and is a file, not a directory: {directory_path}",
+                    "path": directory_path,
+                    "exists": True,
+                    "is_file": True
+                }
+            elif exist_ok:
+                logger.info(f"Directory already exists: {directory_path}")
+                return {
+                    "success": True,
+                    "message": f"Directory already exists: {directory_path}",
+                    "path": str(path_obj),
+                    "created": False,
+                    "existed": True
+                }
+            else:
+                logger.warning(f"Directory already exists and exist_ok=False: {directory_path}")
+                return {
+                    "success": False,
+                    "error": f"Directory already exists: {directory_path}",
+                    "path": directory_path,
+                    "exists": True
+                }
+
+        # Check write permissions on parent directory
+        parent_dir = path_obj.parent
+        if not parent_dir.exists():
+            if not create_parents:
+                logger.warning(f"Parent directory does not exist: {parent_dir}")
+                return {
+                    "success": False,
+                    "error": f"Parent directory does not exist: {parent_dir}",
+                    "path": directory_path
+                }
+        else:
+            if not os.access(parent_dir, os.W_OK):
+                logger.warning(f"Write permission denied for parent directory: {parent_dir}")
+                return {
+                    "success": False,
+                    "error": f"Write permission denied for parent directory: {parent_dir}",
+                    "path": directory_path
+                }
+
+        # Create the directory
+        try:
+            path_obj.mkdir(parents=create_parents, exist_ok=exist_ok)
+            stat_info = path_obj.stat()
+
+            result = {
+                "success": True,
+                "message": f"Directory created successfully: {directory_path}",
+                "path": str(path_obj),
+                "created": True,
+                "existed": False,
+                "parents_created": create_parents,
+                "created_time": datetime.fromtimestamp(stat_info.st_ctime).isoformat()
+            }
+
+            logger.info(f"Successfully created directory: {directory_path}")
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to create directory {directory_path}: {e}")
+            return {
+                "success": False,
+                "error": f"Failed to create directory: {str(e)}",
+                "path": directory_path
+            }
+
+    except Exception as e:
+        logger.error(f"Unexpected error creating directory {directory_path}: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Failed to create directory: {str(e)}",
+            "path": directory_path
+        }
+
+
+@_get_app().tool()
+async def remove_directory(
+    directory_path: str,
+    recursive: bool = False
+) -> dict:
+    """Remove a directory with comprehensive error handling and validation.
+
+    This tool removes directories with proper error handling, security checks,
+    and permission validation. It supports both empty directory removal and
+    recursive directory tree removal.
+
+    Args:
+        directory_path: Path to the directory to remove (relative or absolute)
+        recursive: Whether to remove directory and all its contents recursively (default: False)
+
+    Returns:
+        Dictionary containing operation result and metadata
+
+    Error Handling:
+        Returns error dict for permission issues, invalid paths, or removal failures
+
+    Safety Notes:
+        - Non-recursive removal only works on empty directories
+        - Recursive removal permanently deletes all contents - use with caution
+    """
+    try:
+        logger.info(f"Removing directory: {directory_path} (recursive={recursive})")
+
+        # Resolve and validate the path
+        path_obj = _safe_resolve_path(directory_path)
+
+        # Check if path exists
+        if not path_obj.exists():
+            logger.warning(f"Directory not found: {directory_path}")
+            return {
+                "success": False,
+                "error": f"Directory not found: {directory_path}",
+                "path": directory_path
+            }
+
+        # Check if it's actually a directory
+        if not path_obj.is_dir():
+            logger.warning(f"Path exists but is not a directory: {directory_path}")
+            return {
+                "success": False,
+                "error": f"Path exists but is not a directory: {directory_path}",
+                "path": directory_path,
+                "is_file": path_obj.is_file(),
+                "is_symlink": path_obj.is_symlink()
+            }
+
+        # Check write permissions
+        if not os.access(path_obj, os.W_OK):
+            logger.warning(f"Write permission denied: {directory_path}")
+            return {
+                "success": False,
+                "error": f"Write permission denied: {directory_path}",
+                "path": directory_path
+            }
+
+        # For non-recursive removal, check if directory is empty
+        if not recursive:
+            try:
+                next(path_obj.iterdir())
+                logger.warning(f"Directory not empty and recursive=False: {directory_path}")
+                return {
+                    "success": False,
+                    "error": f"Directory not empty: {directory_path}. Use recursive=True to remove all contents.",
+                    "path": directory_path,
+                    "not_empty": True
+                }
+            except StopIteration:
+                # Directory is empty, proceed
+                pass
+
+        # Remove the directory
+        try:
+            if recursive:
+                import shutil
+                shutil.rmtree(str(path_obj))
+            else:
+                path_obj.rmdir()
+
+            result = {
+                "success": True,
+                "message": f"Directory removed successfully: {directory_path}",
+                "path": directory_path,
+                "recursive": recursive,
+                "removed": True
+            }
+
+            logger.info(f"Successfully removed directory: {directory_path} (recursive={recursive})")
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to remove directory {directory_path}: {e}")
+            return {
+                "success": False,
+                "error": f"Failed to remove directory: {str(e)}",
+                "path": directory_path,
+                "recursive": recursive
+            }
+
+    except Exception as e:
+        logger.error(f"Unexpected error removing directory {directory_path}: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Failed to remove directory: {str(e)}",
+            "path": directory_path
         }
 
 

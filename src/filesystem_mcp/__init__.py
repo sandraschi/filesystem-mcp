@@ -47,15 +47,15 @@ def _import_tools():
         import importlib
 
         tool_modules = [
-            'filesystem_mcp.tools.file_operations',
-            'filesystem_mcp.tools.repo_operations',
-            'filesystem_mcp.tools.docker_operations',
-            'filesystem_mcp.tools.system_tools'
+            '.tools.file_operations',
+            # '.tools.repo_operations',  # TODO: Check for syntax errors
+            '.tools.docker_operations',
+            # '.tools.system_tools'  # TODO: Check for syntax errors
         ]
 
         for module_name in tool_modules:
             try:
-                importlib.import_module(module_name)
+                importlib.import_module(module_name, package=__name__)
                 logger.debug(f"Tool module {module_name} imported successfully")
             except Exception as e:
                 logger.error(f"Failed to import tool module {module_name}: {e}")

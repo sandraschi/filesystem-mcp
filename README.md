@@ -238,36 +238,44 @@ python -m filesystem_mcp --debug
 #### 🐳 Docker Operations
 
 **Container Management**
-- `list_containers`: List all containers with filtering options
-- `get_container`: Get detailed container information
-- `create_container`: Create a new container with custom configuration
-- `start_container`: Start a stopped container
-- `stop_container`: Stop a running container
-- `restart_container`: Restart a container
-- `remove_container`: Remove a container
-- `container_exec`: Execute commands in a container
-- `container_logs`: Stream container logs
-- `container_stats`: Get container resource usage statistics
+- ✅ `list_containers`: List all containers with filtering options
+- ✅ `get_container`: Get detailed container information
+- ✅ `create_container`: Create a new container with custom configuration
+- ✅ `start_container`: Start a stopped container
+- ✅ `stop_container`: Stop a running container
+- ✅ `restart_container`: Restart a container
+- ✅ `remove_container`: Remove a container
+- ✅ `container_exec`: Execute commands in a container
+- ✅ `container_logs`: Stream container logs
+- ✅ `container_stats`: Get container resource usage statistics
 
 **Image Management**
-- `list_images`: List available Docker images
-- `pull_image`: Pull an image from a registry
-- `build_image`: Build an image from a Dockerfile
-- `remove_image`: Remove an image
+- ✅ `list_images`: List available Docker images
+- ✅ `get_image`: Get detailed image information
+- ✅ `pull_image`: Pull an image from a registry
+- ✅ `build_image`: Build an image from a Dockerfile
+- ✅ `remove_image`: Remove an image
+- ✅ `prune_images`: Remove unused images
 
 **Network & Volume Management**
-- `list_networks`: List Docker networks
-- `create_network`: Create a new network
-- `remove_network`: Remove a network
-- `list_volumes`: List Docker volumes
-- `create_volume`: Create a new volume
-- `remove_volume`: Remove a volume
+- ✅ `list_networks`: List Docker networks
+- ✅ `get_network`: Get detailed network information
+- ✅ `create_network`: Create a new network
+- ✅ `remove_network`: Remove a network
+- ✅ `prune_networks`: Remove unused networks
+- ✅ `list_volumes`: List Docker volumes
+- ✅ `get_volume`: Get detailed volume information
+- ✅ `create_volume`: Create a new volume
+- ✅ `remove_volume`: Remove a volume
+- ✅ `prune_volumes`: Remove unused volumes
 
 **Docker Compose**
-- `compose_up`: Start services defined in docker-compose.yml
-- `compose_down`: Stop and remove containers, networks, etc.
-- `compose_ps`: List containers for services
-- `compose_logs`: View output from containers
+- ✅ `compose_up`: Start services defined in docker-compose.yml
+- ✅ `compose_down`: Stop and remove containers, networks, etc.
+- ✅ `compose_ps`: List containers for services
+- ✅ `compose_logs`: View output from containers
+- ✅ `compose_config`: Validate and view compose configuration
+- ✅ `compose_restart`: Restart compose services
 
 #### 🔄 Repository Operations
 
