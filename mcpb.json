@@ -1,0 +1,46 @@
+{
+  "name": "filesystem-mcp",
+  "version": "2.0.0",
+  "description": "Comprehensive file system operations, Git repository management, and Docker container management MCP server",
+  "author": "Sandra Schi <sandra@sandraschi.dev>",
+  "license": "MIT",
+  "outputDir": "dist",
+  "build": {
+    "include": [
+      "src/**/*",
+      "assets/**/*",
+      "mcpb_manifest.json"
+    ],
+    "exclude": [
+      "**/__pycache__/**",
+      "**/*.pyc",
+      "**/.pytest_cache/**",
+      "**/.mypy_cache/**",
+      "**/tests/**",
+      "**/docs/**",
+      "**/.git/**",
+      "**/node_modules/**",
+      "**/requirements.txt",
+      "**/pyproject.toml",
+      "**/setup.py",
+      "**/.windsurf/**",
+      "**/.cursor/**",
+      "**/.vscode/**",
+      "**/dist/**"
+    ]
+  },
+  "validation": {
+    "strict": true,
+    "fail_on_warnings": false
+  },
+  "signing": {
+    "enabled": false,
+    "algorithm": "sha256",
+    "key_file": "signing.key"
+  },
+  "registry": {
+    "enabled": false,
+    "url": "https://registry.mcp.anthropic.com",
+    "publish": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["sandraschi"],
+  "name": "filesystem-mcp",
+  "description": "FastMCP 2.14.1+ server for file system operations, Git repository management, and Docker container management. Beta status.",
+  "type": "mcp_server",
+  "status": "beta",
+  "framework": "FastMCP 2.14.1+",
+  "tools": 15,
+  "transport": ["stdio"],
+  "keywords": [
+    "filesystem",
+    "git",
+    "docker",
+    "file-operations",
+    "repository-management",
+    "mcp-server",
+    "fastmcp"
+  ],
+  "features": {
+    "file_operations": {
+      "enabled": true
+    },
+    "git_management": {
+      "enabled": true
+    },
+    "docker_management": {
+      "enabled": true
+    }
+  }
+}
+

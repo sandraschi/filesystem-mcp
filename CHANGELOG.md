@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-12-25
+
+### Added
+- **Major Tool Expansion**: Added 10+ advanced file operations tools (57+ total tools)
+  - `find_large_files` - Large file detection for disk management
+  - `find_duplicate_files` - Content-based duplicate file detection
+  - `find_empty_directories` - Empty directory cleanup
+  - `compare_files` - File diff comparison with unified format
+  - `read_multiple_files` - Batch file reading operations
+  - `move_file` - File/directory moving with overwrite control
+  - `read_file_lines` - Precise line-based file reading
+  - `search_files` - Advanced recursive file search with patterns
+  - `directory_tree` - Visual directory tree representation
+  - `calculate_directory_size` - Directory size calculation with statistics
+
+- **MCPB Packaging**: Professional drag-and-drop installation for Claude Desktop
+  - Complete MCPB manifest with user configuration
+  - Extensive prompt templates for AI integration
+  - Clean package structure without bundled dependencies
+  - Professional build scripts and CI/CD integration
+
+- **Enhanced Prompt Templates**: Comprehensive AI integration templates
+  - `system.md` - System-level Claude Desktop instructions
+  - `user.md` - User interaction guide with examples
+  - `examples.json` - Structured tool usage examples
+  - `quick-start.md` - 5-minute getting started guide
+  - `configuration.md` - Detailed configuration options
+  - `troubleshooting.md` - Comprehensive troubleshooting guide
+
+### Changed
+- **FastMCP Upgrade**: Migrated from FastMCP 2.12.0 to 2.14.1+
+- **Packaging Migration**: Complete transition from DXT to MCPB format
+- **Installation Method**: MCPB drag-and-drop now primary installation method
+- **Dependencies**: MCPB packages no longer bundle dependencies (installed separately)
+- **Documentation**: Updated installation instructions and feature descriptions
+
+### Fixed
+- Manifest validation errors in MCPB packaging
+- Broken symlinks in development environment
+- Package build process optimizations
+
+### Security
+- Updated author information and contact details
+- Maintained secure path validation and permission checks
+- Enhanced audit logging capabilities
+
 ## [1.0.0] - 2024-05-20
 
 ### Added

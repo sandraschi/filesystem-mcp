@@ -1,0 +1,252 @@
+[
+  {
+    "name": "basic_file_operations",
+    "description": "Basic file read/write operations",
+    "category": "file_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "read_file",
+          "parameters": {
+            "file_path": "README.md"
+          }
+        },
+        "output": "Successfully read README.md content",
+        "description": "Read the contents of a README file"
+      },
+      {
+        "input": {
+          "tool": "write_file",
+          "parameters": {
+            "path": "notes.txt",
+            "content": "Meeting notes from today"
+          }
+        },
+        "output": "Successfully wrote to notes.txt",
+        "description": "Create a new file with content"
+      },
+      {
+        "input": {
+          "tool": "list_directory",
+          "parameters": {
+            "directory_path": ".",
+            "recursive": false
+          }
+        },
+        "output": "Found 5 files and 3 directories",
+        "description": "List contents of current directory"
+      }
+    ]
+  },
+  {
+    "name": "git_workflow",
+    "description": "Complete Git repository workflow",
+    "category": "git_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "clone_repo",
+          "parameters": {
+            "repo_url": "https://github.com/user/project.git",
+            "target_path": "./project"
+          }
+        },
+        "output": "Successfully cloned repository to ./project",
+        "description": "Clone a Git repository"
+      },
+      {
+        "input": {
+          "tool": "get_repo_status",
+          "parameters": {
+            "repo_path": "./project"
+          }
+        },
+        "output": "Repository status: 2 modified files, 1 untracked file",
+        "description": "Check Git repository status"
+      },
+      {
+        "input": {
+          "tool": "commit_changes",
+          "parameters": {
+            "repo_path": "./project",
+            "message": "Add new feature implementation",
+            "files": ["src/feature.py", "tests/test_feature.py"]
+          }
+        },
+        "output": "Successfully committed 2 files",
+        "description": "Commit specific files to Git"
+      }
+    ]
+  },
+  {
+    "name": "docker_management",
+    "description": "Docker container and image management",
+    "category": "docker_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "list_containers",
+          "parameters": {
+            "all_containers": false
+          }
+        },
+        "output": "Found 3 running containers: web-server, database, cache",
+        "description": "List all running Docker containers"
+      },
+      {
+        "input": {
+          "tool": "container_exec",
+          "parameters": {
+            "container_id": "web-server",
+            "command": ["ps", "aux"]
+          }
+        },
+        "output": "Executed command in container, showing process list",
+        "description": "Execute command inside running container"
+      },
+      {
+        "input": {
+          "tool": "container_logs",
+          "parameters": {
+            "container_id": "web-server",
+            "tail": 100
+          }
+        },
+        "output": "Retrieved last 100 log lines from web-server container",
+        "description": "View container logs"
+      }
+    ]
+  },
+  {
+    "name": "file_analysis",
+    "description": "Advanced file analysis operations",
+    "category": "file_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "find_large_files",
+          "parameters": {
+            "directory_path": "/home/user",
+            "min_size_mb": 100,
+            "recursive": true
+          }
+        },
+        "output": "Found 5 large files totaling 2.3 GB",
+        "description": "Find files larger than 100MB"
+      },
+      {
+        "input": {
+          "tool": "find_duplicate_files",
+          "parameters": {
+            "directory_path": "/home/user/documents",
+            "recursive": true
+          }
+        },
+        "output": "Found 12 duplicate file groups, saving 500MB",
+        "description": "Find duplicate files by content"
+      },
+      {
+        "input": {
+          "tool": "calculate_directory_size",
+          "parameters": {
+            "directory_path": "/home/user/projects",
+            "human_readable": true
+          }
+        },
+        "output": "Directory size: 1.2 GB (1,234 files)",
+        "description": "Calculate total directory size"
+      }
+    ]
+  },
+  {
+    "name": "search_and_filter",
+    "description": "File search and content filtering",
+    "category": "file_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "grep_file",
+          "parameters": {
+            "file_path": "app.log",
+            "pattern": "ERROR",
+            "context_lines": 2
+          }
+        },
+        "output": "Found 15 ERROR occurrences with context",
+        "description": "Search for error patterns in log file"
+      },
+      {
+        "input": {
+          "tool": "search_files",
+          "parameters": {
+            "directory_path": "/home/user/code",
+            "pattern": "*.py",
+            "recursive": true
+          }
+        },
+        "output": "Found 47 Python files",
+        "description": "Find all Python files in directory tree"
+      },
+      {
+        "input": {
+          "tool": "extract_log_lines",
+          "parameters": {
+            "file_path": "app.log",
+            "patterns": ["ERROR", "WARNING"],
+            "start_time": "2024-01-01T00:00:00",
+            "max_lines": 100
+          }
+        },
+        "output": "Extracted 25 error/warning lines from timeframe",
+        "description": "Extract specific log entries by pattern and time"
+      }
+    ]
+  },
+  {
+    "name": "docker_compose_workflow",
+    "description": "Docker Compose project management",
+    "category": "docker_operations",
+    "examples": [
+      {
+        "input": {
+          "tool": "compose_up",
+          "parameters": {
+            "path": "./project",
+            "detach": true,
+            "build": true
+          }
+        },
+        "output": "Successfully started 5 services: web, api, db, redis, nginx",
+        "description": "Start Docker Compose project with build"
+      },
+      {
+        "input": {
+          "tool": "compose_logs",
+          "parameters": {
+            "path": "./project",
+            "services": ["web", "api"],
+            "tail": 50
+          }
+        },
+        "output": "Retrieved logs from web and api services",
+        "description": "View logs from specific services"
+      },
+      {
+        "input": {
+          "tool": "compose_down",
+          "parameters": {
+            "path": "./project",
+            "volumes": true,
+            "remove_orphans": true
+          }
+        },
+        "output": "Successfully stopped all services and removed volumes",
+        "description": "Clean shutdown of Docker Compose project"
+      }
+    ]
+  }
+]
+
+
+
+

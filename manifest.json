@@ -1,0 +1,21 @@
+{
+  "manifest_version": "0.2",
+  "name": "filesystem-mcp",
+  "version": "1.0.0",
+  "description": "A MCPB bundle",
+  "author": {
+    "name": "Unknown Author"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {}
+    }
+  },
+  "license": "MIT"
+}

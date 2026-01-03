@@ -1,0 +1,1539 @@
+# Portmanteau filesystem operations tool for FastMCP 2.14.1+
+"""
+Comprehensive filesystem operations portmanteau tool.
+
+PORTMANTEAU PATTERN: Consolidates all filesystem operations into a single unified tool.
+This reduces tool explosion while maintaining full functionality for file system operations.
+
+SUPPORTED OPERATIONS:
+- read_file: Read file contents with proper error handling
+- write_file: Write content to files with validation
+- list_directory: List directory contents with detailed metadata
+- file_exists: Check file/directory existence with type validation
+- get_file_info: Get comprehensive file/directory metadata
+- head_file: Read first N lines of files
+- tail_file: Read last N lines of files
+- grep_file: Search patterns in files with regex support
+- count_pattern: Count pattern occurrences in files
+- extract_log_lines: Extract and filter log lines
+- edit_file: Edit files by replacing text content
+- create_directory: Create directories with validation
+- remove_directory: Remove directories recursively or not
+- directory_tree: Generate visual directory tree representations
+- calculate_directory_size: Calculate directory sizes with statistics
+- find_duplicate_files: Find duplicate files using hashing
+- find_large_files: Find files larger than specified size
+- find_empty_directories: Find empty directories in tree
+- compare_files: Compare two text files with diff output
+- read_multiple_files: Read multiple files efficiently
+- move_file: Move/rename files and directories
+- read_file_lines: Read specific line ranges from files
+- search_files: Search for files matching patterns
+"""
+
+import logging
+import os
+import hashlib
+import json
+import shutil
+import difflib
+import fnmatch
+import re
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Union, Literal
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+# Import app locally to avoid circular imports
+def _get_app():
+    """Get the app instance locally to avoid circular imports."""
+    from .. import app
+    return app
+
+
+# Utility functions
+def _safe_resolve_path(file_path: str) -> Path:
+    """Safely resolve a file path with security validation."""
+    try:
+        # Convert to Path and resolve any symlinks/relative paths
+        path_obj = Path(file_path).resolve()
+
+        # Basic security check - prevent access to sensitive system paths
+        # This is a basic implementation - production systems should be more thorough
+        sensitive_paths = [
+            Path("/etc"), Path("/proc"), Path("/sys"), Path("/dev"),
+            Path("C:\\Windows\\System32"), Path("C:\\Windows\\System")
+        ]
+
+        for sensitive in sensitive_paths:
+            try:
+                path_obj.relative_to(sensitive)
+                raise ValueError(f"Access to system path denied: {sensitive}")
+            except ValueError:
+                # Path is not within sensitive directory, continue checking
+                pass
+
+        return path_obj
+
+    except Exception as e:
+        logger.error(f"Path resolution failed for {file_path}: {e}")
+        raise ValueError(f"Invalid path: {file_path}")
+
+
+def _format_file_size(size_bytes: int) -> str:
+    """Format file size in human-readable format."""
+    if size_bytes == 0:
+        return "0 B"
+
+    size_names = ["B", "KB", "MB", "GB", "TB", "PB"]
+    size_index = 0
+    size = float(size_bytes)
+
+    while size >= 1024.0 and size_index < len(size_names) - 1:
+        size /= 1024.0
+        size_index += 1
+
+    if size_index == 0:
+        return f"{int(size)} {size_names[size_index]}"
+    else:
+        return f"{size:.1f} {size_names[size_index]}"
+
+
+# Portmanteau filesystem tool with all operations
+@_get_app().tool()
+async def filesystem_operations(
+    operation: Literal[
+        "read_file", "write_file", "list_directory", "file_exists", "get_file_info",
+        "head_file", "tail_file", "grep_file", "count_pattern", "extract_log_lines",
+        "edit_file", "create_directory", "remove_directory", "directory_tree",
+        "calculate_directory_size", "find_duplicate_files", "find_large_files",
+        "find_empty_directories", "compare_files", "read_multiple_files",
+        "move_file", "read_file_lines", "search_files"
+    ],
+    # Common parameters
+    path: Optional[str] = None,
+    content: Optional[str] = None,
+    encoding: str = "utf-8",
+    recursive: bool = False,
+    include_hidden: bool = False,
+    # File operations
+    old_string: Optional[str] = None,
+    new_string: Optional[str] = None,
+    # Directory operations
+    create_parents: bool = True,
+    exist_ok: bool = True,
+    max_depth: int = 3,
+    pattern: Optional[str] = None,
+    exclude_patterns: Optional[List[str]] = None,
+    output_format: Literal["text", "json"] = "text",
+    # Size operations
+    human_readable: bool = True,
+    min_size_mb: float = 100,
+    # Search operations
+    search_pattern: Optional[str] = None,
+    case_sensitive: bool = False,
+    max_matches: int = 100,
+    context_lines: int = 0,
+    # Log extraction
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    log_levels: Optional[List[str]] = None,
+    exclude_log_levels: Optional[List[str]] = None,
+    max_lines: int = 100,
+    # Comparison
+    path2: Optional[str] = None,
+    # Multiple files
+    file_paths: Optional[List[str]] = None,
+    # Move operations
+    destination_path: Optional[str] = None,
+    overwrite: bool = False,
+    # Line reading
+    offset: int = 0,
+    limit: Optional[int] = None,
+    # Search files
+    max_results: int = 100,
+    # Advanced operations
+    min_size: int = 1,
+    max_files: int = 1000,
+    hash_algorithm: Literal["md5", "sha256"] = "md5",
+    check_type: Literal["file", "directory", "any"] = "any",
+    follow_symlinks: bool = True,
+    include_content: bool = False,
+    max_content_size: int = 1048576,
+    lines: int = 10
+) -> Dict[str, Any]:
+    """Comprehensive filesystem operations portmanteau tool.
+
+    PORTMANTEAU PATTERN: Consolidates all filesystem operations into a single unified tool.
+    This reduces tool explosion while maintaining full functionality for file system operations.
+    Follows FastMCP 2.14.1+ best practices for portmanteau tool design.
+
+    Args:
+        operation (Literal, required): Available filesystem operations:
+            - "read_file": Read file contents with proper error handling (requires: path)
+            - "write_file": Write content to files with validation (requires: path, content)
+            - "list_directory": List directory contents with detailed metadata (requires: path)
+            - "file_exists": Check file/directory existence with type validation (requires: path)
+            - "get_file_info": Get comprehensive file/directory metadata (requires: path)
+            - "head_file": Read first N lines of files (requires: path, optional: lines)
+            - "tail_file": Read last N lines of files (requires: path, optional: lines)
+            - "grep_file": Search patterns in files with regex support (requires: path, search_pattern)
+            - "count_pattern": Count pattern occurrences in files (requires: path, search_pattern)
+            - "extract_log_lines": Extract and filter log lines with time/level filters (requires: path)
+            - "edit_file": Edit files by replacing text content (requires: path, old_string, new_string)
+            - "create_directory": Create directories with validation (requires: path)
+            - "remove_directory": Remove directories recursively or not (requires: path)
+            - "directory_tree": Generate visual directory tree representations (requires: path)
+            - "calculate_directory_size": Calculate directory sizes with statistics (requires: path)
+            - "find_duplicate_files": Find duplicate files using hashing (requires: path)
+            - "find_large_files": Find files larger than specified size (requires: path)
+            - "find_empty_directories": Find empty directories in tree (requires: path)
+            - "compare_files": Compare two text files with diff output (requires: path, path2)
+            - "read_multiple_files": Read multiple files efficiently (requires: file_paths)
+            - "move_file": Move/rename files and directories (requires: path, destination_path)
+            - "read_file_lines": Read specific line ranges from files (requires: path, optional: offset, limit)
+            - "search_files": Search for files matching patterns (requires: path, optional: pattern)
+
+        --- PRIMARY PARAMETERS ---
+
+        path (str | None): Primary file/directory path for most operations
+            Used by: read_file, write_file, list_directory, file_exists, get_file_info,
+                     head_file, tail_file, grep_file, count_pattern, extract_log_lines,
+                     edit_file, create_directory, remove_directory, directory_tree,
+                     calculate_directory_size, find_duplicate_files, find_large_files,
+                     find_empty_directories, read_file_lines, search_files
+
+        content (str | None): Content for write operations (write_file)
+            Required for: write_file operations
+
+        encoding (str): Text encoding for file operations. Default: "utf-8"
+            Used by: read_file, write_file, head_file, tail_file, grep_file, count_pattern,
+                     extract_log_lines, edit_file, read_file_lines
+
+        recursive (bool): Whether to operate recursively. Default: False
+            Used by: list_directory, calculate_directory_size, find_duplicate_files,
+                     find_large_files, find_empty_directories, search_files
+
+        include_hidden (bool): Whether to include hidden files/directories. Default: False
+            Used by: list_directory, calculate_directory_size, find_duplicate_files,
+                     find_large_files, find_empty_directories, search_files
+
+        --- FILE EDITING ---
+
+        old_string (str | None): Text to replace in edit operations (edit_file)
+            Required for: edit_file operations
+
+        new_string (str | None): Replacement text in edit operations (edit_file)
+            Required for: edit_file operations
+
+        --- DIRECTORY CONFIGURATION ---
+
+        create_parents (bool): Create parent directories when creating. Default: True
+            Used by: create_directory operations
+
+        exist_ok (bool): Succeed silently if directory exists. Default: True
+            Used by: create_directory operations
+
+        max_depth (int): Maximum recursion depth. Default: 3
+            Used by: directory_tree operations
+
+        pattern (str | None): Glob pattern for filtering
+            Used by: search_files, directory_tree operations
+
+        exclude_patterns (List[str] | None): Patterns to exclude from operations
+            Used by: list_directory, directory_tree, search_files operations
+
+        output_format (Literal["text", "json"]): Output format. Default: "text"
+            Used by: directory_tree operations
+
+        --- SIZE & QUANTITY ---
+
+        human_readable (bool): Format sizes human-readably. Default: True
+            Used by: calculate_directory_size operations
+
+        min_size_mb (float): Minimum size in MB for large file search. Default: 100.0
+            Used by: find_large_files operations
+
+        --- SEARCH & PATTERN MATCHING ---
+
+        search_pattern (str | None): Pattern to search for
+            Required for: grep_file, count_pattern, extract_log_lines operations
+
+        case_sensitive (bool): Case sensitivity for searches. Default: False
+            Used by: grep_file, count_pattern operations
+
+        max_matches (int): Maximum matches to return. Default: 100
+            Used by: grep_file operations
+
+        context_lines (int): Context lines around matches. Default: 0
+            Used by: grep_file operations
+
+        --- LOG EXTRACTION ---
+
+        start_time (str | None): Start time for log filtering
+            Used by: extract_log_lines operations
+
+        end_time (str | None): End time for log filtering
+            Used by: extract_log_lines operations
+
+        log_levels (List[str] | None): Log levels to include
+            Used by: extract_log_lines operations
+
+        exclude_log_levels (List[str] | None): Log levels to exclude
+            Used by: extract_log_lines operations
+
+        max_lines (int): Maximum lines to return. Default: 100
+            Used by: extract_log_lines, read_file_lines operations
+
+        --- MULTI-FILE & MOVEMENT ---
+
+        path2 (str | None): Second path for comparison operations (compare_files)
+            Required for: compare_files operations
+
+        file_paths (List[str] | None): List of paths for multi-file operations
+            Required for: read_multiple_files operations
+
+        destination_path (str | None): Destination for move operations
+            Required for: move_file operations
+
+        overwrite (bool): Whether to overwrite existing files. Default: False
+            Used by: move_file operations
+
+        --- PAGINATION & LIMITS ---
+
+        offset (int): Line offset for reading operations. Default: 0
+            Used by: read_file_lines operations
+
+        limit (int | None): Maximum lines/items to return
+            Used by: read_file_lines operations
+
+        max_results (int): Maximum results for search operations. Default: 100
+            Used by: search_files, find_large_files operations
+
+        --- HASHING & METADATA ---
+
+        min_size (int): Minimum file size for duplicate detection. Default: 1
+            Used by: find_duplicate_files operations
+
+        max_files (int): Maximum files to process. Default: 1000
+            Used by: find_duplicate_files operations
+
+        hash_algorithm (Literal["md5", "sha256"]): Hash algorithm for duplicate detection. Default: "md5"
+            Used by: find_duplicate_files operations
+
+        check_type (Literal["file", "directory", "any"]): Type check for existence operations. Default: "any"
+            Used by: file_exists operations
+
+        follow_symlinks (bool): Whether to follow symbolic links. Default: True
+            Used by: list_directory, get_file_info operations
+
+        include_content (bool): Include file content in info operations. Default: False
+            Used by: get_file_info operations
+
+        max_content_size (int): Maximum content size to include. Default: 1048576
+            Used by: get_file_info operations
+
+        lines (int): Number of lines for head/tail operations. Default: 10
+            Used by: head_file, tail_file operations
+
+    Returns:
+        Dictionary with success status and operation-specific results. All operations return:
+        - success: Boolean indicating success/failure
+        - error: Error message if success is False
+        - [operation-specific fields]: Additional result data
+
+    Examples:
+        # Read a file
+        result = await filesystem_operations("read_file", path="README.md")
+
+        # Write content to file
+        result = await filesystem_operations("write_file", path="output.txt", content="Hello World!")
+
+        # List directory contents
+        result = await filesystem_operations("list_directory", path=".", recursive=True)
+
+        # Search for Python files
+        result = await filesystem_operations("search_files", path=".", pattern="*.py")
+
+        # Get file information with content
+        result = await filesystem_operations("get_file_info", path="script.py", include_content=True)
+
+        # Edit file content
+        result = await filesystem_operations("edit_file", path="config.txt", old_string="old_value", new_string="new_value")
+
+        # Calculate directory size
+        result = await filesystem_operations("calculate_directory_size", path="/home/user", human_readable=True)
+
+        # Find duplicate files
+        result = await filesystem_operations("find_duplicate_files", path="/home/user/documents")
+
+        # Compare two files
+        result = await filesystem_operations("compare_files", path="file1.txt", path2="file2.txt")
+    """
+
+    try:
+        # Operation routing
+        if operation == "read_file":
+            return await _read_file(path, encoding)
+        elif operation == "write_file":
+            return await _write_file(path, content, encoding, create_parents)
+        elif operation == "list_directory":
+            return await _list_directory(path, recursive, include_hidden, max_results, exclude_patterns, follow_symlinks)
+        elif operation == "file_exists":
+            return await _file_exists(path, check_type, follow_symlinks)
+        elif operation == "get_file_info":
+            return await _get_file_info(path, follow_symlinks, include_content, max_content_size)
+        elif operation == "head_file":
+            return await _head_file(path, lines, encoding)
+        elif operation == "tail_file":
+            return await _tail_file(path, lines, encoding)
+        elif operation == "grep_file":
+            return await _grep_file(path, search_pattern, case_sensitive, max_matches, context_lines, encoding)
+        elif operation == "count_pattern":
+            return await _count_pattern(path, search_pattern, case_sensitive, encoding)
+        elif operation == "extract_log_lines":
+            return await _extract_log_lines(path, search_pattern, exclude_patterns, log_levels, exclude_log_levels, start_time, end_time, max_lines, encoding)
+        elif operation == "edit_file":
+            return await _edit_file(path, old_string, new_string)
+        elif operation == "create_directory":
+            return await _create_directory(path, create_parents, exist_ok)
+        elif operation == "remove_directory":
+            return await _remove_directory(path, recursive)
+        elif operation == "directory_tree":
+            return await _directory_tree(path, max_depth, include_hidden, pattern, exclude_patterns, output_format)
+        elif operation == "calculate_directory_size":
+            return await _calculate_directory_size(path, include_hidden, human_readable)
+        elif operation == "find_duplicate_files":
+            return await _find_duplicate_files(path, recursive, min_size, include_hidden, max_files, hash_algorithm)
+        elif operation == "find_large_files":
+            return await _find_large_files(path, min_size_mb, recursive, max_results, include_hidden)
+        elif operation == "find_empty_directories":
+            return await _find_empty_directories(path, recursive, include_hidden)
+        elif operation == "compare_files":
+            return await _compare_files(path, path2, encoding)
+        elif operation == "read_multiple_files":
+            return await _read_multiple_files(file_paths, encoding)
+        elif operation == "move_file":
+            return await _move_file(path, destination_path, overwrite)
+        elif operation == "read_file_lines":
+            return await _read_file_lines(path, offset, limit, encoding)
+        elif operation == "search_files":
+            return await _search_files(path, pattern, recursive, include_hidden, max_results)
+        else:
+            return {
+                "success": False,
+                "error": f"Unknown operation: {operation}",
+                "available_operations": [
+                    "read_file", "write_file", "list_directory", "file_exists", "get_file_info",
+                    "head_file", "tail_file", "grep_file", "count_pattern", "extract_log_lines",
+                    "edit_file", "create_directory", "remove_directory", "directory_tree",
+                    "calculate_directory_size", "find_duplicate_files", "find_large_files",
+                    "find_empty_directories", "compare_files", "read_multiple_files",
+                    "move_file", "read_file_lines", "search_files"
+                ]
+            }
+
+    except Exception as e:
+        logger.error(f"Filesystem operation '{operation}' failed: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Operation failed: {str(e)}",
+            "operation": operation
+        }
+
+
+# Implementation of individual operations
+async def _read_file(file_path: str, encoding: str) -> Dict[str, Any]:
+    """Read file contents with enhanced metadata and suggestions."""
+    import time
+    start_time = time.time()
+
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {
+                "success": False,
+                "error": f"File does not exist: {file_path}",
+                "error_type": "file_not_found",
+                "recovery_options": [
+                    "Check if the file path is correct",
+                    "Verify file permissions",
+                    "Use search_files to locate the file"
+                ],
+                "suggested_commands": [
+                    f"search_files(directory_path='.', pattern='{Path(file_path).name}')",
+                    f"file_exists(path='{file_path}')"
+                ]
+            }
+        if not path_obj.is_file():
+            return {
+                "success": False,
+                "error": f"Path is not a file: {file_path}",
+                "error_type": "not_a_file",
+                "actual_type": "directory" if path_obj.is_dir() else "unknown",
+                "recovery_options": [
+                    "Use list_directory for directories",
+                    "Check the path and try again"
+                ]
+            }
+
+        content = path_obj.read_text(encoding=encoding)
+        execution_time = time.time() - start_time
+
+        # Analyze content for suggestions
+        lines = content.splitlines()
+        file_size_mb = len(content) / (1024 * 1024)
+
+        suggestions = []
+        if len(lines) > 1000:
+            suggestions.append("File is quite large - consider using read_file_lines with offset/limit")
+        if file_size_mb > 10:
+            suggestions.append("Large file detected - consider processing in chunks")
+
+        # Detect file type for additional suggestions
+        file_ext = path_obj.suffix.lower()
+        if file_ext in ['.json', '.yaml', '.yml', '.xml']:
+            suggestions.append("Structured file detected - consider using appropriate parsing tools")
+        elif file_ext in ['.md', '.txt']:
+            suggestions.append("Text file - consider grep_file for searching content")
+        elif file_ext in ['.log']:
+            suggestions.append("Log file detected - consider extract_log_lines for analysis")
+
+        return {
+            "success": True,
+            "content": content,
+            "size": len(content),
+            "size_human": _format_file_size(len(content)),
+            "lines": len(lines),
+            "encoding": encoding,
+            "path": str(path_obj),
+            "execution_time": round(execution_time, 3),
+            "file_type": file_ext or "no_extension",
+            "recommendations": suggestions,
+            "next_steps": [
+                f"grep_file(path='{file_path}', search_pattern='search_term')" if file_ext in ['.md', '.txt', '.log'] else None,
+                f"read_file_lines(path='{file_path}', limit=50)" if len(lines) > 100 else None,
+                f"get_file_info(path='{file_path}')"  # Always suggest getting more info
+            ],
+            "related_operations": [
+                "grep_file" if file_ext in ['.md', '.txt', '.log'] else None,
+                "read_file_lines" if len(lines) > 50 else None,
+                "get_file_info"
+            ]
+        }
+
+    except UnicodeDecodeError as e:
+        return {
+            "success": False,
+            "error": f"Cannot decode as {encoding}: {str(e)}",
+            "error_type": "encoding_error",
+            "suggested_encodings": ["utf-8", "latin-1", "cp1252"],
+            "recovery_options": [
+                "Try a different encoding",
+                "Check if file is binary",
+                f"Use get_file_info(path='{file_path}') to check file type"
+            ]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to read file: {str(e)}",
+            "error_type": "io_error",
+            "recovery_options": [
+                "Check file permissions",
+                "Verify the file is not locked by another process",
+                "Try again in a few moments"
+            ]
+        }
+
+
+async def _write_file(file_path: str, content: str, encoding: str, create_parents: bool) -> Dict[str, Any]:
+    """Write content to file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+
+        if create_parents:
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+
+        path_obj.write_text(content, encoding=encoding)
+        return {
+            "success": True,
+            "path": str(path_obj),
+            "size": len(content),
+            "encoding": encoding
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to write file: {str(e)}"}
+
+
+async def _list_directory(
+    directory_path: str,
+    recursive: bool,
+    include_hidden: bool,
+    max_files: int,
+    exclude_patterns: Optional[List[str]],
+    follow_symlinks: bool
+) -> Dict[str, Any]:
+    """List directory contents."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"Directory does not exist: {directory_path}"}
+        if not path_obj.is_dir():
+            return {"success": False, "error": f"Path is not a directory: {directory_path}"}
+
+        # Compile exclude patterns
+        exclude_regexes = []
+        if exclude_patterns:
+            for pattern in exclude_patterns:
+                try:
+                    exclude_regexes.append(re.compile(pattern))
+                except re.error:
+                    logger.warning(f"Invalid exclude pattern: {pattern}")
+
+        files = []
+        total_size = 0
+        file_count = 0
+        dir_count = 0
+
+        def should_exclude(name: str) -> bool:
+            if not include_hidden and name.startswith('.'):
+                return True
+            for regex in exclude_regexes:
+                if regex.search(name):
+                    return True
+            return False
+
+        def scan_dir(dir_path: Path) -> None:
+            nonlocal file_count, dir_count, total_size
+            if len(files) >= max_files:
+                return
+
+            try:
+                entries = list(os.scandir(dir_path))
+                for entry in entries:
+                    if len(files) >= max_files:
+                        return
+
+                    if should_exclude(entry.name):
+                        continue
+
+                    try:
+                        stat = entry.stat(follow_symlinks=follow_symlinks)
+                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+
+                        item = {
+                            "name": entry.name,
+                            "path": str(Path(entry.path)),
+                            "type": "directory" if is_dir else "file",
+                            "size": stat.st_size if not is_dir else 0,
+                            "modified": stat.st_mtime,
+                            "permissions": oct(stat.st_mode)[-3:]
+                        }
+
+                        if is_dir:
+                            dir_count += 1
+                            if recursive:
+                                scan_dir(Path(entry.path))
+                        else:
+                            file_count += 1
+                            total_size += stat.st_size
+
+                        files.append(item)
+
+                    except (PermissionError, FileNotFoundError):
+                        pass
+
+            except (PermissionError, FileNotFoundError):
+                pass
+
+        scan_dir(path_obj)
+
+        # Generate enhanced response with recommendations
+        recommendations = []
+        if len(files) >= max_files:
+            recommendations.append(f"Results truncated at {max_files} items - consider using filters or smaller directories")
+        if dir_count > file_count * 2:
+            recommendations.append("Directory-heavy structure detected - consider recursive=true for deeper exploration")
+        if total_size > 100 * 1024 * 1024:  # 100MB
+            recommendations.append("Large directory detected - consider find_large_files to identify space usage")
+
+        # Suggest next operations
+        next_steps = []
+        if file_count > 0:
+            next_steps.append(f"read_file(path='{path_obj}/<filename>')")
+        if dir_count > 0 and not recursive:
+            next_steps.append(f"list_directory(path='{path_obj}', recursive=True)")
+        if total_size > 10 * 1024 * 1024:  # 10MB
+            next_steps.append(f"calculate_directory_size(path='{path_obj}')")
+
+        result = {
+            "success": True,
+            "directory": str(path_obj),
+            "files": files,
+            "total_files": file_count,
+            "total_directories": dir_count,
+            "total_items": file_count + dir_count,
+            "total_size": total_size,
+            "total_size_human": _format_file_size(total_size),
+            "max_files_reached": len(files) >= max_files,
+            "filters_applied": {
+                "recursive": recursive,
+                "include_hidden": include_hidden,
+                "exclude_patterns": exclude_patterns
+            },
+            "recommendations": recommendations,
+            "next_steps": next_steps,
+            "related_operations": [
+                "calculate_directory_size" if total_size > 1024 * 1024 else None,  # > 1MB
+                "find_large_files" if total_size > 10 * 1024 * 1024 else None,  # > 10MB
+                "search_files" if file_count > 10 else None
+            ],
+            "summary": {
+                "structure": "directory_heavy" if dir_count > file_count else "file_heavy",
+                "size_category": "large" if total_size > 100 * 1024 * 1024 else "medium" if total_size > 1024 * 1024 else "small",
+                "complexity": "high" if (file_count + dir_count) > 1000 else "medium" if (file_count + dir_count) > 100 else "low"
+            }
+        }
+
+        return result
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to list directory: {str(e)}",
+            "error_type": "directory_access_error",
+            "directory_path": directory_path,
+            "recovery_options": [
+                "Check if the directory exists",
+                "Verify read permissions on the directory",
+                "Try with include_hidden=False if there are permission issues",
+                "Use file_exists to check directory status first"
+            ],
+            "diagnostic_commands": [
+                f"file_exists(path='{directory_path}')",
+                f"list_directory(path='{Path(directory_path).parent}', recursive=False)" if Path(directory_path).parent.exists() else None
+            ]
+        }
+
+
+async def _file_exists(file_path: str, check_type: str, follow_symlinks: bool) -> Dict[str, Any]:
+    """Check if file/directory exists."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        exists = path_obj.exists()
+
+        if not exists:
+            return {"success": True, "exists": False, "path": str(path_obj)}
+
+        is_file = path_obj.is_file()
+        is_dir = path_obj.is_dir()
+
+        type_matches = (
+            (check_type == "any") or
+            (check_type == "file" and is_file) or
+            (check_type == "directory" and is_dir)
+        )
+
+        return {
+            "success": True,
+            "exists": True,
+            "path": str(path_obj),
+            "is_file": is_file,
+            "is_dir": is_dir,
+            "type_matches": type_matches,
+            "check_type": check_type
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to check existence: {str(e)}"}
+
+
+async def _get_file_info(file_path: str, follow_symlinks: bool, include_content: bool, max_content_size: int) -> Dict[str, Any]:
+    """Get detailed file information."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"Path does not exist: {file_path}"}
+
+        stat = path_obj.stat(follow_symlinks=follow_symlinks)
+
+        info = {
+            "success": True,
+            "path": str(path_obj),
+            "name": path_obj.name,
+            "size": stat.st_size,
+            "modified": stat.st_mtime,
+            "created": stat.st_ctime,
+            "accessed": stat.st_atime,
+            "permissions": oct(stat.st_mode)[-3:],
+            "is_file": path_obj.is_file(),
+            "is_dir": path_obj.is_dir(),
+            "is_symlink": path_obj.is_symlink(),
+            "human_size": _format_file_size(stat.st_size)
+        }
+
+        if include_content and path_obj.is_file() and stat.st_size <= max_content_size:
+            try:
+                info["content"] = path_obj.read_text(encoding="utf-8", errors="ignore")
+                info["content_included"] = True
+            except Exception:
+                info["content_included"] = False
+        else:
+            info["content_included"] = False
+
+        return info
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get file info: {str(e)}"}
+
+
+async def _head_file(file_path: str, lines: int, encoding: str) -> Dict[str, Any]:
+    """Read first N lines of file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding=encoding)
+        all_lines = content.splitlines(keepends=True)
+        selected_lines = all_lines[:lines]
+
+        return {
+            "success": True,
+            "content": "".join(selected_lines),
+            "lines_requested": lines,
+            "lines_returned": len(selected_lines),
+            "total_lines": len(all_lines),
+            "encoding": encoding,
+            "path": str(path_obj)
+        }
+
+    except UnicodeDecodeError as e:
+        return {"success": False, "error": f"Cannot decode as {encoding}: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to read head: {str(e)}"}
+
+
+async def _tail_file(file_path: str, lines: int, encoding: str) -> Dict[str, Any]:
+    """Read last N lines of file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding=encoding)
+        all_lines = content.splitlines(keepends=True)
+        selected_lines = all_lines[-lines:] if lines > 0 else []
+
+        return {
+            "success": True,
+            "content": "".join(selected_lines),
+            "lines_requested": lines,
+            "lines_returned": len(selected_lines),
+            "total_lines": len(all_lines),
+            "encoding": encoding,
+            "path": str(path_obj)
+        }
+
+    except UnicodeDecodeError as e:
+        return {"success": False, "error": f"Cannot decode as {encoding}: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to read tail: {str(e)}"}
+
+
+async def _grep_file(file_path: str, pattern: str, case_sensitive: bool, max_matches: int, context_lines: int, encoding: str) -> Dict[str, Any]:
+    """Search for patterns in file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding=encoding)
+        lines = content.splitlines()
+
+        flags = 0 if case_sensitive else re.IGNORECASE
+        try:
+            regex = re.compile(pattern, flags)
+        except re.error as e:
+            return {"success": False, "error": f"Invalid regex pattern: {str(e)}"}
+
+        matches = []
+        for i, line in enumerate(lines):
+            if regex.search(line):
+                match_info = {
+                    "line_number": i + 1,
+                    "content": line,
+                    "match": regex.search(line).group(0) if regex.search(line) else ""
+                }
+
+                if context_lines > 0:
+                    start = max(0, i - context_lines)
+                    end = min(len(lines), i + context_lines + 1)
+                    match_info["context"] = {
+                        "before": lines[start:i],
+                        "after": lines[i+1:end]
+                    }
+
+                matches.append(match_info)
+
+                if len(matches) >= max_matches:
+                    break
+
+        return {
+            "success": True,
+            "pattern": pattern,
+            "matches": matches,
+            "total_matches": len(matches),
+            "max_matches_reached": len(matches) >= max_matches,
+            "file_path": str(path_obj),
+            "encoding": encoding
+        }
+
+    except UnicodeDecodeError as e:
+        return {"success": False, "error": f"Cannot decode as {encoding}: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to grep file: {str(e)}"}
+
+
+async def _count_pattern(file_path: str, pattern: str, case_sensitive: bool, encoding: str) -> Dict[str, Any]:
+    """Count pattern occurrences in file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding=encoding)
+
+        flags = 0 if case_sensitive else re.IGNORECASE
+        try:
+            regex = re.compile(pattern, flags)
+        except re.error as e:
+            return {"success": False, "error": f"Invalid regex pattern: {str(e)}"}
+
+        matches = regex.findall(content)
+        count = len(matches)
+
+        return {
+            "success": True,
+            "pattern": pattern,
+            "count": count,
+            "file_path": str(path_obj),
+            "encoding": encoding
+        }
+
+    except UnicodeDecodeError as e:
+        return {"success": False, "error": f"Cannot decode as {encoding}: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to count pattern: {str(e)}"}
+
+
+async def _extract_log_lines(
+    file_path: str,
+    patterns: Optional[str],
+    exclude_patterns: Optional[List[str]],
+    log_levels: Optional[List[str]],
+    exclude_log_levels: Optional[List[str]],
+    start_time: Optional[str],
+    end_time: Optional[str],
+    max_lines: int,
+    encoding: str
+) -> Dict[str, Any]:
+    """Extract and filter log lines."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding=encoding)
+        lines = content.splitlines()
+
+        # Time filtering
+        start_dt = None
+        end_dt = None
+        if start_time:
+            try:
+                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+        if end_time:
+            try:
+                end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+
+        # Compile patterns
+        include_patterns = []
+        if patterns:
+            try:
+                include_patterns.append(re.compile(patterns, re.IGNORECASE))
+            except re.error:
+                pass
+
+        exclude_regexes = []
+        if exclude_patterns:
+            for pattern in exclude_patterns:
+                try:
+                    exclude_regexes.append(re.compile(pattern, re.IGNORECASE))
+                except re.error:
+                    pass
+
+        filtered_lines = []
+        for line in lines:
+            if len(filtered_lines) >= max_lines:
+                break
+
+            # Time filtering (basic ISO timestamp detection)
+            if start_dt or end_dt:
+                # Look for ISO timestamp at start of line
+                timestamp_match = re.match(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)', line)
+                if timestamp_match:
+                    try:
+                        line_dt = datetime.fromisoformat(timestamp_match.group(1).replace('Z', '+00:00'))
+                        if start_dt and line_dt < start_dt:
+                            continue
+                        if end_dt and line_dt > end_dt:
+                            continue
+                    except ValueError:
+                        pass
+
+            # Log level filtering
+            if log_levels or exclude_log_levels:
+                level_match = re.search(r'\b(DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL|TRACE)\b', line, re.IGNORECASE)
+                if level_match:
+                    level = level_match.group(1).upper()
+                    if log_levels and level not in [l.upper() for l in log_levels]:
+                        continue
+                    if exclude_log_levels and level in [l.upper() for l in exclude_log_levels]:
+                        continue
+
+            # Pattern filtering
+            if include_patterns:
+                included = False
+                for pattern in include_patterns:
+                    if pattern.search(line):
+                        included = True
+                        break
+                if not included:
+                    continue
+
+            # Exclude patterns
+            excluded = False
+            for pattern in exclude_regexes:
+                if pattern.search(line):
+                    excluded = True
+                    break
+            if excluded:
+                continue
+
+            filtered_lines.append(line)
+
+        return {
+            "success": True,
+            "lines": filtered_lines,
+            "total_lines": len(filtered_lines),
+            "max_lines_reached": len(filtered_lines) >= max_lines,
+            "file_path": str(path_obj),
+            "encoding": encoding,
+            "filters_applied": {
+                "patterns": bool(patterns),
+                "exclude_patterns": bool(exclude_patterns),
+                "log_levels": bool(log_levels),
+                "exclude_log_levels": bool(exclude_log_levels),
+                "time_range": bool(start_time or end_time)
+            }
+        }
+
+    except UnicodeDecodeError as e:
+        return {"success": False, "error": f"Cannot decode as {encoding}: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to extract log lines: {str(e)}"}
+
+
+async def _edit_file(file_path: str, old_string: str, new_string: str) -> Dict[str, Any]:
+    """Edit file by replacing text."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"File does not exist: {file_path}"}
+        if not path_obj.is_file():
+            return {"success": False, "error": f"Path is not a file: {file_path}"}
+
+        content = path_obj.read_text(encoding="utf-8")
+        if old_string not in content:
+            return {"success": False, "error": f"Text to replace not found in file"}
+
+        new_content = content.replace(old_string, new_string, 1)  # Replace first occurrence only
+
+        # Create backup
+        backup_path = path_obj.with_suffix(path_obj.suffix + ".backup")
+        shutil.copy2(path_obj, backup_path)
+
+        path_obj.write_text(new_content, encoding="utf-8")
+
+        return {
+            "success": True,
+            "path": str(path_obj),
+            "backup_path": str(backup_path),
+            "old_length": len(content),
+            "new_length": len(new_content)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to edit file: {str(e)}"}
+
+
+async def _create_directory(directory_path: str, create_parents: bool, exist_ok: bool) -> Dict[str, Any]:
+    """Create directory."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+
+        if path_obj.exists() and not exist_ok:
+            return {"success": False, "error": f"Directory already exists: {directory_path}"}
+
+        if create_parents:
+            path_obj.mkdir(parents=True, exist_ok=exist_ok)
+        else:
+            path_obj.mkdir(exist_ok=exist_ok)
+
+        return {
+            "success": True,
+            "path": str(path_obj),
+            "created": True,
+            "parents_created": create_parents
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to create directory: {str(e)}"}
+
+
+async def _remove_directory(directory_path: str, recursive: bool) -> Dict[str, Any]:
+    """Remove directory."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"Directory does not exist: {directory_path}"}
+        if not path_obj.is_dir():
+            return {"success": False, "error": f"Path is not a directory: {directory_path}"}
+
+        if recursive:
+            shutil.rmtree(path_obj)
+        else:
+            path_obj.rmdir()
+
+        return {
+            "success": True,
+            "path": str(path_obj),
+            "recursive": recursive
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to remove directory: {str(e)}"}
+
+
+# Directory tree implementation (simplified)
+async def _directory_tree(
+    directory_path: str,
+    max_depth: int,
+    include_files: bool,
+    pattern: Optional[str],
+    exclude_patterns: Optional[List[str]],
+    output_format: str
+) -> Dict[str, Any]:
+    """Generate directory tree."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists():
+            return {"success": False, "error": f"Directory does not exist: {directory_path}"}
+        if not path_obj.is_dir():
+            return {"success": False, "error": f"Path is not a directory: {directory_path}"}
+
+        # Simplified tree generation
+        tree_lines = []
+        file_count = 0
+        dir_count = 0
+
+        def build_tree(path: Path, prefix: str = "", depth: int = 0):
+            nonlocal file_count, dir_count
+            if depth > max_depth:
+                return
+
+            try:
+                entries = sorted(os.scandir(path), key=lambda e: (not e.is_dir(), e.name.lower()))
+                for i, entry in enumerate(entries):
+                    is_last = i == len(entries) - 1
+                    entry_path = Path(entry.path)
+
+                    if not include_files and entry.is_file():
+                        continue
+
+                    if pattern and not fnmatch.fnmatch(entry.name, pattern):
+                        continue
+
+                    if exclude_patterns:
+                        excluded = False
+                        for exclude in exclude_patterns:
+                            if fnmatch.fnmatch(entry.name, exclude):
+                                excluded = True
+                                break
+                        if excluded:
+                            continue
+
+                    connector = "└── " if is_last else "├── "
+                    tree_lines.append(f"{prefix}{connector}{entry.name}")
+
+                    if entry.is_dir():
+                        dir_count += 1
+                        next_prefix = prefix + ("    " if is_last else "│   ")
+                        build_tree(entry_path, next_prefix, depth + 1)
+                    else:
+                        file_count += 1
+
+            except PermissionError:
+                pass
+
+        tree_lines.append(path_obj.name)
+        build_tree(path_obj)
+
+        result = {
+            "success": True,
+            "directory": str(path_obj),
+            "tree": "\n".join(tree_lines),
+            "file_count": file_count,
+            "directory_count": dir_count
+        }
+
+        if output_format == "json":
+            # Simplified JSON structure
+            result["json_tree"] = {"name": path_obj.name, "type": "directory", "children": []}
+
+        return result
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to generate directory tree: {str(e)}"}
+
+
+# Simplified implementations for remaining operations
+async def _calculate_directory_size(directory_path: str, include_hidden: bool, human_readable: bool) -> Dict[str, Any]:
+    """Calculate directory size."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists() or not path_obj.is_dir():
+            return {"success": False, "error": "Invalid directory path"}
+
+        total_size = 0
+        file_count = 0
+
+        for root, dirs, files in os.walk(path_obj):
+            for file in files:
+                if not include_hidden and file.startswith('.'):
+                    continue
+                try:
+                    total_size += os.path.getsize(os.path.join(root, file))
+                    file_count += 1
+                except OSError:
+                    pass
+
+        result = {
+            "success": True,
+            "directory": str(path_obj),
+            "total_bytes": total_size,
+            "file_count": file_count
+        }
+
+        if human_readable:
+            result["human_readable"] = _format_file_size(total_size)
+
+        return result
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to calculate size: {str(e)}"}
+
+
+async def _find_duplicate_files(directory_path: str, recursive: bool, min_size: int, include_hidden: bool, max_files: int, hash_algorithm: str) -> Dict[str, Any]:
+    """Find duplicate files."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists() or not path_obj.is_dir():
+            return {"success": False, "error": "Invalid directory path"}
+
+        # Simplified duplicate detection
+        file_hashes = {}
+        duplicates = []
+
+        for root, dirs, files in os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]:
+            for file in files:
+                if not include_hidden and file.startswith('.'):
+                    continue
+
+                file_path = Path(root) / file
+                try:
+                    if file_path.stat().st_size < min_size:
+                        continue
+
+                    file_hash = hashlib.md5(file_path.read_bytes()).hexdigest()
+                    if file_hash in file_hashes:
+                        duplicates.append({
+                            "hash": file_hash,
+                            "files": [str(file_hashes[file_hash]), str(file_path)]
+                        })
+                    else:
+                        file_hashes[file_hash] = file_path
+
+                except OSError:
+                    pass
+
+        return {
+            "success": True,
+            "directory": str(path_obj),
+            "duplicates": duplicates,
+            "total_duplicates": len(duplicates)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to find duplicates: {str(e)}"}
+
+
+async def _find_large_files(directory_path: str, min_size_mb: float, recursive: bool, max_results: int, include_hidden: bool) -> Dict[str, Any]:
+    """Find large files."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists() or not path_obj.is_dir():
+            return {"success": False, "error": "Invalid directory path"}
+
+        min_size_bytes = int(min_size_mb * 1024 * 1024)
+        large_files = []
+
+        for root, dirs, files in os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]:
+            for file in files:
+                if not include_hidden and file.startswith('.'):
+                    continue
+
+                file_path = Path(root) / file
+                try:
+                    size = file_path.stat().st_size
+                    if size >= min_size_bytes:
+                        large_files.append({
+                            "path": str(file_path),
+                            "size_bytes": size,
+                            "size_mb": round(size / (1024 * 1024), 2)
+                        })
+
+                        if len(large_files) >= max_results:
+                            break
+
+                except OSError:
+                    pass
+
+        large_files.sort(key=lambda x: x["size_bytes"], reverse=True)
+
+        return {
+            "success": True,
+            "directory": str(path_obj),
+            "large_files": large_files,
+            "min_size_mb": min_size_mb,
+            "total_found": len(large_files)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to find large files: {str(e)}"}
+
+
+async def _find_empty_directories(directory_path: str, recursive: bool, include_hidden: bool) -> Dict[str, Any]:
+    """Find empty directories."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists() or not path_obj.is_dir():
+            return {"success": False, "error": "Invalid directory path"}
+
+        empty_dirs = []
+
+        for root, dirs, files in os.walk(path_obj):
+            # Filter hidden items
+            if not include_hidden:
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                files = [f for f in files if not f.startswith('.')]
+
+            if not dirs and not files:
+                empty_dirs.append(root)
+
+        return {
+            "success": True,
+            "directory": str(path_obj),
+            "empty_directories": empty_dirs,
+            "total_empty": len(empty_dirs)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to find empty directories: {str(e)}"}
+
+
+async def _compare_files(file_path_1: str, file_path_2: str, encoding: str) -> Dict[str, Any]:
+    """Compare two files."""
+    try:
+        path1 = _safe_resolve_path(file_path_1)
+        path2 = _safe_resolve_path(file_path_2)
+
+        if not path1.exists() or not path1.is_file():
+            return {"success": False, "error": f"Invalid first file: {file_path_1}"}
+        if not path2.exists() or not path2.is_file():
+            return {"success": False, "error": f"Invalid second file: {file_path_2}"}
+
+        content1 = path1.read_text(encoding=encoding)
+        content2 = path2.read_text(encoding=encoding)
+
+        diff = list(difflib.unified_diff(
+            content1.splitlines(keepends=True),
+            content2.splitlines(keepends=True),
+            fromfile=str(path1),
+            tofile=str(path2)
+        ))
+
+        return {
+            "success": True,
+            "file1": str(path1),
+            "file2": str(path2),
+            "are_identical": content1 == content2,
+            "diff": "".join(diff),
+            "diff_lines": len(diff)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to compare files: {str(e)}"}
+
+
+async def _read_multiple_files(file_paths: List[str], encoding: str) -> Dict[str, Any]:
+    """Read multiple files."""
+    try:
+        results = {}
+        success_count = 0
+
+        for file_path in file_paths:
+            try:
+                path_obj = _safe_resolve_path(file_path)
+                if path_obj.exists() and path_obj.is_file():
+                    content = path_obj.read_text(encoding=encoding)
+                    results[file_path] = {"success": True, "content": content}
+                    success_count += 1
+                else:
+                    results[file_path] = {"success": False, "error": "File not found"}
+            except Exception as e:
+                results[file_path] = {"success": False, "error": str(e)}
+
+        return {
+            "success": True,
+            "results": results,
+            "total_files": len(file_paths),
+            "successful_reads": success_count
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to read multiple files: {str(e)}"}
+
+
+async def _move_file(source_path: str, destination_path: str, overwrite: bool) -> Dict[str, Any]:
+    """Move file or directory."""
+    try:
+        source = _safe_resolve_path(source_path)
+        dest = _safe_resolve_path(destination_path)
+
+        if not source.exists():
+            return {"success": False, "error": f"Source does not exist: {source_path}"}
+
+        if dest.exists() and not overwrite:
+            return {"success": False, "error": f"Destination exists: {destination_path}"}
+
+        shutil.move(str(source), str(dest))
+
+        return {
+            "success": True,
+            "source": str(source),
+            "destination": str(dest),
+            "overwritten": dest.exists()
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to move: {str(e)}"}
+
+
+async def _read_file_lines(file_path: str, offset: int, limit: Optional[int], encoding: str) -> Dict[str, Any]:
+    """Read specific lines from file."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists() or not path_obj.is_file():
+            return {"success": False, "error": "Invalid file path"}
+
+        content = path_obj.read_text(encoding=encoding)
+        lines = content.splitlines(keepends=True)
+
+        if offset >= len(lines):
+            selected_lines = []
+        else:
+            end = len(lines) if limit is None else min(offset + limit, len(lines))
+            selected_lines = lines[offset:end]
+
+        return {
+            "success": True,
+            "content": "".join(selected_lines),
+            "offset": offset,
+            "limit": limit,
+            "lines_returned": len(selected_lines),
+            "total_lines": len(lines)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to read lines: {str(e)}"}
+
+
+async def _search_files(directory_path: str, pattern: str, recursive: bool, include_hidden: bool, max_results: int) -> Dict[str, Any]:
+    """Search for files matching pattern."""
+    try:
+        path_obj = _safe_resolve_path(directory_path)
+        if not path_obj.exists() or not path_obj.is_dir():
+            return {"success": False, "error": "Invalid directory path"}
+
+        matching_files = []
+
+        for root, dirs, files in os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]:
+            for file in files:
+                if not include_hidden and file.startswith('.'):
+                    continue
+
+                if fnmatch.fnmatch(file, pattern):
+                    file_path = Path(root) / file
+                    try:
+                        stat = file_path.stat()
+                        matching_files.append({
+                            "path": str(file_path),
+                            "name": file,
+                            "size": stat.st_size,
+                            "modified": stat.st_mtime
+                        })
+
+                        if len(matching_files) >= max_results:
+                            break
+                    except OSError:
+                        pass
+
+        return {
+            "success": True,
+            "directory": str(path_obj),
+            "pattern": pattern,
+            "matching_files": matching_files,
+            "total_matches": len(matching_files),
+            "max_results_reached": len(matching_files) >= max_results
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to search files: {str(e)}"}

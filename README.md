@@ -2,22 +2,24 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.12.0+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.1+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
 [![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
 [![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
-A **FastMCP 2.12.0+ compliant** MCP server for comprehensive file system operations, Git repository management, and Docker container management. Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
+A **FastMCP 2.14.1+ compliant** MCP server using **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management. Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
 
 ## ✨ Features
 
-### 🗂️ File System Operations
-- Read, write, and manage files and directories
-- List directory contents with detailed file metadata
-- Check file existence and get file information
-- Recursive directory scanning with configurable depth
-- File content analysis and manipulation
+### 🗂️ File System Operations (20+ Tools)
+- **Basic Operations**: Read, write, list, copy, move, and delete files/directories
+- **Advanced Analysis**: Find large files, duplicate detection, directory size calculation
+- **File Comparison**: Side-by-side diff comparison with unified format
+- **Content Search**: Grep pattern matching, line-based reading, log extraction
+- **Batch Operations**: Process multiple files simultaneously
+- **Path Management**: Secure path validation with configurable restrictions
+- **Metadata Analysis**: Comprehensive file information with type detection
 
 ### 🐳 Docker Container Management
 - **Container Operations**
@@ -50,59 +52,76 @@ A **FastMCP 2.12.0+ compliant** MCP server for comprehensive file system operati
 - Manage branches and remotes
 
 ### 🤖 System Tools & Help
-- **Multilevel Help System**: Hierarchical documentation with tool examples and use cases
+- **Multilevel Help System**: Hierarchical documentation with portmanteau tool examples and use cases
 - **System Status Tool**: Comprehensive system monitoring with resource usage metrics
 - **Interactive Guidance**: Context-aware help with parameter validation and suggestions
 
 ### 🚀 Advanced Features
-- **FastMCP 2.12.0+ Compliance**: Modern tool registration with `@app.tool()` decorators
+- **FastMCP 2.14.1+ Compliance**: Modern tool registration with `@app.tool()` decorators
+- **Portmanteau Pattern**: Consolidated tool interfaces reducing complexity while maintaining full functionality
 - **Enterprise Security**: Path traversal protection, permission validation, audit trails
 - **Extensive Testing**: Unit, integration, and performance tests with 80%+ coverage
-- **DXT Packaging**: Professional deployment with all dependencies included
+- **MCPB Packaging**: Professional drag-and-drop installation for Claude Desktop
 - **Structured Logging**: Comprehensive logging with file output and monitoring
 - **Async Operations**: Full async/await support for optimal concurrency
 - **Pydantic V2**: Modern data validation with `field_validator` and `ConfigDict`
-- FastMCP 2.10 compliant API
-- Asynchronous operations for improved performance
-- Detailed documentation and type hints
+- **Multilevel Help System**: Interactive guidance with portmanteau tool examples and use cases
+- **System Monitoring**: Resource usage tracking and performance metrics
+- **Cross-Platform**: Windows, macOS, and Linux support
 
 ## 🚀 Installation
 
 ### Prerequisites
-- **Python 3.9+** (FastMCP 2.12.0+ requirement)
+- **Python 3.9+** (FastMCP 2.14.1+ requirement)
 - **Docker Engine** (for container operations)
 - **Git** (for repository operations)
-- **Node.js 20+** (for DXT packaging)
+- **Node.js 20+** (for MCPB packaging)
 
-### Quick Start with DXT (Recommended)
+### Quick Start with MCPB (Recommended)
 
-1. **Download** the `filesystem-mcp.dxt` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+1. **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
 2. **Drag & Drop** the file to Claude Desktop
-3. **Configure** working directory when prompted
-4. **Start using** professional tools immediately
+3. **Configure** settings when prompted (working directory, timeouts, etc.)
+4. **Install dependencies** separately (see below)
+5. **Start using** 57+ professional tools immediately
 
-### Manual Installation
+#### Dependencies Installation
+
+MCPB packages do **NOT** include Python dependencies. Install them separately:
+
+```bash
+# Required for all functionality
+pip install fastmcp>=2.14.1 pydantic>=2.5.0
+
+# Docker operations (optional)
+pip install docker>=6.0.0
+
+# Git operations (optional)
+pip install gitpython>=3.1.0
+
+# All dependencies
+pip install fastmcp>=2.14.1 pydantic>=2.5.0 docker>=6.0.0 gitpython>=3.1.0 aiohttp>=3.9.0
+```
+
+### Alternative: Manual Installation (Advanced Users)
+
+For developers or users who prefer manual setup, or for other MCP clients (Cursor, Windsurf, etc.):
 
 ```bash
 # Clone the repository
 git clone https://github.com/sandr/filesystem-mcp.git
 cd filesystem-mcp
 
-# Create and activate a virtual environment (recommended)
-python -m venv venv
-# On Windows: .\venv\Scripts\Activate.ps1
-# On Unix/Mac: source venv/bin/activate
+# Install dependencies
+pip install fastmcp>=2.14.1 pydantic>=2.5.0 docker>=6.0.0 gitpython>=3.1.0
 
-# Install with all dependencies
+# Install in development mode (optional)
 pip install -e .[dev,test]
-
-# Install development dependencies (optional)
-pip install -r requirements-dev.txt
 ```
 
-### Claude Desktop Configuration
+### Manual Claude Desktop Configuration
 
-After installation, configure Claude Desktop to use the filesystem MCP server by adding the following to your Claude Desktop configuration file (`claude_desktop_config.json`):
+For manual installation or other MCP clients, add to your Claude Desktop configuration file (`claude_desktop_config.json`):
 
 **Windows:**
 ```json
@@ -166,38 +185,62 @@ docker run -d --name filesystem-mcp \
 
 ## 🤖 Help System & Status Tools
 
+### System Operations (portmanteau)
+
+**Unified system tool** with 20+ operations:
+- **Help**: `get_help` - Multilevel help system with tool documentation
+- **Status**: `get_system_status` - Comprehensive system monitoring
+- **Resources**: `get_resource_usage`, `get_cpu_info`, `get_memory_info`, `get_disk_usage`
+- **Processes**: `get_process_info` - Process monitoring and management
+- **Network**: `get_network_info` - Network interface information
+- **System Info**: `get_system_info`, `get_hardware_info`, `get_software_info`
+- **Environment**: `get_environment_info`, `get_locale_info`, `get_time_info`
+- **Security**: `get_security_info` - Basic security information
+- **Performance**: `get_performance_metrics` - System performance monitoring
+
+```python
+# Get comprehensive help
+result = system_operations("get_help", category="filesystem")
+
+# Monitor system status
+result = system_operations("get_system_status", include_processes=True, include_disk=True)
+
+# Get resource usage
+result = system_operations("get_resource_usage")
+```
+
 ### Multilevel Help System
-Get comprehensive guidance for all tools:
+Get comprehensive guidance for all portmanteau tools:
 
 ```python
 # Overview of all categories and tools
-get_help()
+system_operations("get_help")
 
-# Detailed help for file operations
-get_help('file_operations')
+# Detailed help for filesystem operations
+system_operations("get_help", category="filesystem")
 
 # Specific tool documentation with examples
-get_help('file_operations', 'read_file')
+system_operations("get_help", category="filesystem", tool_name="filesystem_operations")
 ```
 
 **Help Categories:**
-- `file_operations` - File reading, writing, directory management
-- `git_operations` - Repository cloning, status, commits, branches
-- `docker_operations` - Container listing, resource monitoring
-- `system_tools` - Help and status functionality
+- `filesystem` - File reading, writing, directory management, search, analysis
+- `docker` - Container, image, network, and volume management
+- `repository` - Git repository operations (clone, commit, branch, merge, etc.)
+- `system` - System monitoring, status, and help functionality
 
 ### System Status Monitoring
 Monitor system resources and server health:
 
 ```python
 # Comprehensive system status
-get_system_status()
+system_operations("get_system_status")
 
 # Resource monitoring only
-get_system_status(include_processes=True, include_disk=True)
+system_operations("get_system_status", include_processes=True, include_disk=True)
 
 # Network and system info
-get_system_status(include_network=True)
+system_operations("get_system_status", include_network=True)
 ```
 
 **Status Metrics:**
@@ -223,68 +266,70 @@ python -m filesystem_mcp --host 127.0.0.1 --port 8080
 python -m filesystem_mcp --debug
 ```
 
-### Available Tools
+### Available Portmanteau Tools
 
-#### 📂 File Operations
+#### 📂 Filesystem Operations (portmanteau)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `read_file` | Read file contents | `file_path`, `encoding` |
-| `write_file` | Write to a file | `file_path`, `content`, `encoding` |
-| `list_directory` | List directory contents | `directory_path`, `recursive` |
-| `file_exists` | Check if file/directory exists | `file_path` |
-| `get_file_info` | Get file/directory metadata | `file_path` |
+**Unified filesystem tool** with 20+ operations:
+- `read_file`, `write_file`, `list_directory`, `file_exists`, `get_file_info`
+- `head_file`, `tail_file`, `grep_file`, `count_pattern`, `extract_log_lines`
+- `edit_file`, `create_directory`, `remove_directory`, `directory_tree`
+- `calculate_directory_size`, `find_duplicate_files`, `find_large_files`
+- `find_empty_directories`, `compare_files`, `read_multiple_files`
+- `move_file`, `read_file_lines`, `search_files`
 
-#### 🐳 Docker Operations
+```python
+# Read a file
+result = filesystem_operations("read_file", path="README.md")
 
-**Container Management**
-- ✅ `list_containers`: List all containers with filtering options
-- ✅ `get_container`: Get detailed container information
-- ✅ `create_container`: Create a new container with custom configuration
-- ✅ `start_container`: Start a stopped container
-- ✅ `stop_container`: Stop a running container
-- ✅ `restart_container`: Restart a container
-- ✅ `remove_container`: Remove a container
-- ✅ `container_exec`: Execute commands in a container
-- ✅ `container_logs`: Stream container logs
-- ✅ `container_stats`: Get container resource usage statistics
+# List directory contents
+result = filesystem_operations("list_directory", path=".", recursive=True)
 
-**Image Management**
-- ✅ `list_images`: List available Docker images
-- ✅ `get_image`: Get detailed image information
-- ✅ `pull_image`: Pull an image from a registry
-- ✅ `build_image`: Build an image from a Dockerfile
-- ✅ `remove_image`: Remove an image
-- ✅ `prune_images`: Remove unused images
+# Search for files
+result = filesystem_operations("search_files", directory_path=".", pattern="*.py")
+```
 
-**Network & Volume Management**
-- ✅ `list_networks`: List Docker networks
-- ✅ `get_network`: Get detailed network information
-- ✅ `create_network`: Create a new network
-- ✅ `remove_network`: Remove a network
-- ✅ `prune_networks`: Remove unused networks
-- ✅ `list_volumes`: List Docker volumes
-- ✅ `get_volume`: Get detailed volume information
-- ✅ `create_volume`: Create a new volume
-- ✅ `remove_volume`: Remove a volume
-- ✅ `prune_volumes`: Remove unused volumes
+#### 🐳 Docker Operations (portmanteau)
 
-**Docker Compose**
-- ✅ `compose_up`: Start services defined in docker-compose.yml
-- ✅ `compose_down`: Stop and remove containers, networks, etc.
-- ✅ `compose_ps`: List containers for services
-- ✅ `compose_logs`: View output from containers
-- ✅ `compose_config`: Validate and view compose configuration
-- ✅ `compose_restart`: Restart compose services
+**Unified Docker tool** with 25+ operations:
+- **Container**: `list_containers`, `get_container`, `create_container`, `start_container`, `stop_container`, `restart_container`, `remove_container`, `container_exec`, `container_logs`, `container_stats`
+- **Images**: `list_images`, `get_image`, `pull_image`, `build_image`, `remove_image`, `prune_images`
+- **Networks**: `list_networks`, `get_network`, `create_network`, `remove_network`, `prune_networks`
+- **Volumes**: `list_volumes`, `get_volume`, `create_volume`, `remove_volume`, `prune_volumes`
+- **Compose**: `compose_up`, `compose_down`, `compose_ps`, `compose_logs`, `compose_config`, `compose_restart`
 
-#### 🔄 Repository Operations
+```python
+# List running containers
+result = docker_operations("list_containers")
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `clone_repo` | Clone a Git repository | `repo_url`, `target_dir`, `branch`, `depth` |
-| `get_repo_status` | Get repository status | `repo_path` |
-| `commit_changes` | Commit changes to repository | `repo_path`, `message`, `add_all`, `paths` |
-| `read_repo` | Read repository structure | `repo_path`, `max_depth`, `include_files`, `include_dirs` |
+# Create and start a container
+result = docker_operations("create_container", image="nginx:latest", name="web", ports={"80/tcp": 8080})
+result = docker_operations("start_container", container_id="web")
+
+# Get container logs
+result = docker_operations("container_logs", container_id="web", tail=100)
+```
+
+#### 🔄 Repository Operations (portmanteau)
+
+**Unified Git tool** with 30+ operations:
+- **Basic**: `clone_repo`, `get_repo_status`, `commit_changes`, `read_repo`
+- **Branching**: `create_branch`, `switch_branch`, `merge_branch`, `delete_branch`, `list_branches`
+- **Remotes**: `push_changes`, `pull_changes`, `fetch_updates`, `list_remotes`, `add_remote`, `remove_remote`
+- **History**: `get_commit_history`, `show_commit`, `diff_changes`, `blame_file`, `get_file_history`
+- **Advanced**: `stash_changes`, `apply_stash`, `list_stashes`, `create_tag`, `list_tags`, `delete_tag`
+- **Operations**: `revert_commit`, `reset_to_commit`, `cherry_pick`, `rebase_branch`, `resolve_conflicts`
+
+```python
+# Clone a repository
+result = repository_operations("clone_repo", repo_url="https://github.com/user/repo.git", target_dir="./project")
+
+# Get repository status
+result = repository_operations("get_repo_status", repo_path="./project")
+
+# Commit changes
+result = repository_operations("commit_changes", repo_path="./project", message="Add new feature", add_all=True)
+```
 
 #### 🛠️ Developer Tools
 
@@ -323,43 +368,68 @@ symbols = developer_tool('find_symbols', pattern='auth', recursive=True)
 ```python
 from filesystem_mcp import app
 
-# Get a list of available tools
+# Get a list of available portmanteau tools
 tools = app.list_tools()
-print(f"Available tools: {', '.join(tools.keys())}")
+print(f"Available portmanteau tools: {', '.join(tools.keys())}")
 
-# Example: List running containers
+# Example: Filesystem operations
 try:
-    containers = tools["list_containers"]()
-    print(f"Running containers: {containers}")
+    # Read a file
+    result = tools["filesystem_operations"]("read_file", path="README.md")
+    print(f"File content: {result['content'][:200]}...")
+
+    # List directory contents
+    result = tools["filesystem_operations"]("list_directory", path=".", recursive=False)
+    print(f"Directory contents: {len(result['files'])} items")
+
+    # Search for Python files
+    result = tools["filesystem_operations"]("search_files", directory_path=".", pattern="*.py")
+    print(f"Found {result['total_matches']} Python files")
+
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Filesystem error: {e}")
 
-# Example: Create a new container
-container_config = {
-    "image": "nginx:latest",
-    "name": "my-nginx",
-    "ports": {"80/tcp": 8080},
-    "detach": True
-}
-container = tools["create_container"](**container_config)
-print(f"Created container: {container}")
-```
-
-### Example Usage
-
-```python
-from filesystem_mcp import app
-
-# Get a list of available tools
-tools = app.list_tools()
-print(f"Available tools: {', '.join(tools.keys())}")
-
-# Use a tool
+# Example: Docker operations
 try:
-    result = tools["read_file"]("README.md")
-    print(f"File content: {result[:200]}...")
+    # List running containers
+    result = tools["docker_operations"]("list_containers")
+    print(f"Running containers: {len(result['containers'])}")
+
+    # Get container details
+    if result['containers']:
+        container_id = result['containers'][0]['id']
+        details = tools["docker_operations"]("get_container", container_id=container_id)
+        print(f"Container {container_id}: {details['container']['status']}")
+
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Docker error: {e}")
+
+# Example: Repository operations
+try:
+    # Get repository status
+    result = tools["repository_operations"]("get_repo_status", repo_path=".")
+    print(f"Repository status: {result['is_dirty']} (ahead: {result['ahead']}, behind: {result['behind']})")
+
+    # List branches
+    result = tools["repository_operations"]("list_branches", repo_path=".")
+    print(f"Branches: {result['local_branches']}")
+
+except Exception as e:
+    print(f"Repository error: {e}")
+
+# Example: System operations
+try:
+    # Get system status
+    result = tools["system_operations"]("get_system_status", include_processes=True)
+    print(f"CPU usage: {result['cpu']['usage_percent']}%")
+    print(f"Memory usage: {result['memory']['percent']}%")
+
+    # Get help information
+    result = tools["system_operations"]("get_help", category="filesystem")
+    print(f"Available filesystem operations: {len(result.get('tools', {}))}")
+
+except Exception as e:
+    print(f"System error: {e}")
 ```
 
 ## 🏗️ Development

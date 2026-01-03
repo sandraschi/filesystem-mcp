@@ -336,3 +336,6 @@ cython_debug/
 *.swp
 *.swo
 *~
+
+# Private documentation (internal dev notes, not for public)
+docs-private/

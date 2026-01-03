@@ -1,0 +1,17 @@
+# Filesystem MCP - Cursor Ignore
+
+node_modules/
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+.idea/
+.vscode/
+.git/
+*.log
+

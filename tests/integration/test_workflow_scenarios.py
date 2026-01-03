@@ -4,14 +4,18 @@ Integration tests for complete workflow scenarios.
 Tests real workflows that combine multiple tools to accomplish tasks.
 """
 
-import pytest
 import asyncio
 import json
-from pathlib import Path
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from filesystem_mcp.tools.file_operations import read_file, write_file, list_directory, get_file_info
+import pytest
+from filesystem_mcp.tools.file_operations import (
+    get_file_info,
+    list_directory,
+    read_file,
+    write_file,
+)
 from filesystem_mcp.tools.repo_operations import clone_repo, get_repo_status
 from filesystem_mcp.tools.system_tools import get_help, get_system_status
 
@@ -47,9 +51,15 @@ description = "A sample project"
         # Create files
         result1 = await write_file.run({"file_path": str(src_dir / "__init__.py"), "content": ""})
         result2 = await write_file.run({"file_path": str(tests_dir / "__init__.py"), "content": ""})
-        result3 = await write_file.run({"file_path": str(docs_dir / "README.md"), "content": "Documentation"})
-        result4 = await write_file.run({"file_path": str(project_dir / "pyproject.toml"), "content": pyproject_content})
-        result5 = await write_file.run({"file_path": str(project_dir / "README.md"), "content": readme_content})
+        result3 = await write_file.run(
+            {"file_path": str(docs_dir / "README.md"), "content": "Documentation"}
+        )
+        result4 = await write_file.run(
+            {"file_path": str(project_dir / "pyproject.toml"), "content": pyproject_content}
+        )
+        result5 = await write_file.run(
+            {"file_path": str(project_dir / "README.md"), "content": readme_content}
+        )
 
         # Verify all operations succeeded
         assert result1["success"] is True
@@ -81,18 +91,33 @@ description = "A sample project"
         project_dir.mkdir()
 
         # Create various file types
-        await write_file.run({"file_path": str(project_dir / "main.py"), "content": "print('Hello, World!')"})
-        await write_file.run({"file_path": str(project_dir / "config.json"), "content": '{"debug": true, "port": 8080}'})
-        await write_file.run({"file_path": str(project_dir / "README.md"), "content": "# Analysis Project"})
-        await write_file.run({"file_path": str(project_dir / ".gitignore"), "content": "*.pyc\n__pycache__/"})
+        await write_file.run(
+            {"file_path": str(project_dir / "main.py"), "content": "print('Hello, World!')"}
+        )
+        await write_file.run(
+            {
+                "file_path": str(project_dir / "config.json"),
+                "content": '{"debug": true, "port": 8080}',
+            }
+        )
+        await write_file.run(
+            {"file_path": str(project_dir / "README.md"), "content": "# Analysis Project"}
+        )
+        await write_file.run(
+            {"file_path": str(project_dir / ".gitignore"), "content": "*.pyc\n__pycache__/"}
+        )
 
         # Create subdirectory
         src_dir = project_dir / "src"
         src_dir.mkdir()
-        await write_file.run({"file_path": str(src_dir / "utils.py"), "content": "def helper(): pass"})
+        await write_file.run(
+            {"file_path": str(src_dir / "utils.py"), "content": "def helper(): pass"}
+        )
 
         # Analyze the project
-        result = await list_directory.run({"directory_path": str(project_dir), "recursive": True, "include_hidden": True})
+        result = await list_directory.run(
+            {"directory_path": str(project_dir), "recursive": True, "include_hidden": True}
+        )
         data = parse_tool_result(result)
         assert "files" in data
 
@@ -117,7 +142,7 @@ class TestRepositoryWorkflow:
     """Test Git repository workflows."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.repo_operations.git.Repo.clone_from')
+    @patch("filesystem_mcp.tools.repo_operations.git.Repo.clone_from")
     async def test_repository_clone_and_analysis(self, mock_clone, temp_dir):
         """Test cloning a repository and analyzing it."""
         # Mock the repository clone
@@ -136,10 +161,9 @@ class TestRepositoryWorkflow:
         mock_clone.return_value = mock_repo
 
         # Clone repository
-        clone_result = await clone_repo.run({
-            "repo_url": "https://github.com/test/repo.git",
-            "target_dir": str(temp_dir / "repo")
-        })
+        clone_result = await clone_repo.run(
+            {"repo_url": "https://github.com/test/repo.git", "target_dir": str(temp_dir / "repo")}
+        )
         clone_data = parse_tool_result(clone_result)
         assert clone_data["success"] is True
 
@@ -176,8 +200,8 @@ class TestHelpAndStatusWorkflow:
         assert "parameters" in tool_help["data"]
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.system_tools.psutil')
-    @patch('filesystem_mcp.tools.system_tools.platform')
+    @patch("filesystem_mcp.tools.system_tools.psutil")
+    @patch("filesystem_mcp.tools.system_tools.platform")
     async def test_system_status_integration(self, mock_platform, mock_psutil):
         """Test system status with mocked dependencies."""
         # Mock system info
@@ -189,11 +213,7 @@ class TestHelpAndStatusWorkflow:
         mock_psutil.cpu_count.return_value = 8
         mock_psutil.cpu_percent.return_value = [45.0, 23.1, 67.8, 12.4, 89.0, 34.6, 56.7, 78.9]
         mock_psutil.virtual_memory.return_value = Mock(
-            total=17179869184,
-            available=8589934592,
-            percent=50.0,
-            used=8589934592,
-            free=4294967296
+            total=17179869184, available=8589934592, percent=50.0, used=8589934592, free=4294967296
         )
 
         # Get system status
@@ -249,8 +269,7 @@ class TestErrorHandlingWorkflow:
         (existing_dir / "file.txt").write_text("content")
 
         result = await clone_repo(
-            repo_url="https://github.com/test/repo.git",
-            target_dir=str(existing_dir)
+            repo_url="https://github.com/test/repo.git", target_dir=str(existing_dir)
         )
         assert result["success"] is False
         assert "not empty" in result["error"]
@@ -320,7 +339,7 @@ if __name__ == "__main__":
         await write_file(str(project_dir / "utils.py"), "def helper(): pass")
 
         # Create documentation
-        readme_content = f"""# Documented Project
+        readme_content = """# Documented Project
 
 This project contains the following files:
 

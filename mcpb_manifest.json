@@ -1,0 +1,321 @@
+{
+  "manifest_version": "0.2",
+  "name": "filesystem-mcp",
+  "version": "2.0.0",
+  "description": "Comprehensive file system operations, Git repository management, and Docker container management MCP server",
+  "author": {
+    "name": "Sandra Schi",
+    "email": "sandra@sandraschi.dev"
+  },
+  "homepage": "https://github.com/sandraschi/filesystem-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/filesystem-mcp"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "src/filesystem_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "filesystem_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "working_directory": {
+      "type": "string",
+      "title": "Working Directory",
+      "description": "Default working directory for file operations",
+      "default": "."
+    },
+    "max_file_size_mb": {
+      "type": "string",
+      "title": "Max File Size (MB)",
+      "description": "Maximum file size for operations in megabytes",
+      "default": "100"
+    },
+    "timeout_seconds": {
+      "type": "string",
+      "title": "Operation Timeout (seconds)",
+      "description": "Timeout for long-running operations",
+      "default": "30"
+    }
+  },
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read the contents of a file with proper error handling"
+    },
+    {
+      "name": "write_file",
+      "description": "Write content to a file with proper error handling and validation"
+    },
+    {
+      "name": "list_directory",
+      "description": "List contents of a directory with detailed metadata and filtering"
+    },
+    {
+      "name": "file_exists",
+      "description": "Check if a file or directory exists with detailed status information"
+    },
+    {
+      "name": "get_file_info",
+      "description": "Get detailed information about a file or directory"
+    },
+    {
+      "name": "head_file",
+      "description": "Read the first N lines of a file (head command equivalent)"
+    },
+    {
+      "name": "tail_file",
+      "description": "Read the last N lines of a file (tail command equivalent)"
+    },
+    {
+      "name": "grep_file",
+      "description": "Search for patterns in a file (grep equivalent)"
+    },
+    {
+      "name": "count_pattern",
+      "description": "Count occurrences of a pattern in a file"
+    },
+    {
+      "name": "extract_log_lines",
+      "description": "Extract and filter log lines from files"
+    },
+    {
+      "name": "edit_file",
+      "description": "Edit a file by replacing text content with comprehensive error handling"
+    },
+    {
+      "name": "read_multiple_files",
+      "description": "Read multiple files at once"
+    },
+    {
+      "name": "move_file",
+      "description": "Move or rename a file or directory"
+    },
+    {
+      "name": "read_file_lines",
+      "description": "Read specific lines from a text file"
+    },
+    {
+      "name": "search_files",
+      "description": "Search for files matching a pattern in a directory"
+    },
+    {
+      "name": "directory_tree",
+      "description": "Generate a visual directory tree structure"
+    },
+    {
+      "name": "calculate_directory_size",
+      "description": "Calculate the total size of a directory and all its contents"
+    },
+    {
+      "name": "find_duplicate_files",
+      "description": "Find duplicate files by comparing file contents using hashing"
+    },
+    {
+      "name": "find_large_files",
+      "description": "Find files larger than the specified size"
+    },
+    {
+      "name": "find_empty_directories",
+      "description": "Find empty directories in a directory tree"
+    },
+    {
+      "name": "compare_files",
+      "description": "Compare two text files and show differences"
+    },
+    {
+      "name": "create_directory",
+      "description": "Create a new directory with comprehensive error handling and validation"
+    },
+    {
+      "name": "remove_directory",
+      "description": "Remove a directory with comprehensive error handling and validation"
+    },
+    {
+      "name": "clone_repo",
+      "description": "Clone a Git repository to a local directory"
+    },
+    {
+      "name": "get_repo_status",
+      "description": "Get the current status of a Git repository"
+    },
+    {
+      "name": "list_branches",
+      "description": "List all branches in a Git repository"
+    },
+    {
+      "name": "commit_changes",
+      "description": "Commit changes to a Git repository"
+    },
+    {
+      "name": "read_repo",
+      "description": "Read files from a Git repository"
+    },
+    {
+      "name": "list_containers",
+      "description": "List Docker containers with detailed information and filtering options"
+    },
+    {
+      "name": "get_container",
+      "description": "Get detailed information about a specific Docker container"
+    },
+    {
+      "name": "create_container",
+      "description": "Create a new Docker container with custom configuration"
+    },
+    {
+      "name": "start_container",
+      "description": "Start a stopped Docker container"
+    },
+    {
+      "name": "stop_container",
+      "description": "Stop a running Docker container"
+    },
+    {
+      "name": "restart_container",
+      "description": "Restart a Docker container"
+    },
+    {
+      "name": "remove_container",
+      "description": "Remove a Docker container"
+    },
+    {
+      "name": "container_exec",
+      "description": "Execute a command inside a running Docker container"
+    },
+    {
+      "name": "container_logs",
+      "description": "Get logs from a Docker container"
+    },
+    {
+      "name": "container_stats",
+      "description": "Get real-time resource usage statistics for a container"
+    },
+    {
+      "name": "list_images",
+      "description": "List Docker images with detailed information and filtering options"
+    },
+    {
+      "name": "get_image",
+      "description": "Get detailed information about a specific Docker image"
+    },
+    {
+      "name": "pull_image",
+      "description": "Pull a Docker image from a registry"
+    },
+    {
+      "name": "build_image",
+      "description": "Build a Docker image from a Dockerfile"
+    },
+    {
+      "name": "remove_image",
+      "description": "Remove a Docker image"
+    },
+    {
+      "name": "prune_images",
+      "description": "Prune unused Docker images"
+    },
+    {
+      "name": "list_networks",
+      "description": "List Docker networks with detailed information and filtering options"
+    },
+    {
+      "name": "get_network",
+      "description": "Get detailed information about a specific Docker network"
+    },
+    {
+      "name": "create_network",
+      "description": "Create a new Docker network with custom configuration"
+    },
+    {
+      "name": "remove_network",
+      "description": "Remove a Docker network"
+    },
+    {
+      "name": "prune_networks",
+      "description": "Prune unused Docker networks"
+    },
+    {
+      "name": "list_volumes",
+      "description": "List Docker volumes with detailed information and filtering options"
+    },
+    {
+      "name": "get_volume",
+      "description": "Get detailed information about a specific Docker volume"
+    },
+    {
+      "name": "create_volume",
+      "description": "Create a new Docker volume with custom configuration"
+    },
+    {
+      "name": "remove_volume",
+      "description": "Remove a Docker volume"
+    },
+    {
+      "name": "prune_volumes",
+      "description": "Prune unused Docker volumes"
+    },
+    {
+      "name": "compose_up",
+      "description": "Start Docker Compose services"
+    },
+    {
+      "name": "compose_down",
+      "description": "Stop and remove Docker Compose services"
+    },
+    {
+      "name": "compose_ps",
+      "description": "List Docker Compose containers"
+    },
+    {
+      "name": "compose_logs",
+      "description": "Get logs from Docker Compose services"
+    },
+    {
+      "name": "compose_config",
+      "description": "Validate and view Docker Compose configuration"
+    },
+    {
+      "name": "compose_restart",
+      "description": "Restart Docker Compose services"
+    },
+    {
+      "name": "get_system_info",
+      "description": "Get comprehensive system information"
+    },
+    {
+      "name": "list_processes",
+      "description": "List running processes with detailed information"
+    },
+    {
+      "name": "get_process_info",
+      "description": "Get detailed information about a specific process"
+    },
+    {
+      "name": "kill_process",
+      "description": "Terminate a running process"
+    },
+    {
+      "name": "get_disk_usage",
+      "description": "Get disk usage information for the system"
+    },
+    {
+      "name": "get_memory_usage",
+      "description": "Get memory usage information for the system"
+    },
+    {
+      "name": "get_network_stats",
+      "description": "Get network statistics and interface information"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python": ">=3.9.0"
+  }
+}

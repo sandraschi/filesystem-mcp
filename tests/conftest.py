@@ -4,11 +4,13 @@ Pytest configuration and fixtures for filesystem-mcp tests.
 This file contains shared fixtures and configuration for all tests.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
+
+import pytest
+
 
 @pytest.fixture(scope="session")
 def temp_dir() -> Generator[Path, None, None]:
@@ -17,12 +19,14 @@ def temp_dir() -> Generator[Path, None, None]:
     yield temp_path
     shutil.rmtree(temp_path, ignore_errors=True)
 
+
 @pytest.fixture
 def temp_file(temp_dir: Path) -> Generator[Path, None, None]:
     """Create a temporary file for testing."""
     file_path = temp_dir / "test_file.txt"
     file_path.write_text("Test content")
     yield file_path
+
 
 @pytest.fixture
 def temp_repo(temp_dir: Path) -> Generator[Path, None, None]:

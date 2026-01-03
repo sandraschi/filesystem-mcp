@@ -4,23 +4,19 @@ Unit tests for file operations.
 Tests read_file, write_file, list_directory, file_exists, and get_file_info functions.
 """
 
-import pytest
-import asyncio
-import tempfile
 import json
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
 
+import pytest
+from filesystem_mcp.tools.file_operations import _edit_file_plain as edit_file
 from filesystem_mcp.tools.file_operations import (
-    read_file,
-    write_file,
-    list_directory,
+    _get_file_permissions,
+    _safe_resolve_path,
     file_exists,
     get_file_info,
-    _edit_file_plain as edit_file,
-    _get_file_permissions,
-    _safe_resolve_path
+    list_directory,
+    read_file,
+    write_file,
 )
 
 
@@ -60,7 +56,9 @@ class TestSafeResolvePath:
         test_file.write_text("content")
 
         # Try to access via traversal
-        traversal_path = str(temp_dir / "nested" / "deep" / ".." / ".." / ".." / "nested" / "deep" / "test.txt")
+        traversal_path = str(
+            temp_dir / "nested" / "deep" / ".." / ".." / ".." / "nested" / "deep" / "test.txt"
+        )
         resolved = _safe_resolve_path(traversal_path)
         assert resolved == test_file.resolve()
 
@@ -142,7 +140,7 @@ class TestReadFile:
     async def test_read_file_encoding_error(self, temp_file):
         """Test reading a file with encoding issues."""
         # Write binary data
-        temp_file.write_bytes(b'\xff\xfe\xfd')
+        temp_file.write_bytes(b"\xff\xfe\xfd")
 
         result = await read_file.run({"file_path": str(temp_file)})
 
@@ -173,11 +171,9 @@ class TestWriteFile:
         nested_path = temp_dir / "nested" / "dirs" / "file.txt"
         content = "Nested content"
 
-        result = await write_file.run({
-            "path": str(nested_path),
-            "content": content,
-            "create_parents": True
-        })
+        result = await write_file.run(
+            {"path": str(nested_path), "content": content, "create_parents": True}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -190,11 +186,9 @@ class TestWriteFile:
         nested_path = temp_dir / "nested" / "dirs" / "file.txt"
         content = "Nested content"
 
-        result = await write_file.run({
-            "path": str(nested_path),
-            "content": content,
-            "create_parents": False
-        })
+        result = await write_file.run(
+            {"path": str(nested_path), "content": content, "create_parents": False}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is False
@@ -233,10 +227,7 @@ class TestListDirectory:
         nested.mkdir()
         (nested / "file3.txt").write_text("content3")
 
-        result = await list_directory.run({
-            "directory_path": str(temp_dir),
-            "recursive": True
-        })
+        result = await list_directory.run({"directory_path": str(temp_dir), "recursive": True})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -249,19 +240,15 @@ class TestListDirectory:
         (temp_dir / ".hidden.txt").write_text("hidden")
 
         # Test without hidden files
-        result = await list_directory.run({
-            "directory_path": str(temp_dir),
-            "include_hidden": False
-        })
+        result = await list_directory.run(
+            {"directory_path": str(temp_dir), "include_hidden": False}
+        )
         data = parse_tool_result(result)
         assert data["success"] is True
         assert len(data["items"]) == 1
 
         # Test with hidden files
-        result = await list_directory.run({
-            "directory_path": str(temp_dir),
-            "include_hidden": True
-        })
+        result = await list_directory.run({"directory_path": str(temp_dir), "include_hidden": True})
         data = parse_tool_result(result)
         assert data["success"] is True
         assert len(data["items"]) == 2
@@ -330,10 +317,7 @@ class TestGetFileInfo:
     @pytest.mark.asyncio
     async def test_get_file_info_with_content(self, temp_file):
         """Test getting file info with content."""
-        result = await get_file_info.run({
-            "path": str(temp_file),
-            "include_content": True
-        })
+        result = await get_file_info.run({"path": str(temp_file), "include_content": True})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -347,10 +331,7 @@ class TestGetFileInfo:
         large_content = "x" * (1024 * 1024 + 100)  # Over 1MB
         temp_file.write_text(large_content)
 
-        result = await get_file_info.run({
-            "path": str(temp_file),
-            "include_content": True
-        })
+        result = await get_file_info.run({"path": str(temp_file), "include_content": True})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -459,7 +440,7 @@ class TestEditFile:
     async def test_edit_file_binary_content(self, temp_file):
         """Test attempting to edit a binary file."""
         # Write binary data
-        temp_file.write_bytes(b'\xff\xfe\xfd\xfc')
+        temp_file.write_bytes(b"\xff\xfe\xfd\xfc")
 
         result = await edit_file(str(temp_file), "old", "new")
 
@@ -476,7 +457,7 @@ class TestEditFile:
 
         assert result["success"] is True
         # Backup should be cleaned up after successful edit
-        backup_path = temp_file.with_suffix(temp_file.suffix + '.backup')
+        backup_path = temp_file.with_suffix(temp_file.suffix + ".backup")
         assert not backup_path.exists()  # Should be cleaned up
 
     @pytest.mark.asyncio

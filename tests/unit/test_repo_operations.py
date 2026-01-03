@@ -5,24 +5,23 @@ Tests Git repository management functionality including cloning,
 status checking, branch operations, and committing changes.
 """
 
-import pytest
-import os
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
 
 from filesystem_mcp.tools.repo_operations import (
     clone_repo,
+    commit_changes,
     get_repo_status,
     list_branches,
-    commit_changes,
-    read_repo
 )
 
 
 def parse_tool_result(result):
     """Parse the JSON content from a ToolResult."""
     import json
+
     return json.loads(result.content[0].text)
 
 
@@ -34,7 +33,7 @@ class TestCloneRepo:
         """Test successful repository cloning."""
         target_dir = temp_dir / "cloned_repo"
 
-        with patch('filesystem_mcp.tools.repo_operations.git.Repo.clone_from') as mock_clone:
+        with patch("filesystem_mcp.tools.repo_operations.git.Repo.clone_from") as mock_clone:
             # Mock the cloned repository
             mock_repo = Mock()
             mock_repo.head.is_valid.return_value = True
@@ -51,10 +50,9 @@ class TestCloneRepo:
 
             mock_clone.return_value = mock_repo
 
-            result = await clone_repo.run({
-                "repo_url": "https://github.com/test/repo.git",
-                "target_dir": str(target_dir)
-            })
+            result = await clone_repo.run(
+                {"repo_url": "https://github.com/test/repo.git", "target_dir": str(target_dir)}
+            )
 
             data = parse_tool_result(result)
             assert data["success"] is True
@@ -70,10 +68,9 @@ class TestCloneRepo:
         target_dir.mkdir()
         (target_dir / "existing_file.txt").write_text("existing")
 
-        result = await clone_repo.run({
-            "repo_url": "https://github.com/test/repo.git",
-            "target_dir": str(target_dir)
-        })
+        result = await clone_repo.run(
+            {"repo_url": "https://github.com/test/repo.git", "target_dir": str(target_dir)}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is False
@@ -156,11 +153,9 @@ class TestCommitChanges:
         repo = git.Repo(temp_repo)
         repo.index.add([str(test_file.relative_to(temp_repo))])
 
-        result = await commit_changes.run({
-            "repo_path": str(temp_repo),
-            "message": "Test commit",
-            "add_all": False
-        })
+        result = await commit_changes.run(
+            {"repo_path": str(temp_repo), "message": "Test commit", "add_all": False}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -169,10 +164,7 @@ class TestCommitChanges:
     @pytest.mark.asyncio
     async def test_commit_changes_no_changes(self, temp_repo):
         """Test committing when there are no changes."""
-        result = await commit_changes.run({
-            "repo_path": str(temp_repo),
-            "message": "Empty commit"
-        })
+        result = await commit_changes.run({"repo_path": str(temp_repo), "message": "Empty commit"})
 
         data = parse_tool_result(result)
         assert data["success"] is False

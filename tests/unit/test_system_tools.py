@@ -4,15 +4,11 @@ Unit tests for system tools.
 Tests help system and status reporting functions.
 """
 
-import pytest
-import asyncio
 import json
-from unittest.mock import Mock, patch, MagicMock
 
-from filesystem_mcp.tools.system_tools import (
-    get_help,
-    get_system_status
-)
+import pytest
+
+from filesystem_mcp.tools.system_tools import get_help, get_system_status
 
 
 def parse_tool_result(result):
@@ -47,10 +43,7 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_tool(self):
         """Test getting help for a specific tool."""
-        result = await get_help.run({
-            "category": "file_operations",
-            "tool_name": "read_file"
-        })
+        result = await get_help.run({"category": "file_operations", "tool_name": "read_file"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -72,10 +65,7 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_invalid_tool(self):
         """Test getting help for invalid tool in valid category."""
-        result = await get_help.run({
-            "category": "file_operations",
-            "tool_name": "invalid_tool"
-        })
+        result = await get_help.run({"category": "file_operations", "tool_name": "invalid_tool"})
 
         data = parse_tool_result(result)
         assert data["success"] is False

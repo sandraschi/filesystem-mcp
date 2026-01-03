@@ -1,12 +1,12 @@
 {
   "name": "filesystem-mcp",
   "version": "2.0.0",
-  "description": "DXT build configuration for filesystem-mcp - FastMCP 2.12 compliant",
-  "author": "Sandra Schimanovich <sandra@sandraschi.dev>",
+  "description": "DXT build configuration for filesystem-mcp - FastMCP 2.14.1 compliant",
+  "author": "Sandra Schi <sandra@sandraschi.dev>",
   "license": "MIT",
   "outputDir": "dist",
   "mcp": {
-    "version": "2.12.0",
+    "version": "2.14.1",
     "server": {
       "command": "python",
       "args": ["-m", "filesystem_mcp"],

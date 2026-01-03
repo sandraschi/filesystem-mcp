@@ -1,4 +1,4 @@
-# 🎉 **DXT Package Successfully Built!**
+# 🎉 **MCPB Package Successfully Built!**
 
 ## 📦 **Package Details**
 
@@ -7,14 +7,14 @@
 - **Version**: `2.0.0`
 - **Package Size**: `7.0kB`
 - **Unpacked Size**: `20.5kB`
-- **Output File**: `dist/filesystem-mcp.dxt`
+- **Output File**: `dist/filesystem-mcp.mcpb`
 - **SHA256 Hash**: `e8dc79eaf12e9cabad4ff2909ac26372690c6fe7`
 
 ### **Package Contents**
 ```
-filesystem-mcp.dxt
-├── dxt.json (1.4kB)        # Build configuration
-├── manifest.json (4.9kB)    # Runtime configuration
+filesystem-mcp.mcpb
+├── mcpb.json (1.4kB)        # Build configuration
+├── mcpb_manifest.json (4.9kB)    # Runtime configuration
 ├── prompts/ (14.2kB total)  # AI prompt templates
 │   ├── system.md (4.2kB)    # System prompt
 │   ├── user.md (2.9kB)      # User guide

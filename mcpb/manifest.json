@@ -1,0 +1,63 @@
+{
+  "name": "filesystem-mcp",
+  "version": "1.0.0",
+  "description": "Comprehensive file system operations, Git repository management, and Docker container management MCP server with enterprise-grade security and Austrian precision",
+  "author": "Sandra Schi",
+  "license": "MIT",
+  "homepage": "https://github.com/sandraschi/filesystem-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/filesystem-mcp"
+  },
+  "main": "server/server.py",
+  "mcp": {
+    "version": "1.0",
+    "capabilities": ["tools"],
+    "prompts": {
+      "system": "assets/prompts/system.md",
+      "file_operations": "assets/prompts/file_operations.md",
+      "git_workflows": "assets/prompts/git_workflows.md",
+      "docker_management": "assets/prompts/docker_management.md",
+      "security_permissions": "assets/prompts/security_permissions.md",
+      "troubleshooting": "assets/prompts/troubleshooting.md"
+    }
+  },
+  "runtime": {
+    "python": ">=3.9"
+  },
+  "dependencies": {
+    "fastmcp": ">=2.14.1,<3.0.0",
+    "pydantic": ">=2.0.0",
+    "docker": ">=6.0.0",
+    "gitpython": ">=3.1.0"
+  },
+  "features": [
+    "File system operations (read, write, list, manage)",
+    "Directory scanning (recursive, configurable depth)",
+    "File metadata and analysis",
+    "Git repository management (clone, commit, status, branches)",
+    "Docker container operations (create, start, stop, exec)",
+    "Docker image management (pull, build, remove)",
+    "Docker networking and volumes",
+    "Docker Compose support (deploy, scale, logs)",
+    "Enterprise-grade security",
+    "Comprehensive error handling",
+    "Extensive test coverage",
+    "FastMCP 2.12+ compliance",
+    "Austrian engineering quality"
+  ],
+  "keywords": [
+    "filesystem",
+    "files",
+    "directories",
+    "git",
+    "docker",
+    "containers",
+    "devops",
+    "automation",
+    "fastmcp",
+    "mcp-server",
+    "austria"
+  ]
+}
+

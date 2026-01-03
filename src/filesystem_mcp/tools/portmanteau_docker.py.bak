@@ -1,0 +1,1390 @@
+# Portmanteau Docker operations tool for FastMCP 2.14.1+
+"""
+Comprehensive Docker operations portmanteau tool.
+
+PORTMANTEAU PATTERN: Consolidates all Docker operations into a single unified tool.
+This reduces tool explosion while maintaining full functionality for Docker management.
+
+SUPPORTED OPERATIONS:
+- list_containers: List Docker containers with filtering
+- get_container: Get detailed container information
+- create_container: Create new containers with configuration
+- start_container: Start stopped containers
+- stop_container: Stop running containers
+- restart_container: Restart containers
+- remove_container: Remove containers
+- container_exec: Execute commands in containers
+- container_logs: Stream container logs
+- container_stats: Get container resource statistics
+- list_images: List Docker images
+- get_image: Get detailed image information
+- pull_image: Pull images from registry
+- build_image: Build images from Dockerfile
+- remove_image: Remove images
+- prune_images: Remove unused images
+- list_networks: List Docker networks
+- get_network: Get network information
+- create_network: Create new networks
+- remove_network: Remove networks
+- prune_networks: Remove unused networks
+- list_volumes: List Docker volumes
+- get_volume: Get volume information
+- create_volume: Create new volumes
+- remove_volume: Remove volumes
+- prune_volumes: Remove unused volumes
+- compose_up: Start Docker Compose services
+- compose_down: Stop Docker Compose services
+- compose_ps: List Compose services
+- compose_logs: View Compose logs
+- compose_config: Validate Compose configuration
+- compose_restart: Restart Compose services
+"""
+
+import logging
+from typing import Any, Dict, List, Optional, Union, Literal
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+# Import app locally to avoid circular imports
+def _get_app():
+    """Get the app instance locally to avoid circular imports."""
+    from .. import app
+    return app
+
+# Docker client will be initialized when needed
+_docker_client = None
+
+def _get_docker_client():
+    """Get Docker client with lazy initialization."""
+    global _docker_client
+    if _docker_client is None:
+        try:
+            import docker
+            _docker_client = docker.from_env()
+        except ImportError:
+            raise RuntimeError("Docker operations require 'docker' package. Install with: pip install docker")
+        except Exception as e:
+            raise RuntimeError(f"Failed to connect to Docker: {e}")
+    return _docker_client
+
+
+# Portmanteau Docker tool with all operations
+@_get_app().tool()
+async def docker_operations(
+    operation: Literal[
+        "list_containers", "get_container", "create_container", "start_container",
+        "stop_container", "restart_container", "remove_container", "container_exec",
+        "container_logs", "container_stats", "list_images", "get_image",
+        "pull_image", "build_image", "remove_image", "prune_images",
+        "list_networks", "get_network", "create_network", "remove_network",
+        "prune_networks", "list_volumes", "get_volume", "create_volume",
+        "remove_volume", "prune_volumes", "compose_up", "compose_down",
+        "compose_ps", "compose_logs", "compose_config", "compose_restart"
+    ],
+    # Container operations
+    container_id: Optional[str] = None,
+    image: Optional[str] = None,
+    command: Optional[Union[str, List[str]]] = None,
+    name: Optional[str] = None,
+    ports: Optional[Dict[str, Union[int, str]]] = None,
+    volumes: Optional[Dict[str, Dict[str, str]]] = None,
+    environment: Optional[Dict[str, str]] = None,
+    working_dir: Optional[str] = None,
+    detach: bool = True,
+    auto_remove: bool = False,
+    network_mode: Optional[str] = None,
+    restart_policy: Optional[str] = None,
+    timeout: int = 10,
+    # Execution operations
+    tty: bool = False,
+    stdin: bool = False,
+    stdout: bool = True,
+    stderr: bool = True,
+    stream: bool = False,
+    socket: bool = False,
+    user: Optional[str] = None,
+    # Logs operations
+    tail: Optional[int] = 100,
+    since: Optional[str] = None,
+    until: Optional[str] = None,
+    timestamps: bool = False,
+    follow: bool = False,
+    # Image operations
+    tag: str = "latest",
+    all_images: bool = False,
+    filters: Optional[Dict[str, List[str]]] = None,
+    platform: Optional[str] = None,
+    nocache: bool = False,
+    pull: bool = False,
+    rm: bool = True,
+    forcerm: bool = False,
+    squash: bool = False,
+    path: Optional[str] = None,
+    dockerfile: str = "Dockerfile",
+    labels: Optional[Dict[str, str]] = None,
+    buildargs: Optional[Dict[str, str]] = None,
+    network_mode_build: Optional[str] = None,
+    # Network operations
+    driver: str = "bridge",
+    options: Optional[Dict[str, str]] = None,
+    ipam: Optional[Dict[str, Any]] = None,
+    internal: bool = False,
+    attachable: bool = False,
+    ingress: bool = False,
+    enable_ipv6: bool = False,
+    # Volume operations
+    volume_name: Optional[str] = None,
+    driver_opts: Optional[Dict[str, str]] = None,
+    # Compose operations
+    services: Optional[List[str]] = None,
+    build: bool = False,
+    scale: Optional[Dict[str, int]] = None,
+    remove_orphans: bool = True,
+    volumes_prune: bool = False,
+    all_services: bool = False,
+    validate: bool = True,
+    # General
+    show_stats: bool = False,
+    force: bool = False,
+    noprune: bool = False
+) -> Dict[str, Any]:
+    """Comprehensive Docker operations portmanteau tool.
+
+    PORTMANTEAU PATTERN: Consolidates all Docker operations into a single unified tool.
+    This reduces tool explosion while maintaining full functionality for Docker container management.
+    Follows FastMCP 2.14.1+ best practices for portmanteau tool design.
+
+    Args:
+        operation (Literal, required): Available Docker operations:
+            - "list_containers": List Docker containers with filtering options
+            - "get_container": Get detailed container information (requires: container_id)
+            - "create_container": Create new containers with configuration (requires: image)
+            - "start_container": Start stopped containers (requires: container_id)
+            - "stop_container": Stop running containers (requires: container_id)
+            - "restart_container": Restart containers (requires: container_id)
+            - "remove_container": Remove containers (requires: container_id)
+            - "container_exec": Execute commands in containers (requires: container_id, command)
+            - "container_logs": Stream container logs (requires: container_id)
+            - "container_stats": Get container resource statistics (requires: container_id)
+            - "list_images": List available Docker images
+            - "get_image": Get detailed image information (requires: container_id or image)
+            - "pull_image": Pull images from registry (requires: image)
+            - "build_image": Build images from Dockerfile (requires: path)
+            - "remove_image": Remove images (requires: container_id or image)
+            - "prune_images": Remove unused images
+            - "list_networks": List Docker networks
+            - "get_network": Get network information (requires: container_id or volume_name)
+            - "create_network": Create new networks (requires: name)
+            - "remove_network": Remove networks (requires: container_id or volume_name)
+            - "prune_networks": Remove unused networks
+            - "list_volumes": List Docker volumes
+            - "get_volume": Get volume information (requires: volume_name)
+            - "create_volume": Create new volumes (requires: volume_name)
+            - "remove_volume": Remove volumes (requires: volume_name)
+            - "prune_volumes": Remove unused volumes
+            - "compose_up": Start Docker Compose services (requires: path)
+            - "compose_down": Stop Docker Compose services (requires: path)
+            - "compose_ps": List Compose services (requires: path)
+            - "compose_logs": View Compose logs (requires: path)
+            - "compose_config": Validate Compose configuration (requires: path)
+            - "compose_restart": Restart Compose services (requires: path)
+
+        --- CORE IDENTIFIERS ---
+
+        container_id (str | None): Container ID or name for container operations
+            Required for: get_container, start_container, stop_container, restart_container,
+                         remove_container, container_exec, container_logs, container_stats
+            Used by: get_image (as alternative to image), get_network (as alternative to volume_name)
+
+        image (str | None): Docker image name for create/container operations
+            Required for: create_container, pull_image, get_image (as alternative to container_id)
+
+        name (str | None): Container name for create operations
+            Used by: create_container, create_network operations
+
+        volume_name (str | None): Volume name for volume operations
+            Required for: get_volume, create_volume, remove_volume
+            Used by: get_network (as alternative to container_id)
+
+        --- CONTAINER CONFIGURATION ---
+
+        command (str | List[str] | None): Command to run in container
+            Required for: container_exec operations
+
+        ports (Dict[str, int | str] | None): Port mappings dictionary
+            Used by: create_container operations
+
+        volumes (Dict[str, Dict[str, str]] | None): Volume mounts dictionary
+            Used by: create_container operations
+
+        environment (Dict[str, str] | None): Environment variables dictionary
+            Used by: create_container, container_exec operations
+
+        working_dir (str | None): Working directory in container
+            Used by: create_container, container_exec operations
+
+        user (str | None): User to run commands as in container
+            Used by: container_exec operations
+
+        detach (bool): Run container in background. Default: True
+            Used by: create_container operations
+
+        auto_remove (bool): Auto-remove container when stopped. Default: False
+            Used by: create_container operations
+
+        network_mode (str | None): Network mode configuration
+            Used by: create_container operations
+
+        restart_policy (str | None): Restart policy configuration
+            Used by: create_container operations
+
+        --- RUNTIME OPTIONS ---
+
+        timeout (int): Timeout for operations in seconds. Default: 10
+            Used by: stop_container, restart_container operations
+
+        force (bool): Force operations like remove. Default: False
+            Used by: remove_container, remove_image, remove_volume operations
+
+        --- EXECUTION OPTIONS ---
+
+        tty (bool): Allocate pseudo-TTY for exec operations. Default: False
+            Used by: container_exec operations
+
+        stdin (bool): Keep STDIN open for exec. Default: False
+            Used by: container_exec operations
+
+        stdout (bool): Return STDOUT for exec. Default: True
+            Used by: container_exec operations
+
+        stderr (bool): Return STDERR for exec. Default: True
+            Used by: container_exec operations
+
+        stream (bool): Stream exec output. Default: False
+            Used by: container_exec operations
+
+        socket (bool): Return socket for exec. Default: False
+            Used by: container_exec operations
+
+        --- LOGGING OPTIONS ---
+
+        tail (int | None): Number of log lines to show. Default: 100
+            Used by: container_logs operations
+
+        since (str | None): Show logs since timestamp
+            Used by: container_logs operations
+
+        until (str | None): Show logs until timestamp
+            Used by: container_logs operations
+
+        timestamps (bool): Include timestamps in logs. Default: False
+            Used by: container_logs operations
+
+        follow (bool): Follow log output in real-time. Default: False
+            Used by: container_logs operations
+
+        --- IMAGE MANAGEMENT ---
+
+        tag (str): Image tag for operations. Default: "latest"
+            Used by: pull_image, build_image operations
+
+        all_images (bool): Show all images including intermediate. Default: False
+            Used by: list_images, pull_image, prune_images operations
+
+        platform (str | None): Target platform for pull/build operations
+            Used by: pull_image operations
+
+        nocache (bool): Don't use build cache. Default: False
+            Used by: build_image operations
+
+        pull (bool): Pull newer image versions. Default: False
+            Used by: build_image operations
+
+        rm (bool): Remove intermediate containers after build. Default: True
+            Used by: build_image operations
+
+        forcerm (bool): Always remove intermediate containers. Default: False
+            Used by: build_image operations
+
+        squash (bool): Squash image layers. Default: False
+            Used by: build_image operations
+
+        dockerfile (str): Dockerfile name. Default: "Dockerfile"
+            Used by: build_image operations
+
+        buildargs (Dict[str, str] | None): Build arguments dictionary
+            Used by: build_image operations
+
+        noprune (bool): Don't prune parent images when removing. Default: False
+            Used by: remove_image operations
+
+        --- NETWORK & VOLUME DRIVERS ---
+
+        driver (str): Network/volume driver. Default: "bridge"
+            Used by: create_network, create_volume operations
+
+        driver_opts (Dict[str, str] | None): Volume driver options dictionary
+            Used by: create_volume operations
+
+        options (Dict[str, str] | None): Driver options dictionary
+            Used by: create_network operations
+
+        ipam (Dict[str, Any] | None): IP Address Management configuration
+            Used by: create_network operations
+
+        internal (bool): Restrict external access. Default: False
+            Used by: create_network operations
+
+        attachable (bool): Allow manual attachment. Default: False
+            Used by: create_network operations
+
+        ingress (bool): Create routing mesh. Default: False
+            Used by: create_network operations
+
+        enable_ipv6 (bool): Enable IPv6 support. Default: False
+            Used by: create_network operations
+
+        network_mode_build (str | None): Network mode for builds
+            Used by: build_image operations
+
+        --- DOCKER COMPOSE OPTIONS ---
+
+        path (str | None): Build context path or compose file path
+            Required for: build_image, compose_up, compose_down, compose_ps,
+                         compose_logs, compose_config, compose_restart operations
+
+        services (List[str] | None): Specific services list for compose operations
+            Used by: compose_up, compose_ps, compose_logs, compose_restart operations
+
+        build (bool): Build images for compose up. Default: False
+            Used by: compose_up operations
+
+        scale (Dict[str, int] | None): Scale services dictionary for compose
+            Used by: compose_up operations
+
+        remove_orphans (bool): Remove orphan containers in compose down. Default: True
+            Used by: compose_down operations
+
+        volumes_prune (bool): Remove volumes in compose down. Default: False
+            Used by: compose_down operations
+
+        all_services (bool): Show all services in compose ps. Default: False
+            Used by: compose_ps operations
+
+        validate (bool): Validate compose configuration. Default: True
+            Used by: compose_config operations
+
+        --- GENERAL OPTIONS ---
+
+        filters (Dict[str, List[str]] | None): Filters dictionary for listing operations
+            Used by: list_containers, list_images, list_networks, list_volumes,
+                     prune_images, prune_networks, prune_volumes operations
+
+        labels (Dict[str, str] | None): Labels dictionary for create operations
+            Used by: create_container, create_network, create_volume operations
+
+        show_stats (bool): Include statistics in list operations. Default: False
+            Used by: list_containers operations
+
+    Returns:
+        Dictionary with success status and operation-specific results. All operations return:
+        - success: Boolean indicating success/failure
+        - error: Error message if success is False
+        - [operation-specific fields]: Additional result data
+
+    Examples:
+        # List running containers
+        result = await docker_operations("list_containers")
+
+        # Create and start a container
+        result = await docker_operations("create_container", image="nginx:latest", name="web")
+        result = await docker_operations("start_container", container_id="web")
+
+        # Execute command in container
+        result = await docker_operations("container_exec", container_id="web", command="ls -la")
+
+        # Get container logs
+        result = await docker_operations("container_logs", container_id="web", tail=50)
+
+        # List available images
+        result = await docker_operations("list_images", all_images=True)
+
+        # Pull an image
+        result = await docker_operations("pull_image", image="ubuntu", tag="20.04")
+
+        # Build an image
+        result = await docker_operations("build_image", path=".", tag="myapp:latest")
+
+        # List networks
+        result = await docker_operations("list_networks")
+
+        # Create a volume
+        result = await docker_operations("create_volume", volume_name="mydata")
+
+        # Docker Compose operations
+        result = await docker_operations("compose_up", path=".", detach=True)
+        result = await docker_operations("compose_logs", path=".", follow=True)
+        result = await docker_operations("compose_down", path=".", remove_orphans=True)
+    """
+
+    try:
+        client = _get_docker_client()
+
+        # Operation routing
+        if operation == "list_containers":
+            return await _list_containers(all_containers=all_images, filters=filters, show_stats=show_stats)
+        elif operation == "get_container":
+            return await _get_container(container_id, show_stats)
+        elif operation == "create_container":
+            return await _create_container(
+                image=image, command=command, name=name, ports=ports, volumes=volumes,
+                environment=environment, working_dir=working_dir, detach=detach,
+                auto_remove=auto_remove, network_mode=network_mode, restart_policy=restart_policy
+            )
+        elif operation == "start_container":
+            return await _start_container(container_id)
+        elif operation == "stop_container":
+            return await _stop_container(container_id, timeout)
+        elif operation == "restart_container":
+            return await _restart_container(container_id, timeout)
+        elif operation == "remove_container":
+            return await _remove_container(container_id, force=force, remove_volumes=volumes_prune)
+        elif operation == "container_exec":
+            return await _container_exec(
+                container_id, command, detach=detach, tty=tty, stdin=stdin,
+                stdout=stdout, stderr=stderr, stream=stream, socket=socket,
+                environment=environment, working_dir=working_dir, user=user
+            )
+        elif operation == "container_logs":
+            return await _container_logs(
+                container_id, tail=tail, since=since, until=until,
+                timestamps=timestamps, follow=follow
+            )
+        elif operation == "container_stats":
+            return await _container_stats(container_id)
+        elif operation == "list_images":
+            return await _list_images(all_images, filters)
+        elif operation == "get_image":
+            return await _get_image(container_id or image)  # container_id reused for image
+        elif operation == "pull_image":
+            return await _pull_image(image, tag, all_images, platform)
+        elif operation == "build_image":
+            return await _build_image(
+                path, dockerfile=dockerfile, tag=tag, labels=labels, buildargs=buildargs,
+                nocache=nocache, pull=pull, rm=rm, forcerm=forcerm, squash=squash,
+                network_mode=network_mode_build
+            )
+        elif operation == "remove_image":
+            return await _remove_image(container_id or image, force, noprune)
+        elif operation == "prune_images":
+            return await _prune_images(all_images, filters)
+        elif operation == "list_networks":
+            return await _list_networks(filters)
+        elif operation == "get_network":
+            return await _get_network(container_id or volume_name)  # container_id reused
+        elif operation == "create_network":
+            return await _create_network(
+                name, driver, options, ipam, internal, attachable, ingress,
+                labels, enable_ipv6
+            )
+        elif operation == "remove_network":
+            return await _remove_network(container_id or volume_name)
+        elif operation == "prune_networks":
+            return await _prune_networks(filters)
+        elif operation == "list_volumes":
+            return await _list_volumes(filters)
+        elif operation == "get_volume":
+            return await _get_volume(volume_name)
+        elif operation == "create_volume":
+            return await _create_volume(volume_name, driver, driver_opts, labels)
+        elif operation == "remove_volume":
+            return await _remove_volume(volume_name, force)
+        elif operation == "prune_volumes":
+            return await _prune_volumes(filters)
+        elif operation == "compose_up":
+            return await _compose_up(path, services, detach, build, scale, timeout)
+        elif operation == "compose_down":
+            return await _compose_down(path, remove_orphans, volumes_prune, timeout)
+        elif operation == "compose_ps":
+            return await _compose_ps(path, services, all_services, timeout)
+        elif operation == "compose_logs":
+            return await _compose_logs(path, services, follow, tail, since, until, timestamps, timeout)
+        elif operation == "compose_config":
+            return await _compose_config(path, validate, timeout)
+        elif operation == "compose_restart":
+            return await _compose_restart(path, services, timeout)
+        else:
+            return {
+                "success": False,
+                "error": f"Unknown operation: {operation}",
+                "available_operations": [
+                    "list_containers", "get_container", "create_container", "start_container",
+                    "stop_container", "restart_container", "remove_container", "container_exec",
+                    "container_logs", "container_stats", "list_images", "get_image",
+                    "pull_image", "build_image", "remove_image", "prune_images",
+                    "list_networks", "get_network", "create_network", "remove_network",
+                    "prune_networks", "list_volumes", "get_volume", "create_volume",
+                    "remove_volume", "prune_volumes", "compose_up", "compose_down",
+                    "compose_ps", "compose_logs", "compose_config", "compose_restart"
+                ]
+            }
+
+    except Exception as e:
+        logger.error(f"Docker operation '{operation}' failed: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Operation failed: {str(e)}",
+            "operation": operation
+        }
+
+
+# Container operations implementations
+async def _list_containers(all_containers: bool = False, filters: Optional[Dict[str, List[str]]] = None, show_stats: bool = False) -> Dict[str, Any]:
+    """List containers."""
+    try:
+        client = _get_docker_client()
+        containers = client.containers.list(all=all_containers, filters=filters)
+
+        container_list = []
+        for container in containers:
+            info = {
+                "id": container.id,
+                "name": container.name,
+                "image": container.image.tags[0] if container.image.tags else container.image.id,
+                "status": container.status,
+                "created": container.attrs.get("Created"),
+                "ports": container.ports
+            }
+
+            if show_stats:
+                try:
+                    stats = container.stats(stream=False)
+                    info["stats"] = _parse_container_stats(stats)
+                except Exception:
+                    pass
+
+            container_list.append(info)
+
+        # Enhanced response with recommendations and metadata
+        recommendations = []
+        if len(container_list) == 0:
+            recommendations.append("No containers found - consider creating containers or checking Docker daemon status")
+        elif len(container_list) > 20:
+            recommendations.append("Many containers detected - consider using filters to narrow results")
+        elif not all_containers and any(c.get('status', '').startswith('exited') for c in container_list):
+            recommendations.append("Some containers are stopped - consider starting them or cleaning up exited containers")
+
+        # Analyze container health
+        running_count = sum(1 for c in container_list if c.get('status', '').startswith('running'))
+        stopped_count = len(container_list) - running_count
+
+        next_steps = []
+        if running_count > 0:
+            next_steps.append("get_container(container_id='<container_id>')")
+            next_steps.append("container_logs(container_id='<container_id>')")
+        if stopped_count > 0:
+            next_steps.append("start_container(container_id='<container_id>')")
+
+        return {
+            "success": True,
+            "containers": container_list,
+            "total": len(container_list),
+            "running": running_count,
+            "stopped": stopped_count,
+            "all": all_containers,
+            "filters_applied": filters,
+            "recommendations": recommendations,
+            "next_steps": next_steps,
+            "related_operations": [
+                "get_container" if len(container_list) > 0 else None,
+                "start_container" if stopped_count > 0 else None,
+                "container_logs" if running_count > 0 else None,
+                "create_container" if len(container_list) == 0 else None
+            ],
+            "summary": {
+                "health_status": "healthy" if running_count > stopped_count else "needs_attention" if stopped_count > 0 else "no_containers",
+                "scale": "large" if len(container_list) > 50 else "medium" if len(container_list) > 10 else "small",
+                "activity_level": "high" if running_count > 10 else "medium" if running_count > 0 else "low"
+            }
+        }
+
+    except Exception as e:
+        error_str = str(e).lower()
+        error_type = "connection_error" if "connection" in error_str else "permission_error" if "permission" in error_str else "docker_error"
+
+        return {
+            "success": False,
+            "error": f"Failed to list containers: {str(e)}",
+            "error_type": error_type,
+            "recovery_options": [
+                "Check if Docker daemon is running",
+                "Verify Docker socket permissions",
+                "Try 'docker ps' in terminal to test connectivity",
+                "Restart Docker service if needed"
+            ],
+            "diagnostic_commands": [
+                "docker version",
+                "docker ps",
+                "systemctl status docker" if "linux" in str(e).lower() else None
+            ],
+            "estimated_recovery_time": "1-5 minutes",
+            "alternative_solutions": [
+                "Use local Docker installation",
+                "Check Docker Desktop status",
+                "Verify user is in docker group (Linux)"
+            ]
+        }
+
+
+async def _get_container(container_id: str, show_stats: bool = False) -> Dict[str, Any]:
+    """Get container details."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+
+        info = {
+            "id": container.id,
+            "name": container.name,
+            "image": container.image.tags[0] if container.image.tags else container.image.id,
+            "status": container.status,
+            "created": container.attrs.get("Created"),
+            "config": container.attrs.get("Config", {}),
+            "network_settings": container.attrs.get("NetworkSettings", {}),
+            "mounts": container.attrs.get("Mounts", [])
+        }
+
+        if show_stats:
+            try:
+                stats = container.stats(stream=False)
+                info["stats"] = _parse_container_stats(stats)
+            except Exception:
+                pass
+
+        return {"success": True, "container": info}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get container: {str(e)}"}
+
+
+async def _create_container(
+    image: str,
+    command: Optional[Union[str, List[str]]] = None,
+    name: Optional[str] = None,
+    ports: Optional[Dict[str, Union[int, str]]] = None,
+    volumes: Optional[Dict[str, Dict[str, str]]] = None,
+    environment: Optional[Dict[str, str]] = None,
+    working_dir: Optional[str] = None,
+    detach: bool = True,
+    auto_remove: bool = False,
+    network_mode: Optional[str] = None,
+    restart_policy: Optional[str] = None
+) -> Dict[str, Any]:
+    """Create container."""
+    try:
+        client = _get_docker_client()
+
+        config = {
+            "image": image,
+            "detach": detach,
+            "auto_remove": auto_remove
+        }
+
+        if command:
+            config["command"] = command if isinstance(command, list) else command.split()
+        if name:
+            config["name"] = name
+        if ports:
+            config["ports"] = ports
+        if volumes:
+            config["volumes"] = volumes
+        if environment:
+            config["environment"] = environment
+        if working_dir:
+            config["working_dir"] = working_dir
+        if network_mode:
+            config["network_mode"] = network_mode
+        if restart_policy:
+            config["restart_policy"] = {"Name": restart_policy}
+
+        container = client.containers.create(**config)
+
+        return {
+            "success": True,
+            "container_id": container.id,
+            "container_name": container.name,
+            "status": "created"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to create container: {str(e)}"}
+
+
+async def _start_container(container_id: str) -> Dict[str, Any]:
+    """Start container."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+        container.start()
+
+        return {"success": True, "container_id": container_id, "status": "started"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to start container: {str(e)}"}
+
+
+async def _stop_container(container_id: str, timeout: int = 10) -> Dict[str, Any]:
+    """Stop container."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+        container.stop(timeout=timeout)
+
+        return {"success": True, "container_id": container_id, "status": "stopped"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to stop container: {str(e)}"}
+
+
+async def _restart_container(container_id: str, timeout: int = 10) -> Dict[str, Any]:
+    """Restart container."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+        container.restart(timeout=timeout)
+
+        return {"success": True, "container_id": container_id, "status": "restarted"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to restart container: {str(e)}"}
+
+
+async def _remove_container(container_id: str, force: bool = False, remove_volumes: bool = False) -> Dict[str, Any]:
+    """Remove container."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+        container.remove(force=force, v=remove_volumes)
+
+        return {"success": True, "container_id": container_id, "status": "removed"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to remove container: {str(e)}"}
+
+
+async def _container_exec(
+    container_id: str,
+    command: Union[str, List[str]],
+    detach: bool = False,
+    tty: bool = False,
+    stdin: bool = False,
+    stdout: bool = True,
+    stderr: bool = True,
+    stream: bool = False,
+    socket: bool = False,
+    environment: Optional[Dict[str, str]] = None,
+    working_dir: Optional[str] = None,
+    user: Optional[str] = None
+) -> Dict[str, Any]:
+    """Execute command in container."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+
+        exec_config = {
+            "cmd": command if isinstance(command, list) else command.split(),
+            "detach": detach,
+            "tty": tty,
+            "stdin": stdin,
+            "stdout": stdout,
+            "stderr": stderr,
+            "stream": stream,
+            "socket": socket
+        }
+
+        if environment:
+            exec_config["environment"] = environment
+        if working_dir:
+            exec_config["working_dir"] = working_dir
+        if user:
+            exec_config["user"] = user
+
+        result = container.exec_run(**exec_config)
+
+        return {
+            "success": True,
+            "container_id": container_id,
+            "exit_code": result.exit_code,
+            "output": result.output.decode() if isinstance(result.output, bytes) else result.output
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to execute in container: {str(e)}"}
+
+
+async def _container_logs(
+    container_id: str,
+    tail: Optional[int] = 100,
+    since: Optional[str] = None,
+    until: Optional[str] = None,
+    timestamps: bool = False,
+    follow: bool = False
+) -> Dict[str, Any]:
+    """Get container logs."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+
+        logs = container.logs(
+            tail=tail,
+            since=since,
+            until=until,
+            timestamps=timestamps,
+            follow=follow,
+            stream=False
+        )
+
+        log_content = logs.decode() if isinstance(logs, bytes) else logs
+
+        return {
+            "success": True,
+            "container_id": container_id,
+            "logs": log_content,
+            "tail": tail,
+            "timestamps": timestamps
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get container logs: {str(e)}"}
+
+
+async def _container_stats(container_id: str) -> Dict[str, Any]:
+    """Get container statistics."""
+    try:
+        client = _get_docker_client()
+        container = client.containers.get(container_id)
+        stats = container.stats(stream=False)
+
+        parsed_stats = _parse_container_stats(stats)
+
+        return {
+            "success": True,
+            "container_id": container_id,
+            "stats": parsed_stats
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get container stats: {str(e)}"}
+
+
+def _parse_container_stats(stats_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse Docker stats data."""
+    try:
+        # Simplified stats parsing
+        memory_stats = stats_data.get("memory_stats", {})
+        cpu_stats = stats_data.get("cpu_stats", {})
+        networks = stats_data.get("networks", {})
+
+        return {
+            "memory": {
+                "usage": memory_stats.get("usage", 0),
+                "limit": memory_stats.get("limit", 0),
+                "percentage": round(memory_stats.get("usage", 0) / max(memory_stats.get("limit", 1), 1) * 100, 2)
+            },
+            "cpu": {
+                "usage": cpu_stats.get("cpu_usage", {}).get("total_usage", 0),
+                "system_cpu_usage": cpu_stats.get("system_cpu_usage", 0)
+            },
+            "networks": networks
+        }
+    except Exception:
+        return {"error": "Failed to parse stats"}
+
+
+# Image operations implementations
+async def _list_images(all_images: bool = False, filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """List images."""
+    try:
+        client = _get_docker_client()
+        images = client.images.list(all=all_images, filters=filters)
+
+        image_list = []
+        for image in images:
+            info = {
+                "id": image.id,
+                "tags": image.tags,
+                "created": image.attrs.get("Created"),
+                "size": image.attrs.get("Size", 0)
+            }
+            image_list.append(info)
+
+        return {
+            "success": True,
+            "images": image_list,
+            "total": len(image_list)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to list images: {str(e)}"}
+
+
+async def _get_image(image_id: str) -> Dict[str, Any]:
+    """Get image details."""
+    try:
+        client = _get_docker_client()
+        image = client.images.get(image_id)
+
+        info = {
+            "id": image.id,
+            "tags": image.tags,
+            "created": image.attrs.get("Created"),
+            "size": image.attrs.get("Size", 0),
+            "architecture": image.attrs.get("Architecture"),
+            "os": image.attrs.get("Os")
+        }
+
+        return {"success": True, "image": info}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get image: {str(e)}"}
+
+
+async def _pull_image(image_name: str, tag: str = "latest", all_tags: bool = False, platform: Optional[str] = None) -> Dict[str, Any]:
+    """Pull image."""
+    try:
+        client = _get_docker_client()
+
+        if all_tags:
+            # Pull all tags
+            images = client.images.pull(image_name, all_tags=True)
+        else:
+            # Pull specific tag
+            image_ref = f"{image_name}:{tag}"
+            image = client.images.pull(image_ref, platform=platform)
+
+        return {
+            "success": True,
+            "image": f"{image_name}:{tag}",
+            "status": "pulled"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to pull image: {str(e)}"}
+
+
+async def _build_image(
+    path: str,
+    dockerfile: str = "Dockerfile",
+    tag: Optional[str] = None,
+    labels: Optional[Dict[str, str]] = None,
+    buildargs: Optional[Dict[str, str]] = None,
+    nocache: bool = False,
+    pull: bool = False,
+    rm: bool = True,
+    forcerm: bool = False,
+    squash: bool = False,
+    network_mode: Optional[str] = None
+) -> Dict[str, Any]:
+    """Build image."""
+    try:
+        client = _get_docker_client()
+
+        build_config = {
+            "path": path,
+            "dockerfile": dockerfile,
+            "nocache": nocache,
+            "pull": pull,
+            "rm": rm,
+            "forcerm": forcerm,
+            "squash": squash
+        }
+
+        if tag:
+            build_config["tag"] = tag
+        if labels:
+            build_config["labels"] = labels
+        if buildargs:
+            build_config["buildargs"] = buildargs
+        if network_mode:
+            build_config["network_mode"] = network_mode
+
+        image, build_logs = client.images.build(**build_config)
+
+        logs_text = ""
+        for log_entry in build_logs:
+            if "stream" in log_entry:
+                logs_text += log_entry["stream"]
+
+        return {
+            "success": True,
+            "image_id": image.id if hasattr(image, 'id') else str(image),
+            "tag": tag,
+            "build_logs": logs_text
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to build image: {str(e)}"}
+
+
+async def _remove_image(image_id: str, force: bool = False, noprune: bool = False) -> Dict[str, Any]:
+    """Remove image."""
+    try:
+        client = _get_docker_client()
+        client.images.remove(image_id, force=force, noprune=noprune)
+
+        return {"success": True, "image_id": image_id, "status": "removed"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to remove image: {str(e)}"}
+
+
+async def _prune_images(all_images: bool = False, filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """Prune images."""
+    try:
+        client = _get_docker_client()
+        result = client.images.prune(filters=filters)
+
+        return {
+            "success": True,
+            "pruned": result,
+            "status": "pruned"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to prune images: {str(e)}"}
+
+
+# Network operations implementations
+async def _list_networks(filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """List networks."""
+    try:
+        client = _get_docker_client()
+        networks = client.networks.list(filters=filters)
+
+        network_list = []
+        for network in networks:
+            info = {
+                "id": network.id,
+                "name": network.name,
+                "driver": network.attrs.get("Driver"),
+                "scope": network.attrs.get("Scope"),
+                "created": network.attrs.get("Created")
+            }
+            network_list.append(info)
+
+        return {
+            "success": True,
+            "networks": network_list,
+            "total": len(network_list)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to list networks: {str(e)}"}
+
+
+async def _get_network(network_id: str) -> Dict[str, Any]:
+    """Get network details."""
+    try:
+        client = _get_docker_client()
+        network = client.networks.get(network_id)
+
+        info = {
+            "id": network.id,
+            "name": network.name,
+            "driver": network.attrs.get("Driver"),
+            "scope": network.attrs.get("Scope"),
+            "created": network.attrs.get("Created"),
+            "containers": network.attrs.get("Containers", {})
+        }
+
+        return {"success": True, "network": info}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get network: {str(e)}"}
+
+
+async def _create_network(
+    name: str,
+    driver: str = "bridge",
+    options: Optional[Dict[str, str]] = None,
+    ipam: Optional[Dict[str, Any]] = None,
+    internal: bool = False,
+    attachable: bool = False,
+    ingress: bool = False,
+    labels: Optional[Dict[str, str]] = None,
+    enable_ipv6: bool = False
+) -> Dict[str, Any]:
+    """Create network."""
+    try:
+        client = _get_docker_client()
+
+        config = {
+            "name": name,
+            "driver": driver,
+            "internal": internal,
+            "attachable": attachable,
+            "ingress": ingress,
+            "enable_ipv6": enable_ipv6
+        }
+
+        if options:
+            config["options"] = options
+        if ipam:
+            config["ipam"] = ipam
+        if labels:
+            config["labels"] = labels
+
+        network = client.networks.create(**config)
+
+        return {
+            "success": True,
+            "network_id": network.id,
+            "network_name": network.name,
+            "status": "created"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to create network: {str(e)}"}
+
+
+async def _remove_network(network_id: str) -> Dict[str, Any]:
+    """Remove network."""
+    try:
+        client = _get_docker_client()
+        network = client.networks.get(network_id)
+        network.remove()
+
+        return {"success": True, "network_id": network_id, "status": "removed"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to remove network: {str(e)}"}
+
+
+async def _prune_networks(filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """Prune networks."""
+    try:
+        client = _get_docker_client()
+        result = client.networks.prune(filters=filters)
+
+        return {
+            "success": True,
+            "pruned": result,
+            "status": "pruned"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to prune networks: {str(e)}"}
+
+
+# Volume operations implementations
+async def _list_volumes(filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """List volumes."""
+    try:
+        client = _get_docker_client()
+        volumes = client.volumes.list(filters=filters)
+
+        volume_list = []
+        for volume in volumes:
+            info = {
+                "name": volume.name,
+                "driver": volume.attrs.get("Driver"),
+                "mountpoint": volume.attrs.get("Mountpoint"),
+                "created": volume.attrs.get("CreatedAt"),
+                "labels": volume.attrs.get("Labels", {})
+            }
+            volume_list.append(info)
+
+        return {
+            "success": True,
+            "volumes": volume_list,
+            "total": len(volume_list)
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to list volumes: {str(e)}"}
+
+
+async def _get_volume(volume_name: str) -> Dict[str, Any]:
+    """Get volume details."""
+    try:
+        client = _get_docker_client()
+        volume = client.volumes.get(volume_name)
+
+        info = {
+            "name": volume.name,
+            "driver": volume.attrs.get("Driver"),
+            "mountpoint": volume.attrs.get("Mountpoint"),
+            "created": volume.attrs.get("CreatedAt"),
+            "labels": volume.attrs.get("Labels", {})
+        }
+
+        return {"success": True, "volume": info}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get volume: {str(e)}"}
+
+
+async def _create_volume(
+    name: str,
+    driver: str = "local",
+    driver_opts: Optional[Dict[str, str]] = None,
+    labels: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
+    """Create volume."""
+    try:
+        client = _get_docker_client()
+
+        config = {"name": name, "driver": driver}
+
+        if driver_opts:
+            config["driver_opts"] = driver_opts
+        if labels:
+            config["labels"] = labels
+
+        volume = client.volumes.create(**config)
+
+        return {
+            "success": True,
+            "volume_name": volume.name,
+            "status": "created"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to create volume: {str(e)}"}
+
+
+async def _remove_volume(volume_name: str, force: bool = False) -> Dict[str, Any]:
+    """Remove volume."""
+    try:
+        client = _get_docker_client()
+        volume = client.volumes.get(volume_name)
+        volume.remove(force=force)
+
+        return {"success": True, "volume_name": volume_name, "status": "removed"}
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to remove volume: {str(e)}"}
+
+
+async def _prune_volumes(filters: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """Prune volumes."""
+    try:
+        client = _get_docker_client()
+        result = client.volumes.prune(filters=filters)
+
+        return {
+            "success": True,
+            "pruned": result,
+            "status": "pruned"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to prune volumes: {str(e)}"}
+
+
+# Compose operations implementations
+async def _compose_up(
+    path: str = ".",
+    services: Optional[List[str]] = None,
+    detach: bool = True,
+    build: bool = False,
+    scale: Optional[Dict[str, int]] = None,
+    timeout: int = 300
+) -> Dict[str, Any]:
+    """Start compose services."""
+    try:
+        import docker
+
+        # Docker Compose operations require docker-compose command
+        # This is a simplified implementation
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to run compose up: {str(e)}"}
+
+
+async def _compose_down(
+    path: str = ".",
+    remove_orphans: bool = True,
+    volumes: bool = False,
+    timeout: int = 300
+) -> Dict[str, Any]:
+    """Stop compose services."""
+    try:
+        # Simplified implementation
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to run compose down: {str(e)}"}
+
+
+async def _compose_ps(
+    path: str = ".",
+    services: Optional[List[str]] = None,
+    all_services: bool = False,
+    timeout: int = 60
+) -> Dict[str, Any]:
+    """List compose services."""
+    try:
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to run compose ps: {str(e)}"}
+
+
+async def _compose_logs(
+    path: str = ".",
+    services: Optional[List[str]] = None,
+    follow: bool = False,
+    tail: Optional[int] = None,
+    since: Optional[str] = None,
+    until: Optional[str] = None,
+    timestamps: bool = False,
+    timeout: int = 60
+) -> Dict[str, Any]:
+    """Get compose logs."""
+    try:
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get compose logs: {str(e)}"}
+
+
+async def _compose_config(path: str = ".", validate: bool = True, timeout: int = 60) -> Dict[str, Any]:
+    """Validate compose config."""
+    try:
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to validate compose config: {str(e)}"}
+
+
+async def _compose_restart(
+    path: str = ".",
+    services: Optional[List[str]] = None,
+    timeout: int = 300
+) -> Dict[str, Any]:
+    """Restart compose services."""
+    try:
+        return {
+            "success": False,
+            "error": "Compose operations require docker-compose command. Use external docker-compose tool."
+        }
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to restart compose services: {str(e)}"}

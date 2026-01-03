@@ -4,46 +4,38 @@ Unit tests for Docker operations.
 Tests all Docker operation functions with proper mocking and edge case coverage.
 """
 
-import pytest
-import asyncio
 import json
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
 
 from filesystem_mcp.tools.docker_operations import (
-    list_containers,
-    get_container,
-    create_container,
-    start_container,
-    stop_container,
-    restart_container,
-    remove_container,
+    build_image,
+    compose_config,
+    compose_down,
+    compose_logs,
+    compose_ps,
+    compose_up,
     container_exec,
     container_logs,
     container_stats,
-    list_images,
-    get_image,
-    pull_image,
-    build_image,
-    remove_image,
-    prune_images,
-    list_networks,
-    get_network,
+    create_container,
     create_network,
-    remove_network,
-    prune_networks,
-    list_volumes,
-    get_volume,
     create_volume,
+    get_container,
+    get_docker_client,
+    list_containers,
+    list_images,
+    list_networks,
+    list_volumes,
+    pull_image,
+    remove_container,
+    remove_image,
+    remove_network,
     remove_volume,
-    prune_volumes,
-    compose_up,
-    compose_down,
-    compose_ps,
-    compose_logs,
-    compose_config,
-    compose_restart,
-    get_docker_client
+    restart_container,
+    start_container,
+    stop_container,
 )
 
 
@@ -55,7 +47,7 @@ def parse_tool_result(result):
 class TestGetDockerClient:
     """Test the get_docker_client function."""
 
-    @patch('filesystem_mcp.tools.docker_operations.docker.from_env')
+    @patch("filesystem_mcp.tools.docker_operations.docker.from_env")
     def test_get_docker_client_success(self, mock_from_env):
         """Test successful Docker client creation."""
         mock_client = Mock()
@@ -67,7 +59,7 @@ class TestGetDockerClient:
         assert result == mock_client
         mock_from_env.assert_called_once()
 
-    @patch('filesystem_mcp.tools.docker_operations.docker.from_env')
+    @patch("filesystem_mcp.tools.docker_operations.docker.from_env")
     def test_get_docker_client_connection_error(self, mock_from_env):
         """Test Docker client creation when Docker is not available."""
         mock_from_env.side_effect = Exception("Connection refused")
@@ -82,7 +74,7 @@ class TestListContainers:
     """Test the list_containers function."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_success(self, mock_get_client):
         """Test successful container listing."""
         # Mock Docker client
@@ -100,7 +92,7 @@ class TestListContainers:
             "Created": "2024-01-01T09:00:00Z",
             "Config": {"Cmd": ["nginx"], "Env": []},
             "HostConfig": {"Binds": [], "PortBindings": {}},
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_container2 = Mock()
@@ -113,7 +105,7 @@ class TestListContainers:
             "Created": "2024-01-01T09:00:00Z",
             "Config": {"Cmd": ["redis-server"], "Env": []},
             "HostConfig": {"Binds": [], "PortBindings": {}},
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container1, mock_container2]
@@ -140,7 +132,7 @@ class TestListContainers:
         assert container2["status"] == "exited"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_no_containers(self, mock_get_client):
         """Test container listing when no containers exist."""
         mock_client = Mock()
@@ -155,7 +147,7 @@ class TestListContainers:
         assert data["containers"] == []
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_with_filters(self, mock_get_client):
         """Test container listing with filters."""
         mock_client = Mock()
@@ -171,7 +163,7 @@ class TestListContainers:
             "Created": "2024-01-01T09:00:00Z",
             "Config": {"Cmd": ["nginx"], "Env": []},
             "HostConfig": {"Binds": [], "PortBindings": {}},
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container]
@@ -185,7 +177,7 @@ class TestListContainers:
         mock_client.containers.list.assert_called_once_with(all=False, filters=filters)
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_running_only(self, mock_get_client):
         """Test listing only running containers."""
         mock_client = Mock()
@@ -201,7 +193,7 @@ class TestListContainers:
             "Created": "2024-01-01T09:00:00Z",
             "Config": {"Cmd": ["nginx"], "Env": []},
             "HostConfig": {"Binds": [], "PortBindings": {}},
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container]
@@ -214,7 +206,7 @@ class TestListContainers:
         mock_client.containers.list.assert_called_once_with(all=False, filters=None)
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_with_volumes(self, mock_get_client):
         """Test container listing with volume information."""
         mock_client = Mock()
@@ -229,11 +221,8 @@ class TestListContainers:
         mock_container.attrs = {
             "Created": "2024-01-01T09:00:00Z",
             "Config": {"Cmd": ["mysqld"], "Env": []},
-            "HostConfig": {
-                "Binds": ["/host/path:/container/path:rw"],
-                "PortBindings": {}
-            },
-            "NetworkSettings": {"Networks": {}}
+            "HostConfig": {"Binds": ["/host/path:/container/path:rw"], "PortBindings": {}},
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container]
@@ -252,7 +241,7 @@ class TestListContainers:
         assert container["volumes"][0]["mode"] == "rw"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_with_labels(self, mock_get_client):
         """Test container listing with label information."""
         mock_client = Mock()
@@ -266,13 +255,9 @@ class TestListContainers:
         mock_container.status = "running"
         mock_container.attrs = {
             "Created": "2024-01-01T09:00:00Z",
-            "Config": {
-                "Cmd": ["nginx"],
-                "Env": [],
-                "Labels": {"app": "web", "version": "1.0"}
-            },
+            "Config": {"Cmd": ["nginx"], "Env": [], "Labels": {"app": "web", "version": "1.0"}},
             "HostConfig": {"Binds": [], "PortBindings": {}},
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container]
@@ -289,7 +274,7 @@ class TestListContainers:
         assert container["labels"]["version"] == "1.0"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_with_ports(self, mock_get_client):
         """Test container listing with port mapping information."""
         mock_client = Mock()
@@ -308,10 +293,10 @@ class TestListContainers:
                 "Binds": [],
                 "PortBindings": {
                     "80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}],
-                    "443/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8443"}]
-                }
+                    "443/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8443"}],
+                },
             },
-            "NetworkSettings": {"Networks": {}}
+            "NetworkSettings": {"Networks": {}},
         }
 
         mock_client.containers.list.return_value = [mock_container]
@@ -334,7 +319,7 @@ class TestListContainers:
         assert ports["443/tcp"]["host_port"] == "8443"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_large_result(self, mock_get_client):
         """Test handling of large numbers of containers."""
         mock_client = Mock()
@@ -353,7 +338,7 @@ class TestListContainers:
                 "Created": "2024-01-01T09:00:00Z",
                 "Config": {"Cmd": ["test"], "Env": []},
                 "HostConfig": {"Binds": [], "PortBindings": {}},
-                "NetworkSettings": {"Networks": {}}
+                "NetworkSettings": {"Networks": {}},
             }
             mock_containers.append(mock_container)
 
@@ -367,7 +352,7 @@ class TestListContainers:
         assert len(data["containers"]) == 100
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_containers_docker_error(self, mock_get_client):
         """Test handling of Docker API errors."""
         mock_client = Mock()
@@ -385,7 +370,7 @@ class TestContainerOperations:
     """Test container management operations."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_get_container_success(self, mock_get_client):
         """Test successful container retrieval."""
         mock_client = Mock()
@@ -406,7 +391,7 @@ class TestContainerOperations:
         assert data["container"]["id"] == "test_container_id"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_create_container_success(self, mock_get_client):
         """Test successful container creation."""
         mock_client = Mock()
@@ -415,17 +400,14 @@ class TestContainerOperations:
         mock_client.containers.create.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await create_container.run({
-            "image": "nginx:latest",
-            "name": "test_container"
-        })
+        result = await create_container.run({"image": "nginx:latest", "name": "test_container"})
 
         data = parse_tool_result(result)
         assert data["status"] == "success"
         assert data["container"]["id"] == "new_container_id"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_start_container_success(self, mock_get_client):
         """Test successful container start."""
         mock_client = Mock()
@@ -441,7 +423,7 @@ class TestContainerOperations:
         mock_container.start.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_stop_container_success(self, mock_get_client):
         """Test successful container stop."""
         mock_client = Mock()
@@ -457,7 +439,7 @@ class TestContainerOperations:
         mock_container.stop.assert_called_once_with(timeout=10)
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_restart_container_success(self, mock_get_client):
         """Test successful container restart."""
         mock_client = Mock()
@@ -472,7 +454,7 @@ class TestContainerOperations:
         mock_container.restart.assert_called_once_with(timeout=10)
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_remove_container_success(self, mock_get_client):
         """Test successful container removal."""
         mock_client = Mock()
@@ -488,7 +470,7 @@ class TestContainerOperations:
         mock_container.remove.assert_called_once_with(force=False, v=False)
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_container_exec_success(self, mock_get_client):
         """Test successful command execution in container."""
         mock_client = Mock()
@@ -501,10 +483,9 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_exec.run({
-            "container_id": "test_container",
-            "command": ["echo", "Hello World"]
-        })
+        result = await container_exec.run(
+            {"container_id": "test_container", "command": ["echo", "Hello World"]}
+        )
 
         data = parse_tool_result(result)
         assert data["status"] == "success"
@@ -512,7 +493,7 @@ class TestContainerOperations:
         assert "Hello World" in data["output"]
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_container_logs_success(self, mock_get_client):
         """Test successful container log retrieval."""
         mock_client = Mock()
@@ -529,16 +510,16 @@ class TestContainerOperations:
         assert "line 2" in data["logs"]
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.containers.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.containers.get_docker_client")
     async def test_container_stats_success(self, mock_get_client):
         """Test successful container statistics retrieval."""
         mock_client = Mock()
         mock_container = Mock()
         mock_container.status = "running"
         mock_stats = {
-            'cpu_stats': {'cpu_usage': {'total_usage': 1000}},
-            'precpu_stats': {'cpu_usage': {'total_usage': 500}, 'system_cpu_usage': 1000},
-            'memory_stats': {'usage': 1024000}
+            "cpu_stats": {"cpu_usage": {"total_usage": 1000}},
+            "precpu_stats": {"cpu_usage": {"total_usage": 500}, "system_cpu_usage": 1000},
+            "memory_stats": {"usage": 1024000},
         }
         mock_container.stats.return_value = mock_stats
         mock_client.containers.get.return_value = mock_container
@@ -556,7 +537,7 @@ class TestImageOperations:
     """Test Docker image operations."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_list_images_success(self, mock_get_client):
         """Test successful image listing."""
         mock_client = Mock()
@@ -572,7 +553,7 @@ class TestImageOperations:
         assert len(data["images"]) == 1
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_pull_image_success(self, mock_get_client):
         """Test successful image pulling."""
         mock_client = Mock()
@@ -588,7 +569,7 @@ class TestImageOperations:
         assert data["status"] == "success"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_build_image_success(self, mock_get_client):
         """Test successful image building."""
         mock_client = Mock()
@@ -597,17 +578,14 @@ class TestImageOperations:
         mock_client.images.build.return_value = (mock_image, [])
         mock_get_client.return_value = mock_client
 
-        result = await build_image.run({
-            "path": "/tmp/test",
-            "tag": "myapp:latest"
-        })
+        result = await build_image.run({"path": "/tmp/test", "tag": "myapp:latest"})
 
         data = parse_tool_result(result)
         assert data["status"] == "success"
         assert data["tag"] == "myapp:latest"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.images.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.images.get_docker_client")
     async def test_remove_image_success(self, mock_get_client):
         """Test successful image removal."""
         mock_client = Mock()
@@ -627,7 +605,7 @@ class TestNetworkOperations:
     """Test Docker network operations."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_list_networks_success(self, mock_get_client):
         """Test successful network listing."""
         mock_client = Mock()
@@ -643,7 +621,7 @@ class TestNetworkOperations:
         assert len(data["networks"]) == 1
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_create_network_success(self, mock_get_client):
         """Test successful network creation."""
         mock_client = Mock()
@@ -652,17 +630,14 @@ class TestNetworkOperations:
         mock_client.networks.create.return_value = mock_network
         mock_get_client.return_value = mock_client
 
-        result = await create_network.run({
-            "name": "test_network",
-            "driver": "bridge"
-        })
+        result = await create_network.run({"name": "test_network", "driver": "bridge"})
 
         data = parse_tool_result(result)
         assert data["status"] == "success"
         assert data["network"]["name"] == "test_network"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_remove_network_success(self, mock_get_client):
         """Test successful network removal."""
         mock_client = Mock()
@@ -681,7 +656,7 @@ class TestVolumeOperations:
     """Test Docker volume operations."""
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_list_volumes_success(self, mock_get_client):
         """Test successful volume listing."""
         mock_client = Mock()
@@ -697,7 +672,7 @@ class TestVolumeOperations:
         assert len(data["volumes"]) == 1
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_create_volume_success(self, mock_get_client):
         """Test successful volume creation."""
         mock_client = Mock()
@@ -706,17 +681,14 @@ class TestVolumeOperations:
         mock_client.volumes.create.return_value = mock_volume
         mock_get_client.return_value = mock_client
 
-        result = await create_volume.run({
-            "name": "test_volume",
-            "driver": "local"
-        })
+        result = await create_volume.run({"name": "test_volume", "driver": "local"})
 
         data = parse_tool_result(result)
         assert data["status"] == "success"
         assert data["volume"]["name"] == "test_volume"
 
     @pytest.mark.asyncio
-    @patch('filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client')
+    @patch("filesystem_mcp.tools.docker_operations.networks_volumes.get_docker_client")
     async def test_remove_volume_success(self, mock_get_client):
         """Test successful volume removal."""
         mock_client = Mock()
@@ -737,7 +709,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_up_success(self):
         """Test successful compose up."""
-        with patch('filesystem_mcp.tools.docker_operations._run_compose_command') as mock_run:
+        with patch("filesystem_mcp.tools.docker_operations._run_compose_command") as mock_run:
             mock_run.return_value = (0, "Creating network...\nStarting services...", "")
 
             result = await compose_up.run({"path": "/tmp/compose"})
@@ -749,7 +721,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_down_success(self):
         """Test successful compose down."""
-        with patch('filesystem_mcp.tools.docker_operations._run_compose_command') as mock_run:
+        with patch("filesystem_mcp.tools.docker_operations._run_compose_command") as mock_run:
             mock_run.return_value = (0, "Stopping services...\nRemoving containers...", "")
 
             result = await compose_down.run({"path": "/tmp/compose"})
@@ -761,8 +733,12 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_ps_success(self):
         """Test successful compose ps."""
-        with patch('filesystem_mcp.tools.docker_operations._run_compose_command') as mock_run:
-            mock_run.return_value = (0, "NAME                COMMAND             SERVICE             STATUS              PORTS", "")
+        with patch("filesystem_mcp.tools.docker_operations._run_compose_command") as mock_run:
+            mock_run.return_value = (
+                0,
+                "NAME                COMMAND             SERVICE             STATUS              PORTS",
+                "",
+            )
 
             result = await compose_ps.run({"path": "/tmp/compose"})
 
@@ -773,8 +749,12 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_logs_success(self):
         """Test successful compose logs."""
-        with patch('filesystem_mcp.tools.docker_operations._run_compose_command') as mock_run:
-            mock_run.return_value = (0, "web_1  | Starting nginx...\napi_1  | Starting server...", "")
+        with patch("filesystem_mcp.tools.docker_operations._run_compose_command") as mock_run:
+            mock_run.return_value = (
+                0,
+                "web_1  | Starting nginx...\napi_1  | Starting server...",
+                "",
+            )
 
             result = await compose_logs.run({"path": "/tmp/compose"})
 
@@ -785,8 +765,10 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_config_success(self):
         """Test successful compose config validation."""
-        with patch('filesystem_mcp.tools.docker_operations._run_compose_command') as mock_run, \
-             patch('filesystem_mcp.tools.docker_operations._parse_compose_config') as mock_parse:
+        with (
+            patch("filesystem_mcp.tools.docker_operations._run_compose_command") as mock_run,
+            patch("filesystem_mcp.tools.docker_operations._parse_compose_config") as mock_parse,
+        ):
             mock_run.return_value = (0, "version: '3.8'\nservices:\n  web:\n    image: nginx", "")
             mock_parse.return_value = {"name": "test", "services": {"web": {"image": "nginx"}}}
 

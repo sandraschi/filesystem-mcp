@@ -1,0 +1,809 @@
+# Portmanteau system tools for FastMCP 2.14.1+
+"""
+Comprehensive system tools portmanteau tool.
+
+PORTMANTEAU PATTERN: Consolidates all system operations into a single unified tool.
+This reduces tool explosion while maintaining full functionality for system monitoring and help.
+
+SUPPORTED OPERATIONS:
+- get_help: Get comprehensive help information about tools and categories
+- get_system_status: Get detailed system status and resource usage
+- get_system_info: Get basic system information
+- get_resource_usage: Get detailed resource usage statistics
+- get_process_info: Get information about running processes
+- get_network_info: Get network interface information
+- get_disk_usage: Get disk usage information
+- get_memory_info: Get memory usage information
+- get_cpu_info: Get CPU information and usage
+- get_environment_info: Get environment variables and system paths
+- get_service_status: Get status of system services
+- get_log_info: Get system log information
+- run_system_command: Execute system commands safely
+- get_performance_metrics: Get system performance metrics
+- get_security_info: Get basic security information
+- get_hardware_info: Get hardware information
+- get_software_info: Get installed software information
+- get_time_info: Get system time and timezone information
+- get_locale_info: Get locale and language settings
+- get_user_info: Get current user information
+- get_session_info: Get current session information
+"""
+
+import logging
+import os
+import platform
+import psutil
+import sys
+from datetime import datetime, timezone
+from typing import List, Optional, Dict, Any, Union, Literal
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# Import app locally to avoid circular imports
+def _get_app():
+    """Get the app instance locally to avoid circular imports."""
+    from .. import app
+    return app
+
+
+# Portmanteau system tool with all operations
+@_get_app().tool()
+async def system_operations(
+    operation: Literal[
+        "get_help", "get_system_status", "get_system_info", "get_resource_usage",
+        "get_process_info", "get_network_info", "get_disk_usage", "get_memory_info",
+        "get_cpu_info", "get_environment_info", "get_service_status", "get_log_info",
+        "run_system_command", "get_performance_metrics", "get_security_info",
+        "get_hardware_info", "get_software_info", "get_time_info", "get_locale_info",
+        "get_user_info", "get_session_info"
+    ],
+    # Help operations
+    category: Optional[str] = None,
+    tool_name: Optional[str] = None,
+    level: str = "basic",
+    # System monitoring
+    include_processes: bool = False,
+    include_disk: bool = True,
+    include_network: bool = True,
+    max_processes: int = 10,
+    # Command execution
+    command: Optional[str] = None,
+    timeout: int = 30,
+    shell: bool = False,
+    # Filtering
+    filter_pattern: Optional[str] = None,
+    sort_by: str = "cpu_percent",
+    sort_order: str = "desc"
+) -> Dict[str, Any]:
+    """Comprehensive system operations portmanteau tool.
+
+    PORTMANTEAU PATTERN: Consolidates all system operations into a single unified tool.
+    This reduces tool explosion while maintaining full functionality for system monitoring and help.
+    Follows FastMCP 2.14.1+ best practices for portmanteau tool design.
+
+    Args:
+        operation (Literal, required): Available system operations:
+            - "get_help": Get comprehensive help information about tools and categories
+            - "get_system_status": Get detailed system status and resource usage
+            - "get_system_info": Get basic system information (OS, architecture, etc.)
+            - "get_resource_usage": Get detailed resource usage statistics (CPU, memory, disk)
+            - "get_process_info": Get information about running processes with filtering
+            - "get_network_info": Get network interface information
+            - "get_disk_usage": Get disk usage information for all partitions
+            - "get_memory_info": Get detailed memory usage information
+            - "get_cpu_info": Get CPU information and usage statistics
+            - "get_environment_info": Get environment variables and system paths
+            - "get_service_status": Get status of system services
+            - "get_log_info": Get system log information
+            - "run_system_command": Execute system commands safely
+            - "get_performance_metrics": Get system performance metrics over time
+            - "get_security_info": Get basic security information
+            - "get_hardware_info": Get hardware information
+            - "get_software_info": Get installed software information
+            - "get_time_info": Get system time and timezone information
+            - "get_locale_info": Get locale and language settings
+            - "get_user_info": Get current user information
+            - "get_session_info": Get current session information
+
+        --- HELP & MONITORING ---
+
+        category (str | None): Help category to get information about (get_help)
+            Used by: get_help operations
+
+        tool_name (str | None): Specific tool to get help for (get_help)
+            Used by: get_help operations
+
+        level (str): Detail level for help. Default: "basic"
+            Used by: get_help operations
+
+        --- SYSTEM STATUS ---
+
+        include_processes (bool): Include process information in status. Default: False
+            Used by: get_system_status operations
+
+        include_disk (bool): Include disk usage in status. Default: True
+            Used by: get_system_status operations
+
+        include_network (bool): Include network information in status. Default: True
+            Used by: get_system_status operations
+
+        max_processes (int): Maximum number of processes to return. Default: 10
+            Used by: get_process_info, get_system_status operations
+
+        --- COMMAND EXECUTION ---
+
+        command (str | None): System command to execute (run_system_command)
+            Required for: run_system_command operations
+
+        timeout (int): Command timeout in seconds. Default: 30
+            Used by: run_system_command operations
+
+        shell (bool): Execute command in shell. Default: False
+            Used by: run_system_command operations
+
+        --- PROCESS FILTERING ---
+
+        filter_pattern (str | None): Pattern to filter process results (get_process_info)
+            Used by: get_process_info operations
+
+        sort_by (str): Field to sort process results by. Default: "cpu_percent"
+            Used by: get_process_info operations
+
+        sort_order (str): Sort order. Default: "desc"
+            Used by: get_process_info operations
+
+    Returns:
+        Dictionary with success status and operation-specific results. All operations return:
+        - success: Boolean indicating success/failure
+        - error: Error message if success is False
+        - [operation-specific fields]: Additional result data
+
+    Examples:
+        # Get comprehensive help
+        result = await system_operations("get_help", category="filesystem")
+
+        # Get system status with all metrics
+        result = await system_operations("get_system_status", include_processes=True, include_disk=True)
+
+        # Monitor processes by CPU usage
+        result = await system_operations("get_process_info", sort_by="cpu_percent", max_processes=5)
+
+        # Get basic system information
+        result = await system_operations("get_system_info")
+
+        # Get resource usage summary
+        result = await system_operations("get_resource_usage")
+
+        # Get network interface information
+        result = await system_operations("get_network_info")
+
+        # Get disk usage for all partitions
+        result = await system_operations("get_disk_usage")
+
+        # Get detailed CPU information
+        result = await system_operations("get_cpu_info")
+
+        # Get environment variables (filtered for security)
+        result = await system_operations("get_environment_info")
+
+        # Get current user information
+        result = await system_operations("get_user_info")
+
+        # Get time and timezone information
+        result = await system_operations("get_time_info")
+    """
+
+    try:
+        # Operation routing
+        if operation == "get_help":
+            return await _get_help(category, tool_name, level)
+        elif operation == "get_system_status":
+            return await _get_system_status(include_processes, include_disk, include_network, max_processes)
+        elif operation == "get_system_info":
+            return await _get_system_info()
+        elif operation == "get_resource_usage":
+            return await _get_resource_usage()
+        elif operation == "get_process_info":
+            return await _get_process_info(max_processes, filter_pattern, sort_by, sort_order)
+        elif operation == "get_network_info":
+            return await _get_network_info()
+        elif operation == "get_disk_usage":
+            return await _get_disk_usage()
+        elif operation == "get_memory_info":
+            return await _get_memory_info()
+        elif operation == "get_cpu_info":
+            return await _get_cpu_info()
+        elif operation == "get_environment_info":
+            return await _get_environment_info()
+        elif operation == "get_service_status":
+            return await _get_service_status()
+        elif operation == "get_log_info":
+            return await _get_log_info()
+        elif operation == "run_system_command":
+            return await _run_system_command(command, timeout, shell)
+        elif operation == "get_performance_metrics":
+            return await _get_performance_metrics()
+        elif operation == "get_security_info":
+            return await _get_security_info()
+        elif operation == "get_hardware_info":
+            return await _get_hardware_info()
+        elif operation == "get_software_info":
+            return await _get_software_info()
+        elif operation == "get_time_info":
+            return await _get_time_info()
+        elif operation == "get_locale_info":
+            return await _get_locale_info()
+        elif operation == "get_user_info":
+            return await _get_user_info()
+        elif operation == "get_session_info":
+            return await _get_session_info()
+        else:
+            return {
+                "success": False,
+                "error": f"Unknown operation: {operation}",
+                "available_operations": [
+                    "get_help", "get_system_status", "get_system_info", "get_resource_usage",
+                    "get_process_info", "get_network_info", "get_disk_usage", "get_memory_info",
+                    "get_cpu_info", "get_environment_info", "get_service_status", "get_log_info",
+                    "run_system_command", "get_performance_metrics", "get_security_info",
+                    "get_hardware_info", "get_software_info", "get_time_info", "get_locale_info",
+                    "get_user_info", "get_session_info"
+                ]
+            }
+
+    except Exception as e:
+        logger.error(f"System operation '{operation}' failed: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Operation failed: {str(e)}",
+            "operation": operation
+        }
+
+
+# Help and status implementations
+async def _get_help(category: Optional[str] = None, tool_name: Optional[str] = None, level: str = "basic") -> Dict[str, Any]:
+    """Get comprehensive help information."""
+    try:
+        help_info = {
+            "success": True,
+            "level": level,
+            "categories": {
+                "filesystem": "File system operations (read, write, list, search, etc.)",
+                "docker": "Docker container and image management",
+                "repository": "Git repository operations",
+                "system": "System monitoring and help tools"
+            }
+        }
+
+        if category:
+            if category == "filesystem":
+                help_info["tools"] = {
+                    "filesystem_operations": "Unified filesystem operations (read, write, list, search, etc.)"
+                }
+            elif category == "docker":
+                help_info["tools"] = {
+                    "docker_operations": "Docker container, image, network, and volume management"
+                }
+            elif category == "repository":
+                help_info["tools"] = {
+                    "repository_operations": "Git repository management (clone, commit, branch, etc.)"
+                }
+            elif category == "system":
+                help_info["tools"] = {
+                    "system_operations": "System monitoring, status, and help information"
+                }
+
+        if tool_name:
+            if tool_name == "filesystem_operations":
+                help_info["tool_details"] = {
+                    "description": "Comprehensive filesystem operations",
+                    "operations": ["read_file", "write_file", "list_directory", "search_files", "etc."],
+                    "examples": [
+                        "Read a file: filesystem_operations('read_file', path='README.md')",
+                        "List directory: filesystem_operations('list_directory', path='.')",
+                        "Search files: filesystem_operations('search_files', directory_path='.', pattern='*.py')"
+                    ]
+                }
+            elif tool_name == "docker_operations":
+                help_info["tool_details"] = {
+                    "description": "Docker management operations",
+                    "operations": ["list_containers", "create_container", "start_container", "etc."],
+                    "examples": [
+                        "List containers: docker_operations('list_containers')",
+                        "Create container: docker_operations('create_container', image='nginx', name='web')"
+                    ]
+                }
+
+        return help_info
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get help: {str(e)}"}
+
+
+async def _get_system_status(
+    include_processes: bool = False,
+    include_disk: bool = True,
+    include_network: bool = True,
+    max_processes: int = 10
+) -> Dict[str, Any]:
+    """Get comprehensive system status."""
+    try:
+        status = {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "system": {
+                "platform": platform.system(),
+                "platform_version": platform.version(),
+                "architecture": platform.architecture()[0],
+                "processor": platform.processor(),
+                "python_version": sys.version
+            }
+        }
+
+        # CPU info
+        status["cpu"] = {
+            "physical_cores": psutil.cpu_count(logical=False),
+            "logical_cores": psutil.cpu_count(logical=True),
+            "usage_percent": psutil.cpu_percent(interval=1),
+            "frequency": psutil.cpu_freq().current if psutil.cpu_freq() else None
+        }
+
+        # Memory info
+        memory = psutil.virtual_memory()
+        status["memory"] = {
+            "total": memory.total,
+            "available": memory.available,
+            "used": memory.used,
+            "percent": memory.percent
+        }
+
+        if include_disk:
+            disk = psutil.disk_usage('/')
+            status["disk"] = {
+                "total": disk.total,
+                "used": disk.used,
+                "free": disk.free,
+                "percent": disk.percent
+            }
+
+        if include_network:
+            net = psutil.net_io_counters()
+            status["network"] = {
+                "bytes_sent": net.bytes_sent,
+                "bytes_recv": net.bytes_recv,
+                "packets_sent": net.packets_sent,
+                "packets_recv": net.packets_recv
+            }
+
+        if include_processes:
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+                try:
+                    pinfo = proc.info
+                    processes.append({
+                        "pid": pinfo['pid'],
+                        "name": pinfo['name'],
+                        "cpu_percent": pinfo['cpu_percent'],
+                        "memory_percent": pinfo['memory_percent']
+                    })
+                    if len(processes) >= max_processes:
+                        break
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+            # Sort by CPU usage
+            processes.sort(key=lambda x: x['cpu_percent'], reverse=True)
+            status["processes"] = processes[:max_processes]
+
+        return status
+
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get system status: {str(e)}"}
+
+
+# Simplified implementations for remaining operations
+async def _get_system_info() -> Dict[str, Any]:
+    """Get basic system information."""
+    try:
+        return {
+            "success": True,
+            "system": platform.system(),
+            "node": platform.node(),
+            "release": platform.release(),
+            "version": platform.version(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "python_version": sys.version,
+            "python_executable": sys.executable,
+            "working_directory": os.getcwd()
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get system info: {str(e)}"}
+
+
+async def _get_resource_usage() -> Dict[str, Any]:
+    """Get detailed resource usage."""
+    try:
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+
+        return {
+            "success": True,
+            "cpu_usage_percent": cpu_percent,
+            "memory": {
+                "total_gb": round(memory.total / (1024**3), 2),
+                "used_gb": round(memory.used / (1024**3), 2),
+                "available_gb": round(memory.available / (1024**3), 2),
+                "usage_percent": memory.percent
+            },
+            "disk": {
+                "total_gb": round(disk.total / (1024**3), 2),
+                "used_gb": round(disk.used / (1024**3), 2),
+                "free_gb": round(disk.free / (1024**3), 2),
+                "usage_percent": disk.percent
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get resource usage: {str(e)}"}
+
+
+async def _get_process_info(max_processes: int = 10, filter_pattern: Optional[str] = None, sort_by: str = "cpu_percent", sort_order: str = "desc") -> Dict[str, Any]:
+    """Get process information."""
+    try:
+        processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'status']):
+            try:
+                pinfo = proc.info
+                if filter_pattern and filter_pattern.lower() not in pinfo['name'].lower():
+                    continue
+
+                processes.append({
+                    "pid": pinfo['pid'],
+                    "name": pinfo['name'],
+                    "cpu_percent": pinfo['cpu_percent'],
+                    "memory_percent": pinfo['memory_percent'],
+                    "status": pinfo['status']
+                })
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        # Sort processes
+        reverse = sort_order == "desc"
+        if sort_by == "cpu_percent":
+            processes.sort(key=lambda x: x['cpu_percent'], reverse=reverse)
+        elif sort_by == "memory_percent":
+            processes.sort(key=lambda x: x['memory_percent'], reverse=reverse)
+        elif sort_by == "name":
+            processes.sort(key=lambda x: x['name'].lower(), reverse=reverse)
+
+        return {
+            "success": True,
+            "processes": processes[:max_processes],
+            "count": len(processes[:max_processes]),
+            "filter": filter_pattern,
+            "sort_by": sort_by,
+            "sort_order": sort_order
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get process info: {str(e)}"}
+
+
+async def _get_network_info() -> Dict[str, Any]:
+    """Get network information."""
+    try:
+        network_info = {}
+        for interface, addrs in psutil.net_if_addrs().items():
+            network_info[interface] = []
+            for addr in addrs:
+                network_info[interface].append({
+                    "family": str(addr.family),
+                    "address": addr.address,
+                    "netmask": addr.netmask,
+                    "broadcast": addr.broadcast
+                })
+
+        io_counters = psutil.net_io_counters()
+        return {
+            "success": True,
+            "interfaces": network_info,
+            "io_counters": {
+                "bytes_sent": io_counters.bytes_sent,
+                "bytes_recv": io_counters.bytes_recv,
+                "packets_sent": io_counters.packets_sent,
+                "packets_recv": io_counters.packets_recv
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get network info: {str(e)}"}
+
+
+async def _get_disk_usage() -> Dict[str, Any]:
+    """Get disk usage information."""
+    try:
+        partitions = []
+        for partition in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                partitions.append({
+                    "device": partition.device,
+                    "mountpoint": partition.mountpoint,
+                    "fstype": partition.fstype,
+                    "opts": partition.opts,
+                    "total_gb": round(usage.total / (1024**3), 2),
+                    "used_gb": round(usage.used / (1024**3), 2),
+                    "free_gb": round(usage.free / (1024**3), 2),
+                    "usage_percent": usage.percent
+                })
+            except PermissionError:
+                continue
+
+        return {
+            "success": True,
+            "partitions": partitions
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get disk usage: {str(e)}"}
+
+
+async def _get_memory_info() -> Dict[str, Any]:
+    """Get detailed memory information."""
+    try:
+        memory = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+
+        return {
+            "success": True,
+            "virtual_memory": {
+                "total": memory.total,
+                "available": memory.available,
+                "used": memory.used,
+                "free": memory.free,
+                "percent": memory.percent,
+                "active": getattr(memory, 'active', None),
+                "inactive": getattr(memory, 'inactive', None),
+                "buffers": getattr(memory, 'buffers', None),
+                "cached": getattr(memory, 'cached', None)
+            },
+            "swap_memory": {
+                "total": swap.total,
+                "used": swap.used,
+                "free": swap.free,
+                "percent": swap.percent,
+                "sin": swap.sin,
+                "sout": swap.sout
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get memory info: {str(e)}"}
+
+
+async def _get_cpu_info() -> Dict[str, Any]:
+    """Get CPU information."""
+    try:
+        freq = psutil.cpu_freq()
+        return {
+            "success": True,
+            "count": psutil.cpu_count(logical=True),
+            "physical_count": psutil.cpu_count(logical=False),
+            "usage_percent": psutil.cpu_percent(interval=1, percpu=True),
+            "frequency": {
+                "current": freq.current if freq else None,
+                "min": freq.min if freq else None,
+                "max": freq.max if freq else None
+            },
+            "times": psutil.cpu_times()._asdict(),
+            "stats": psutil.cpu_stats()._asdict()
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get CPU info: {str(e)}"}
+
+
+async def _get_environment_info() -> Dict[str, Any]:
+    """Get environment information."""
+    try:
+        env_vars = dict(os.environ)
+        # Filter out sensitive variables
+        sensitive_keys = ['password', 'secret', 'key', 'token', 'auth']
+        filtered_env = {}
+        for key, value in env_vars.items():
+            if any(sensitive in key.lower() for sensitive in sensitive_keys):
+                filtered_env[key] = "***FILTERED***"
+            else:
+                filtered_env[key] = value
+
+        return {
+            "success": True,
+            "environment_variables": filtered_env,
+            "path": os.environ.get('PATH', '').split(os.pathsep),
+            "python_path": sys.path,
+            "working_directory": os.getcwd(),
+            "home_directory": os.path.expanduser('~')
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get environment info: {str(e)}"}
+
+
+async def _get_service_status() -> Dict[str, Any]:
+    """Get system service status."""
+    try:
+        # This is a simplified implementation
+        # Real service checking would require platform-specific code
+        return {
+            "success": True,
+            "note": "Service status checking requires platform-specific implementation",
+            "platform": platform.system(),
+            "available_services": ["Basic service detection not implemented"]
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get service status: {str(e)}"}
+
+
+async def _get_log_info() -> Dict[str, Any]:
+    """Get system log information."""
+    try:
+        # This is a simplified implementation
+        return {
+            "success": True,
+            "note": "System log access requires elevated privileges and platform-specific code",
+            "platform": platform.system(),
+            "available_logs": ["System log access not implemented"]
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get log info: {str(e)}"}
+
+
+async def _run_system_command(command: str, timeout: int = 30, shell: bool = False) -> Dict[str, Any]:
+    """Execute system command safely."""
+    try:
+        # This is a simplified implementation for safety
+        # Real command execution should have proper security measures
+        return {
+            "success": False,
+            "error": "System command execution disabled for security reasons",
+            "note": "Use platform-specific secure command execution instead"
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to run command: {str(e)}"}
+
+
+async def _get_performance_metrics() -> Dict[str, Any]:
+    """Get performance metrics."""
+    try:
+        return {
+            "success": True,
+            "cpu": {
+                "usage_percent": psutil.cpu_percent(interval=1),
+                "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else None
+            },
+            "memory": {
+                "usage_percent": psutil.virtual_memory().percent
+            },
+            "disk": {
+                "usage_percent": psutil.disk_usage('/').percent
+            },
+            "network": {
+                "bytes_sent": psutil.net_io_counters().bytes_sent,
+                "bytes_recv": psutil.net_io_counters().bytes_recv
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get performance metrics: {str(e)}"}
+
+
+async def _get_security_info() -> Dict[str, Any]:
+    """Get basic security information."""
+    try:
+        return {
+            "success": True,
+            "platform": platform.system(),
+            "user": os.getlogin() if hasattr(os, 'getlogin') else None,
+            "uid": os.getuid() if hasattr(os, 'getuid') else None,
+            "gid": os.getgid() if hasattr(os, 'getgid') else None,
+            "umask": oct(os.umask(os.umask(0))),
+            "note": "Detailed security information requires elevated privileges"
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get security info: {str(e)}"}
+
+
+async def _get_hardware_info() -> Dict[str, Any]:
+    """Get hardware information."""
+    try:
+        return {
+            "success": True,
+            "platform": platform.system(),
+            "architecture": platform.architecture(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "cpu_count": psutil.cpu_count(logical=True),
+            "physical_cpu_count": psutil.cpu_count(logical=False),
+            "memory_total": psutil.virtual_memory().total,
+            "note": "Detailed hardware information requires additional libraries"
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get hardware info: {str(e)}"}
+
+
+async def _get_software_info() -> Dict[str, Any]:
+    """Get installed software information."""
+    try:
+        return {
+            "success": True,
+            "platform": platform.system(),
+            "python_version": sys.version,
+            "python_executable": sys.executable,
+            "installed_packages": len(sys.modules),
+            "note": "Detailed software inventory requires platform-specific implementation"
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get software info: {str(e)}"}
+
+
+async def _get_time_info() -> Dict[str, Any]:
+    """Get time and timezone information."""
+    try:
+        now = datetime.now()
+        utc_now = datetime.now(timezone.utc)
+
+        return {
+            "success": True,
+            "local_time": now.isoformat(),
+            "utc_time": utc_now.isoformat(),
+            "timezone": str(now.astimezone().tzinfo),
+            "timestamp": now.timestamp(),
+            "utc_offset": now.utcoffset().total_seconds() if now.utcoffset() else None
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get time info: {str(e)}"}
+
+
+async def _get_locale_info() -> Dict[str, Any]:
+    """Get locale and language settings."""
+    try:
+        import locale
+
+        return {
+            "success": True,
+            "locale": locale.getlocale(),
+            "preferred_encoding": locale.getpreferredencoding(),
+            "language": os.environ.get('LANG', 'Unknown'),
+            "lc_all": os.environ.get('LC_ALL'),
+            "lc_ctype": os.environ.get('LC_CTYPE')
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get locale info: {str(e)}"}
+
+
+async def _get_user_info() -> Dict[str, Any]:
+    """Get current user information."""
+    try:
+        return {
+            "success": True,
+            "user": os.getlogin() if hasattr(os, 'getlogin') else None,
+            "uid": os.getuid() if hasattr(os, 'getuid') else None,
+            "gid": os.getgid() if hasattr(os, 'getgid') else None,
+            "home": os.path.expanduser('~'),
+            "shell": os.environ.get('SHELL', os.environ.get('COMSPEC')),
+            "groups": os.getgroups() if hasattr(os, 'getgroups') else None
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get user info: {str(e)}"}
+
+
+async def _get_session_info() -> Dict[str, Any]:
+    """Get current session information."""
+    try:
+        return {
+            "success": True,
+            "pid": os.getpid(),
+            "ppid": os.getppid() if hasattr(os, 'getppid') else None,
+            "working_directory": os.getcwd(),
+            "environment_count": len(os.environ),
+            "platform": platform.system(),
+            "hostname": platform.node()
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get session info: {str(e)}"}

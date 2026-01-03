@@ -1,145 +1,45 @@
-name: "Release Automation"
+name: Release
 
 on:
   push:
     tags:
-      - "v*.*.*"
-  workflow_dispatch:
-    inputs:
-      tag_name:
-        description: "Tag name for release"
-        required: true
-        type: string
-      release_name:
-        description: "Release name"
-        required: true
-        type: string
-
-permissions:
-  contents: write
-  packages: write
-  issues: write
-  pull-requests: write
+      - 'v*.*.*'
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Python
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
+        python-version: "3.10"
 
       - name: Build package
-        run: python -m build
+      run: |
+        python -m pip install --upgrade pip build
+        python -m build
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
+        files: dist/*
+        generate_release_notes: true
           body: |
-            ## 🚀 Release ${{ github.ref_name }}
+          ## Filesystem MCP Release ${{ github.ref_name }}
 
-            ### 📦 What's New
-
-            <!-- Add release notes here -->
-
-            ### 🔧 Installation
-
+          ### Installation
             ```bash
-            pip install filesystem-mcp==${{ github.ref_name }}
+          pip install filesystem-mcp
             ```
 
-            ### 📚 Documentation
+          ### Features
+          - File system operations
+          - Git repository management
+          - Docker container management
 
-            - [README](https://github.com/sandr/filesystem-mcp/blob/main/README.md)
-            - [Changelog](https://github.com/sandr/filesystem-mcp/blob/main/CHANGELOG.md)
-
-            ### 🐛 Bug Fixes
-            <!-- List bug fixes -->
-
-            ### ✨ New Features
-            <!-- List new features -->
-
-            ### 🔄 Changes
-            <!-- List other changes -->
-
-            ---
-            **Full Changelog**: [Compare releases](https://github.com/sandr/filesystem-mcp/compare/v${{ github.event.inputs.previous_version || '2.0.0' }}...${{ github.ref_name }})
-          draft: false
-          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
+          See [CHANGELOG.md](CHANGELOG.md) for details.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/filesystem-mcp-${{ github.ref_name }}.tar.gz
-          asset_name: filesystem-mcp-${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Python Package to PyPI
-        if: "!contains(github.ref_name, 'rc') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'alpha')"
-        run: |
-          python -m twine upload --repository pypi dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Generate Release Notes
-        run: |
-          echo "## 📋 Release Summary" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "**Version:** ${{ github.ref_name }}" >> release_notes.md
-          echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### 📊 Build Information" >> release_notes.md
-          echo "- **Commit:** ${{ github.sha }}" >> release_notes.md
-          echo "- **Branch:** ${{ github.ref_name }}" >> release_notes.md
-          echo "- **Build:** ${{ github.run_number }}" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### 🔍 Quality Checks" >> release_notes.md
-          echo "- ✅ All tests passed" >> release_notes.md
-          echo "- ✅ Security scan completed" >> release_notes.md
-          echo "- ✅ CodeQL analysis passed" >> release_notes.md
-          echo "- ✅ Package build successful" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### 📦 Assets" >> release_notes.md
-          echo "- Python wheel (.whl)" >> release_notes.md
-          echo "- Source distribution (.tar.gz)" >> release_notes.md
-          echo "- DXT package (if applicable)" >> release_notes.md
-
-      - name: Upload Release Notes
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release_notes.md
-          asset_name: release_notes.md
-          asset_content_type: text/markdown
-
-  notify:
-    needs: release
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Notify on Release
-        run: |
-          echo "Release ${{ github.ref_name }} completed successfully!"
-          echo "Check the releases page: https://github.com/sandr/filesystem-mcp/releases"
