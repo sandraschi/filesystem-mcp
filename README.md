@@ -119,6 +119,45 @@ pip install fastmcp>=2.14.1 pydantic>=2.5.0 docker>=6.0.0 gitpython>=3.1.0
 pip install -e .[dev,test]
 ```
 
+### HTTP/HTTPS Mode (For Web Apps)
+
+For web applications or custom MCP clients, run the server in HTTP mode:
+
+```bash
+# Set environment variables
+export MCP_TRANSPORT=http
+export MCP_HOST=127.0.0.1  # or 0.0.0.0 for all interfaces
+export MCP_PORT=8000
+
+# Run the server
+python -m filesystem_mcp
+```
+
+Or use uvicorn directly with the ASGI app:
+
+```python
+from filesystem_mcp import http_app
+import uvicorn
+
+# Get ASGI app
+asgi_app = http_app()
+
+# Run with uvicorn
+uvicorn.run(asgi_app, host="127.0.0.1", port=8000)
+```
+
+Or via command line:
+```bash
+uvicorn filesystem_mcp:http_app --host 127.0.0.1 --port 8000
+```
+
+The MCP endpoint will be available at: `http://127.0.0.1:8000/mcp/`
+
+**Quick test:**
+```bash
+curl http://127.0.0.1:8000/mcp/
+```
+
 ### Manual Claude Desktop Configuration
 
 For manual installation or other MCP clients, add to your Claude Desktop configuration file (`claude_desktop_config.json`):
@@ -163,6 +202,9 @@ For manual installation or other MCP clients, add to your Claude Desktop configu
 - Replace `D:\\path\\to\\filesystem-mcp\\src` with the actual path to your cloned repository's `src` directory
 - Set `cwd` to your preferred working directory for file operations
 - The server supports the following optional environment variables:
+  - `MCP_TRANSPORT`: Set to `"http"` for HTTP mode, `"stdio"` for stdio mode (default: `"stdio"`)
+  - `MCP_HOST`: Host address for HTTP mode (default: `"127.0.0.1"`)
+  - `MCP_PORT`: Port number for HTTP mode (default: `8000`)
   - `FASTMCP_LOG_LEVEL`: Set to `DEBUG`, `INFO`, `WARNING`, or `ERROR`
   - `GIT_USERNAME`: Default Git username for commits
   - `GIT_EMAIL`: Default Git email for commits

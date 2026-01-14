@@ -66,6 +66,7 @@ def _import_tools():
             ".tools.portmanteau_git_mgmt",  # Git management
             ".tools.portmanteau_monitoring",  # System monitoring
             ".tools.portmanteau_host",  # Host context
+            ".tools.agentic_file_workflow",  # SEP-1577 agentic workflows
         ]
 
         for module_name in tool_modules:
@@ -93,6 +94,17 @@ def _import_tools():
 # Import tools immediately
 _tools_imported = _import_tools()
 
+# Export ASGI app for HTTP/HTTPS mode (for web apps)
+def http_app():
+    """Get ASGI application for HTTP/HTTPS mode.
+    
+    Usage:
+        from filesystem_mcp import http_app
+        import uvicorn
+        uvicorn.run(http_app(), host="127.0.0.1", port=8000)
+    """
+    return app.http_app()
+
 
 def main():
     """Main entry point for the MCP server."""
@@ -109,10 +121,23 @@ def main():
         logger.info("Filesystem MCP server ready to start")
         logger.info("Note: Some tools may not be available if optional dependencies are missing")
 
-        # Run the server using stdio (MCP protocol)
-        import asyncio
-
-        asyncio.run(app.run_stdio_async())
+        # Check for HTTP mode via environment variable
+        import os
+        
+        transport = os.getenv("MCP_TRANSPORT", "stdio").lower()
+        host = os.getenv("MCP_HOST", "127.0.0.1")
+        port = int(os.getenv("MCP_PORT", "8000"))
+        
+        if transport == "http":
+            logger.info(f"Starting Filesystem MCP server in HTTP mode on {host}:{port}")
+            logger.info(f"MCP endpoint will be available at: http://{host}:{port}/mcp/")
+            # Run HTTP server (blocks)
+            app.run(transport="http", host=host, port=port)
+        else:
+            # Default: stdio mode for Claude Desktop
+            logger.info("Starting Filesystem MCP server in stdio mode")
+            import asyncio
+            asyncio.run(app.run_stdio_async())
 
     except KeyboardInterrupt:
         logger.info("Server shutdown requested by user")
