@@ -110,7 +110,7 @@ async def _get_system_status(proc, disk, net, max_p):
         if net:
             res["network"] = psutil.net_io_counters()._asdict()
 
-        return _success_response(res, related_ops=["get_resource_usage", "get_process_info"])
+        return _success_response(res, related_operations=["get_resource_usage", "get_process_info"])
     except Exception as e:
         return _error_response(str(e), "psutil_error")
 

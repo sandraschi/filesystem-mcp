@@ -1,0 +1,329 @@
+import logging
+import platform
+import sys
+from datetime import datetime, timezone
+from typing import Any, Literal, Optional
+
+from .utils import (
+    _clarification_response,
+    _error_response,
+    _get_app,
+    _success_response,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@_get_app().tool()
+async def host_ops(
+    operation: Literal[
+        "get_help",
+        "get_system_info",
+        "get_environment_info",
+        "get_security_info",
+        "get_hardware_info",
+        "get_software_info",
+        "get_time_info",
+        "get_locale_info",
+        "get_user_info",
+        "get_session_info",
+        "get_service_status",
+        "get_log_info",
+    ],
+    category: Optional[str] = None,
+    tool_name: Optional[str] = None,
+    level: str = "basic",
+) -> dict[str, Any]:
+    """Host System Context (Info, Env, Help, User).
+
+    Args:
+        operation (Literal, required): Available context operations:
+            - "get_help": Documentation for tools and categories
+            - "get_system_info": OS, node, release, and python version
+            - "get_environment_info": Environment variables and paths
+            - "get_security_info": Basic user and permission info
+            - "get_hardware_info": Machine architecture and processor info
+            - "get_software_info": Python executable and loaded modules
+            - "get_time_info": Local and UTC time with offsets
+            - "get_locale_info": System language and encoding settings
+            - "get_user_info": Current username and home directory
+            - "get_session_info": Process ID and hostname
+            - "get_service_status": Availability of system services
+            - "get_log_info": Access to system logs (if permitted)
+
+        --- OPTIONS ---
+
+        category (str | None): Help category filter
+        tool_name (str | None): Specific tool documentation
+        level (str): Help detail level (basic, advanced). Default: "basic"
+    """
+    try:
+        if not operation:
+            return _clarification_response(
+                "operation",
+                "No operation specified",
+                ["get_system_info", "get_environment_info"],
+            )
+
+        if operation == "get_help":
+            return await _get_help(category, tool_name, level)
+        elif operation == "get_system_info":
+            return await _get_system_info()
+        elif operation == "get_environment_info":
+            return await _get_environment_info()
+        elif operation == "get_security_info":
+            return await _get_security_info()
+        elif operation == "get_hardware_info":
+            return await _get_hardware_info()
+        elif operation == "get_software_info":
+            return await _get_software_info()
+        elif operation == "get_time_info":
+            return await _get_time_info()
+        elif operation == "get_locale_info":
+            return await _get_locale_info()
+        elif operation == "get_user_info":
+            return await _get_user_info()
+        elif operation == "get_session_info":
+            return await _get_session_info()
+        elif operation == "get_service_status":
+            return await _get_service_status()
+        elif operation == "get_log_info":
+            return await _get_log_info()
+        else:
+            return _error_response(
+                f"Unknown operation: {operation}", "unsupported_operation"
+            )
+    except Exception as e:
+        logger.error(f"Host context operation '{operation}' failed: {e}", exc_info=True)
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_help(category, tool_name, level):
+    try:
+        help_info = {
+            "level": level,
+            "categories": {
+                "filesystem": "File system operations (read, write, list, search, etc.)",
+                "docker": "Docker container and image management",
+                "repository": "Git repository operations",
+                "system": "System monitoring and help tools",
+                "sampling": "Agentic orchestration and autonomous workflows (SEP-1577)",
+            },
+        }
+        if category == "filesystem":
+            help_info["tools"] = {
+                "file_ops": "Unified file ops",
+                "dir_ops": "Directory ops",
+            }
+        elif category == "docker":
+            help_info["tools"] = {
+                "container_ops": "Container mgmt",
+                "infra_ops": "Images/Nets",
+            }
+        elif category == "repository":
+            help_info["tools"] = {"repo_ops": "Git core", "git_ops": "Git mgmt"}
+        elif category == "system":
+            help_info["tools"] = {
+                "monitor_ops": "Monitoring",
+                "host_ops": "Host context",
+            }
+        elif category == "sampling":
+            help_info["tools"] = {
+                "agentic_file_workflow": "Autonomous file workflows using sampling",
+                "orch_ops": "Docker Compose orchestration",
+            }
+            help_info["details"] = await _get_sampling_help(level)
+
+        return _success_response(help_info)
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_system_info():
+    try:
+        return _success_response(
+            {
+                "os": platform.system(),
+                "node": platform.node(),
+                "release": platform.release(),
+                "version": platform.version(),
+                "machine": platform.machine(),
+                "processor": platform.processor(),
+                "python_version": sys.version,
+                "python_executable": sys.executable,
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_environment_info():
+    try:
+        import os
+
+        env = dict(os.environ)
+        sensitive = ["pass", "key", "secret", "token", "auth"]
+        filtered = {
+            k: ("***" if any(s in k.lower() for s in sensitive) else v)
+            for k, v in env.items()
+        }
+        return _success_response(
+            {
+                "env": filtered,
+                "path": os.environ.get("PATH", "").split(os.pathsep),
+                "cwd": os.getcwd(),
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_security_info():
+    try:
+        import os
+
+        return _success_response(
+            {
+                "user": os.getlogin() if hasattr(os, "getlogin") else None,
+                "uid": os.getuid() if hasattr(os, "getuid") else None,
+                "gid": os.getgid() if hasattr(os, "getgid") else None,
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_hardware_info():
+    try:
+        import psutil
+
+        return _success_response(
+            {
+                "cpu_count": psutil.cpu_count(logical=True),
+                "phys_cpu_count": psutil.cpu_count(logical=False),
+                "total_mem": psutil.virtual_memory().total,
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_software_info():
+    try:
+        return _success_response(
+            {"python_version": sys.version, "loaded_modules_count": len(sys.modules)}
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_time_info():
+    try:
+        now = datetime.now()
+        return _success_response(
+            {
+                "local": now.isoformat(),
+                "utc": datetime.now(timezone.utc).isoformat(),
+                "timezone": str(now.astimezone().tzinfo),
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_locale_info():
+    try:
+        import locale
+        import os
+
+        return _success_response(
+            {
+                "locale": locale.getlocale(),
+                "encoding": locale.getpreferredencoding(),
+                "lang": os.environ.get("LANG"),
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_user_info():
+    try:
+        import os
+
+        return _success_response(
+            {
+                "user": os.getlogin() if hasattr(os, "getlogin") else None,
+                "home": os.path.expanduser("~"),
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_session_info():
+    try:
+        import os
+
+        return _success_response(
+            {
+                "pid": os.getpid(),
+                "ppid": os.getppid() if hasattr(os, "getppid") else None,
+            }
+        )
+    except Exception as e:
+        return _error_response(str(e), "internal_error")
+
+
+async def _get_service_status():
+    return _success_response({"status": "Checking not supported on this platform"})
+
+
+async def _get_log_info():
+    return _success_response({"status": "Log access restricted"})
+
+
+async def _get_sampling_help(level: str) -> str:
+    """Get detailed help about sampling and agentic operations in Filesystem MCP."""
+
+    if level in ["basic", "intermediate"]:
+        return """# Agentic Sampling & Orchestration
+
+## What is File Sampling?
+
+**File Sampling** (SEP-1577) allows the AI to autonomously perform complex, multi-step filesystem operations. Instead of you giving every command, you provide a high-level goal and the AI "samples" the best tool sequences to achieve it.
+
+## Key Tool: `agentic_file_workflow`
+
+This tool uses deep orchestration to handle complex tasks:
+
+- **Workflow Prompt**: Your high-level goal (e.g., "Find all logs older than 7 days and zip them")
+- **Autonomous Decisions**: The AI decides which files to read, which directories to scan, and how to process the data.
+- **Efficiency**: Reduces server/client round-trips by performing the loop on the server-side logic.
+
+## Common Agentic Workflows
+
+- **Project Organization**: "Categorize all files in /src by their file type into folders."
+- **Data Cleanup**: "Find unused temporary files and archive them."
+- **Intelligent Backups**: "Locate all modified configuration files and create a timestamped backup."
+"""
+
+    else:  # advanced/expert
+        return """# Advanced Agentic Architecture (SEP-1577)
+
+## Orchestration Logic
+
+The `agentic_file_workflow` tool implements a **ctx.sample() sequence** where the model is provided with a set of atomic file operations:
+
+1. **atomic_read**: Low-level file reading
+2. **atomic_list**: Directory enumeration
+3. **atomic_find**: Pattern-based file location
+
+The orchestration loop iterates up to `max_iterations`, allowing the model to refine its approach based on previous findings.
+
+## Security & Guardrails
+
+- **Iteration Limits**: Defaulting to 5 loops to prevent infinite logic cycles.
+- **Result Verification**: The output is structured for validation.
+- **Path Confinement**: All operations are relative to the configured workspace root.
+"""

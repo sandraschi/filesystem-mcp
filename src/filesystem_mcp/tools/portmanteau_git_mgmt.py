@@ -246,7 +246,7 @@ async def _list_branches(repo_path):
                 "git_ops(operation='switch_branch', branch_name='...')",
                 "git_ops(operation='merge_branch')",
             ],
-            related_ops=["list_tags", "list_remotes"],
+            related_operations=["list_tags", "list_remotes"],
         )
     except Exception as e:
         return _error_response(str(e), "git_error")

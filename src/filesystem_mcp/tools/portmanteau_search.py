@@ -209,7 +209,7 @@ async def _grep_file(
                 "encoding": encoding,
             },
             next_steps=[f"file_ops(operation='read_file', path='{file_path}')"],
-            related_ops=["count_pattern", "edit_file"],
+            related_operations=["count_pattern", "edit_file"],
         )
 
     except UnicodeDecodeError as e:
@@ -498,12 +498,12 @@ async def _find_duplicate_files(
             # Early exit if max_duplicates reached
             if max_duplicates and len(duplicates) >= max_duplicates:
                 break
-                
+
             for file in files:
                 # Early exit if max_duplicates reached
                 if max_duplicates and len(duplicates) >= max_duplicates:
                     break
-                    
+
                 if not include_hidden and file.startswith("."):
                     continue
 
@@ -569,7 +569,7 @@ async def _find_large_files(
             for file in files:
                 if done and early_exit:
                     break
-                    
+
                 if not include_hidden and file.startswith("."):
                     continue
 

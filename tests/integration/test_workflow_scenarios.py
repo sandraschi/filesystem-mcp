@@ -1,416 +1,457 @@
 """
-Integration tests for complete workflow scenarios.
+Integration tests for autonomous file workflow scenarios.
 
-Tests real workflows that combine multiple tools to accomplish tasks.
+Tests end-to-end sampling-based workflows using FastMCP 2.14.3+ autonomous execution.
 """
 
-import asyncio
-import json
-from datetime import datetime
-from unittest.mock import Mock, patch
 
 import pytest
-from filesystem_mcp.tools.file_operations import (
-    get_file_info,
-    list_directory,
-    read_file,
-    write_file,
-)
-from filesystem_mcp.tools.repo_operations import clone_repo, get_repo_status
-from filesystem_mcp.tools.system_tools import get_help, get_system_status
+
+from filesystem_mcp.tools.agentic_file_workflow import agentic_file_workflow
 
 
-class TestProjectSetupWorkflow:
-    """Test complete project setup workflow."""
+class TestFileOrganizationWorkflow:
+    """Test file organization workflows using sampling."""
 
     @pytest.mark.asyncio
-    async def test_create_project_structure(self, temp_dir):
-        """Test creating a complete project structure."""
-        project_dir = temp_dir / "my_project"
-        project_dir.mkdir()
+    async def test_project_cleanup_workflow(self, temp_dir, mock_sampling_context):
+        """Test workflow that organizes and cleans up a messy project structure."""
+        # Create a messy project structure
+        (temp_dir / "script.py").write_text("# Main script")
+        (temp_dir / "data.txt").write_text("some data")
+        (temp_dir / "temp.tmp").write_text("temporary file")
+        (temp_dir / "config.json").write_text('{"setting": "value"}')
 
-        # Create main directories
-        src_dir = project_dir / "src"
-        tests_dir = project_dir / "tests"
-        docs_dir = project_dir / "docs"
-
-        # Write configuration files
-        pyproject_content = """
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "my-project"
-version = "0.1.0"
-description = "A sample project"
-"""
-
-        readme_content = "# My Project\n\nThis is a sample project.\n"
-
-        # Create files
-        result1 = await write_file.run({"file_path": str(src_dir / "__init__.py"), "content": ""})
-        result2 = await write_file.run({"file_path": str(tests_dir / "__init__.py"), "content": ""})
-        result3 = await write_file.run(
-            {"file_path": str(docs_dir / "README.md"), "content": "Documentation"}
-        )
-        result4 = await write_file.run(
-            {"file_path": str(project_dir / "pyproject.toml"), "content": pyproject_content}
-        )
-        result5 = await write_file.run(
-            {"file_path": str(project_dir / "README.md"), "content": readme_content}
-        )
-
-        # Verify all operations succeeded
-        assert result1["success"] is True
-        assert result2["success"] is True
-        assert result3["success"] is True
-        assert result4["success"] is True
-        assert result5["success"] is True
-
-        # Verify directory structure
-        result = await list_directory.run({"directory_path": str(project_dir), "recursive": True})
-        data = parse_tool_result(result)
-        assert "files" in data
-
-        # Check that all expected files exist
-        created_files = []
-        for item in data["files"]:
-            if item["type"] == "file":
-                created_files.append(item["name"])
-
-        assert "pyproject.toml" in created_files
-        assert "README.md" in created_files
-        assert "__init__.py" in created_files
-
-    @pytest.mark.asyncio
-    async def test_project_analysis_workflow(self, temp_dir):
-        """Test analyzing a project structure."""
-        # Set up a sample project
-        project_dir = temp_dir / "analysis_project"
-        project_dir.mkdir()
-
-        # Create various file types
-        await write_file.run(
-            {"file_path": str(project_dir / "main.py"), "content": "print('Hello, World!')"}
-        )
-        await write_file.run(
-            {
-                "file_path": str(project_dir / "config.json"),
-                "content": '{"debug": true, "port": 8080}',
-            }
-        )
-        await write_file.run(
-            {"file_path": str(project_dir / "README.md"), "content": "# Analysis Project"}
-        )
-        await write_file.run(
-            {"file_path": str(project_dir / ".gitignore"), "content": "*.pyc\n__pycache__/"}
-        )
-
-        # Create subdirectory
-        src_dir = project_dir / "src"
+        # Create subdirectories with misplaced files
+        src_dir = temp_dir / "src"
         src_dir.mkdir()
-        await write_file.run(
-            {"file_path": str(src_dir / "utils.py"), "content": "def helper(): pass"}
+        (src_dir / "utils.py").write_text("# Utility functions")
+        (src_dir / "readme.txt").write_text("Documentation")
+
+        # Setup mock sampling to simulate file organization
+        mock_sampling_context.sample_step.side_effect = [
+            # Step 1: Analyze current structure
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
+                }
+            },
+            # Step 2: Create organized directories
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "scripts")}
+                }
+            },
+            # Step 3: Move Python files to scripts
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "move_file",
+                        "path": str(temp_dir / "script.py"),
+                        "destination_path": str(temp_dir / "scripts" / "script.py")
+                    }
+                }
+            },
+            # Step 4: Move data files
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "move_file",
+                        "path": str(temp_dir / "data.txt"),
+                        "destination_path": str(temp_dir / "data" / "data.txt")
+                    }
+                }
+            },
+            # Step 5: Remove temp files
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "delete_file",
+                        "path": str(temp_dir / "temp.tmp")
+                    }
+                }
+            },
+            None  # Complete workflow
+        ]
+
+        result = await agentic_file_workflow(
+            workflow_prompt="Organize this project by moving Python files to a scripts directory, data files to a data directory, and remove temporary files",
+            available_tools=["dir_ops", "file_ops"],
+            max_iterations=10
         )
 
-        # Analyze the project
-        result = await list_directory.run(
-            {"directory_path": str(project_dir), "recursive": True, "include_hidden": True}
-        )
-        data = parse_tool_result(result)
-        assert "files" in data
+        assert result["success"] is True
+        assert result["quality_metrics"]["autonomous_execution"] is True
+        assert len(result["tools_executed"]) >= 5
 
-        # Read and analyze key files
-        pyproject_result = await read_file.run({"file_path": str(project_dir / "config.json")})
-        pyproject_data = parse_tool_result(pyproject_result)
-        assert pyproject_data["success"] is True
-
-        config_data = json.loads(pyproject_data["content"])
-        assert config_data["debug"] is True
-        assert config_data["port"] == 8080
-
-        # Check file info for main script
-        main_info_result = await get_file_info.run({"file_path": str(project_dir / "main.py")})
-        main_info = parse_tool_result(main_info_result)
-        assert main_info["success"] is True
-        assert main_info["size"] > 0
-        assert main_info["is_file"] is True
+        # Verify the workflow actually organized files
+        assert (temp_dir / "scripts" / "script.py").exists()
+        assert not (temp_dir / "script.py").exists()  # Should be moved
+        assert not (temp_dir / "temp.tmp").exists()  # Should be deleted
 
 
-class TestRepositoryWorkflow:
-    """Test Git repository workflows."""
+class TestCodeAnalysisWorkflow:
+    """Test code analysis and documentation workflows."""
 
     @pytest.mark.asyncio
-    @patch("filesystem_mcp.tools.repo_operations.git.Repo.clone_from")
-    async def test_repository_clone_and_analysis(self, mock_clone, temp_dir):
-        """Test cloning a repository and analyzing it."""
-        # Mock the repository clone
-        mock_repo = Mock()
-        mock_repo.head.is_valid.return_value = True
-        mock_repo.active_branch = "main"
-        mock_repo.head.commit.hexsha = "abc123456789"
-        mock_repo.head.commit.message = "Initial commit"
-        mock_repo.head.commit.author.name = "Test Author"
-        mock_repo.head.commit.author.email = "test@example.com"
-        mock_repo.head.commit.committed_datetime = datetime.now()
-        mock_repo.head.commit.parents = []
-        mock_repo.remotes = []
-        mock_repo.git_dir = str(temp_dir / "repo" / ".git")
-        mock_repo.bare = False
-        mock_clone.return_value = mock_repo
+    async def test_codebase_analysis_workflow(self, temp_dir, mock_sampling_context):
+        """Test workflow that analyzes a codebase and generates documentation."""
+        # Create a sample Python project
+        main_py = temp_dir / "main.py"
+        main_py.write_text('''
+def hello_world():
+    """Print hello world."""
+    print("Hello, World!")
 
-        # Clone repository
-        clone_result = await clone_repo.run(
-            {"repo_url": "https://github.com/test/repo.git", "target_dir": str(temp_dir / "repo")}
+def calculate_sum(a, b):
+    """Calculate sum of two numbers."""
+    return a + b
+
+if __name__ == "__main__":
+    hello_world()
+    result = calculate_sum(5, 3)
+    print(f"Sum: {result}")
+''')
+
+        utils_py = temp_dir / "utils.py"
+        utils_py.write_text('''
+import os
+
+def get_file_size(filepath):
+    """Get file size in bytes."""
+    return os.path.getsize(filepath)
+
+def list_directory(path):
+    """List contents of directory."""
+    return os.listdir(path)
+''')
+
+        # Setup mock sampling for code analysis
+        mock_sampling_context.sample_step.side_effect = [
+            # Step 1: Analyze project structure
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
+                }
+            },
+            # Step 2: Read main file
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {"operation": "read_file", "path": str(main_py)}
+                }
+            },
+            # Step 3: Analyze functions
+            {
+                "tool_call": {
+                    "name": "search_ops",
+                    "parameters": {
+                        "operation": "find_symbols",
+                        "path": str(temp_dir),
+                        "pattern": "def "
+                    }
+                }
+            },
+            # Step 4: Generate documentation
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "write_file",
+                        "path": str(temp_dir / "README.md"),
+                        "content": "# Sample Python Project\n\nContains utility functions and a main script."
+                    }
+                }
+            },
+            None
+        ]
+
+        result = await agentic_file_workflow(
+            workflow_prompt="Analyze this Python codebase, identify all functions, and generate project documentation",
+            available_tools=["dir_ops", "file_ops", "search_ops"],
+            max_iterations=8
         )
-        clone_data = parse_tool_result(clone_result)
-        assert clone_data["success"] is True
 
-        # Get repository status
-        status_result = await get_repo_status.run({"repo_path": str(temp_dir / "repo")})
-        status_data = parse_tool_result(status_result)
-        assert status_data["success"] is True
-        assert status_data["active_branch"] == "main"
-        assert "head_commit" in status_data
+        assert result["success"] is True
+        assert "analyze" in result["result"]["workflow_prompt"].lower()
+        assert len(result["tools_executed"]) >= 4
+
+        # Should have created documentation
+        readme = temp_dir / "README.md"
+        assert readme.exists()
+        assert "Python Project" in readme.read_text()
 
 
-class TestHelpAndStatusWorkflow:
-    """Test help and status system workflows."""
+class TestDataProcessingWorkflow:
+    """Test data processing and validation workflows."""
 
     @pytest.mark.asyncio
-    async def test_comprehensive_help_system(self):
-        """Test the complete help system functionality."""
-        # Get overview
-        overview = await get_help()
-        assert overview["success"] is True
-        assert "data" in overview
-        assert len(overview["data"]["categories"]) == 4
+    async def test_data_validation_workflow(self, temp_dir, mock_sampling_context):
+        """Test workflow that validates and processes data files."""
+        # Create sample data files
+        valid_json = temp_dir / "data.json"
+        valid_json.write_text('{"name": "test", "value": 123}')
 
-        # Get category help
-        category_help = await get_help("file_operations")
-        assert category_help["success"] is True
-        assert category_help["data"]["name"] == "File Operations"
+        invalid_json = temp_dir / "invalid.json"
+        invalid_json.write_text('{"name": "test", "value": }')  # Invalid JSON
 
-        # Get tool help
-        tool_help = await get_help("file_operations", "read_file")
-        assert tool_help["success"] is True
-        assert tool_help["data"]["name"] == "read_file"
-        assert "description" in tool_help["data"]
-        assert "parameters" in tool_help["data"]
+        csv_file = temp_dir / "data.csv"
+        csv_file.write_text("name,value\ntest,123\nother,456")
 
-    @pytest.mark.asyncio
-    @patch("filesystem_mcp.tools.system_tools.psutil")
-    @patch("filesystem_mcp.tools.system_tools.platform")
-    async def test_system_status_integration(self, mock_platform, mock_psutil):
-        """Test system status with mocked dependencies."""
-        # Mock system info
-        mock_platform.platform.return_value = "Linux-5.4.0-74-generic-x86_64-with-glibc2.29"
-        mock_platform.processor.return_value = "x86_64"
-        mock_platform.architecture.return_value = ("64bit", "ELF")
+        # Setup mock sampling for data validation
+        mock_sampling_context.sample_step.side_effect = [
+            # Step 1: List data files
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
+                }
+            },
+            # Step 2: Validate JSON files
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {"operation": "read_file", "path": str(valid_json)}
+                }
+            },
+            # Step 3: Check invalid JSON
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {"operation": "read_file", "path": str(invalid_json)}
+                }
+            },
+            # Step 4: Process valid data
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "write_file",
+                        "path": str(temp_dir / "processed_data.json"),
+                        "content": '{"processed": true, "records": 2}'
+                    }
+                }
+            },
+            None
+        ]
 
-        # Mock psutil
-        mock_psutil.cpu_count.return_value = 8
-        mock_psutil.cpu_percent.return_value = [45.0, 23.1, 67.8, 12.4, 89.0, 34.6, 56.7, 78.9]
-        mock_psutil.virtual_memory.return_value = Mock(
-            total=17179869184, available=8589934592, percent=50.0, used=8589934592, free=4294967296
+        result = await agentic_file_workflow(
+            workflow_prompt="Validate JSON and CSV data files, process valid data, and report any issues",
+            available_tools=["dir_ops", "file_ops", "search_ops"],
+            max_iterations=7
         )
 
-        # Get system status
-        status = await get_system_status(include_processes=False, include_disk=False)
-        assert status["success"] is True
+        assert result["success"] is True
+        assert "validate" in result["result"]["workflow_prompt"].lower()
+        assert len(result["tools_executed"]) >= 4
 
-        # Verify system information
-        system_info = status["system"]
-        assert "platform" in system_info
-        assert "processor" in system_info
+        # Should have created processed data file
+        processed = temp_dir / "processed_data.json"
+        assert processed.exists()
 
-        # Verify CPU information
-        cpu_info = status["cpu"]
-        assert "physical_cores" in cpu_info
-        assert "logical_cores" in cpu_info
 
-        # Verify memory information
-        memory_info = status["memory"]
-        assert memory_info["total"] == 17179869184
-        assert memory_info["available"] == 8589934592
+class TestBackupAndRecoveryWorkflow:
+    """Test backup creation and recovery workflows."""
+
+    @pytest.mark.asyncio
+    async def test_backup_workflow(self, temp_dir, mock_sampling_context):
+        """Test workflow that creates backups of important files."""
+        # Create important files
+        config = temp_dir / "config.ini"
+        config.write_text("[settings]\nkey=value")
+
+        database = temp_dir / "database.db"
+        database.write_text("database content")
+
+        # Setup mock sampling for backup creation
+        mock_sampling_context.sample_step.side_effect = [
+            # Step 1: Identify important files
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
+                }
+            },
+            # Step 2: Create backup directory
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "backup")}
+                }
+            },
+            # Step 3: Backup config file
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "read_file",
+                        "path": str(config)
+                    }
+                }
+            },
+            # Step 4: Write backup
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "write_file",
+                        "path": str(temp_dir / "backup" / "config.ini.bak"),
+                        "content": "[settings]\nkey=value"
+                    }
+                }
+            },
+            # Step 5: Backup database
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "read_file",
+                        "path": str(database)
+                    }
+                }
+            },
+            # Step 6: Write database backup
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "write_file",
+                        "path": str(temp_dir / "backup" / "database.db.bak"),
+                        "content": "database content"
+                    }
+                }
+            },
+            None
+        ]
+
+        result = await agentic_file_workflow(
+            workflow_prompt="Create backups of all important files in the project",
+            available_tools=["dir_ops", "file_ops"],
+            max_iterations=10
+        )
+
+        assert result["success"] is True
+        assert "backup" in result["result"]["workflow_prompt"].lower()
+        assert len(result["tools_executed"]) >= 6
+
+        # Verify backups were created
+        backup_dir = temp_dir / "backup"
+        assert backup_dir.exists()
+        assert (backup_dir / "config.ini.bak").exists()
+        assert (backup_dir / "database.db.bak").exists()
 
 
 class TestErrorHandlingWorkflow:
-    """Test error handling across multiple tools."""
+    """Test error handling in autonomous workflows."""
 
     @pytest.mark.asyncio
-    async def test_file_operation_error_handling(self, temp_dir):
-        """Test error handling in file operations."""
-        # Try to read non-existent file
-        result = await read_file(str(temp_dir / "nonexistent.txt"))
-        assert result["success"] is False
-        assert "error" in result
+    async def test_workflow_with_errors(self, temp_dir, mock_sampling_context):
+        """Test workflow that encounters and handles errors gracefully."""
+        # Create a file that will cause issues
+        readonly_file = temp_dir / "readonly.txt"
+        readonly_file.write_text("content")
+        readonly_file.chmod(0o444)  # Make readonly
 
-        # Try to write to directory without permission (if possible)
-        # This might not work on all systems, so we'll skip it
+        # Setup mock sampling that will try to modify readonly file
+        mock_sampling_context.sample_step.side_effect = [
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "edit_file",
+                        "path": str(readonly_file),
+                        "old_string": "content",
+                        "new_string": "modified"
+                    }
+                }
+            },
+            # After error, try a different approach
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "read_file",
+                        "path": str(readonly_file)
+                    }
+                }
+            },
+            # Create a new file instead
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {
+                        "operation": "write_file",
+                        "path": str(temp_dir / "modified.txt"),
+                        "content": "modified content"
+                    }
+                }
+            },
+            None
+        ]
 
-        # Try to list non-existent directory
-        result = await list_directory(str(temp_dir / "nonexistent_dir"))
-        assert result["success"] is False
-        assert "error" in result
-
-    @pytest.mark.asyncio
-    async def test_repository_error_handling(self, temp_dir):
-        """Test error handling in repository operations."""
-        # Try to get status of non-existent repository
-        result = await get_repo_status(str(temp_dir / "nonexistent_repo"))
-        assert result["success"] is False
-        assert "error" in result
-
-        # Try to clone to existing non-empty directory
-        existing_dir = temp_dir / "existing"
-        existing_dir.mkdir()
-        (existing_dir / "file.txt").write_text("content")
-
-        result = await clone_repo(
-            repo_url="https://github.com/test/repo.git", target_dir=str(existing_dir)
+        result = await agentic_file_workflow(
+            workflow_prompt="Modify the readonly file and create a new version",
+            available_tools=["file_ops"],
+            max_iterations=5
         )
-        assert result["success"] is False
-        assert "not empty" in result["error"]
+
+        assert result["success"] is True  # Workflow should complete despite errors
+        assert len(result["tools_executed"]) >= 3
+
+        # Should have created the alternative file
+        modified_file = temp_dir / "modified.txt"
+        assert modified_file.exists()
+        assert modified_file.read_text() == "modified content"
 
 
-class TestComplexWorkflow:
-    """Test complex multi-tool workflows."""
-
-    @pytest.mark.asyncio
-    async def test_backup_and_restore_workflow(self, temp_dir):
-        """Test backing up files and creating restore scripts."""
-        # Create source directory with files
-        source_dir = temp_dir / "source"
-        source_dir.mkdir()
-
-        # Create various files to backup
-        await write_file(str(source_dir / "config.json"), '{"backup": true}')
-        await write_file(str(source_dir / "script.py"), "print('backup script')")
-        (source_dir / "data").mkdir()
-        await write_file(str(source_dir / "data" / "important.txt"), "Important data")
-
-        # Create backup directory
-        backup_dir = temp_dir / "backup"
-        backup_dir.mkdir()
-
-        # "Backup" by copying files (simplified)
-        source_list = await list_directory(str(source_dir), recursive=True)
-        assert "files" in source_list
-
-        # Create backup script
-        backup_script = f"""
-import shutil
-import os
-from pathlib import Path
-
-def backup_files():
-    source = Path("{source_dir}")
-    backup = Path("{backup_dir}")
-
-    for item in source.rglob('*'):
-        if item.is_file():
-            relative_path = item.relative_to(source)
-            backup_path = backup / relative_path
-            backup_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(item, backup_path)
-            print(f"Backed up {{item}} to {{backup_path}}")
-
-if __name__ == "__main__":
-    backup_files()
-"""
-
-        await write_file(str(backup_dir / "backup.py"), backup_script)
-
-        # Verify backup script was created
-        script_result = await read_file(str(backup_dir / "backup.py"))
-        assert script_result["success"] is True
-        assert "backup_files" in script_result["content"]
+class TestWorkflowPerformance:
+    """Test workflow performance and efficiency metrics."""
 
     @pytest.mark.asyncio
-    async def test_project_documentation_workflow(self, temp_dir):
-        """Test creating project documentation."""
-        project_dir = temp_dir / "documented_project"
-        project_dir.mkdir()
+    async def test_efficient_workflow_execution(self, temp_dir, mock_sampling_context):
+        """Test that workflows execute efficiently with good metrics."""
+        # Create simple file structure
+        (temp_dir / "file1.txt").write_text("content1")
+        (temp_dir / "file2.txt").write_text("content2")
 
-        # Create project files
-        await write_file(str(project_dir / "main.py"), "def main(): print('Hello')")
-        await write_file(str(project_dir / "utils.py"), "def helper(): pass")
+        # Setup efficient workflow
+        mock_sampling_context.sample_step.side_effect = [
+            {
+                "tool_call": {
+                    "name": "dir_ops",
+                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
+                }
+            },
+            {
+                "tool_call": {
+                    "name": "file_ops",
+                    "parameters": {"operation": "read_file", "path": str(temp_dir / "file1.txt")}
+                }
+            },
+            None  # Complete efficiently
+        ]
 
-        # Create documentation
-        readme_content = """# Documented Project
+        result = await agentic_file_workflow(
+            workflow_prompt="Quickly check the contents of text files in the directory",
+            available_tools=["dir_ops", "file_ops"],
+            max_iterations=5
+        )
 
-This project contains the following files:
+        assert result["success"] is True
 
-## Files
+        # Check performance metrics
+        metrics = result["quality_metrics"]
+        assert "iterations_completed" in metrics
+        assert "tools_executed" in metrics
+        assert "sampling_efficiency" in metrics
+        assert "workflow_duration_seconds" in metrics
 
-"""
-        # Get directory listing for documentation
-        dir_result = await list_directory(str(project_dir))
-        if "files" in dir_result:
-            for item in dir_result["files"]:
-                if item["type"] == "file" and item["size"] is not None:
-                    readme_content += f"- `{item['name']}` ({item['size']} bytes)\n"
-
-        readme_content += "\n## Usage\n\nRun `python main.py` to execute the main function."
-
-        await write_file(str(project_dir / "README.md"), readme_content)
-
-        # Verify documentation
-        readme_result = await read_file(str(project_dir / "README.md"))
-        assert readme_result["success"] is True
-        assert "Documented Project" in readme_result["content"]
-        assert "main.py" in readme_result["content"]
-
-
-class TestPerformanceWorkflow:
-    """Test performance aspects of workflows."""
-
-    @pytest.mark.asyncio
-    async def test_bulk_file_operations(self, temp_dir):
-        """Test performance with bulk file operations."""
-        bulk_dir = temp_dir / "bulk_test"
-        bulk_dir.mkdir()
-
-        # Create many files
-        file_count = 50
-        tasks = []
-
-        for i in range(file_count):
-            file_path = bulk_dir / f"file_{i:03d}.txt"
-            content = f"Content of file {i}"
-            tasks.append(write_file(str(file_path), content))
-
-        # Execute all writes concurrently
-        results = await asyncio.gather(*tasks)
-
-        # Verify all succeeded
-        assert all(result["success"] for result in results)
-        assert len(results) == file_count
-
-        # Verify files exist
-        list_result = await list_directory(str(bulk_dir))
-        assert "files" in list_result
-        assert len(list_result["files"]) == file_count
-
-    @pytest.mark.asyncio
-    async def test_large_file_handling(self, temp_dir):
-        """Test handling of large files."""
-        large_file = temp_dir / "large_file.txt"
-
-        # Create a moderately large file (1MB)
-        large_content = "x" * (1024 * 1024)  # 1MB of 'x' characters
-
-        write_result = await write_file(str(large_file), large_content)
-        assert write_result["success"] is True
-
-        # Read it back (but don't include content in result for large files)
-        read_result = await read_file(str(large_file))
-        assert read_result["success"] is True
-        assert read_result["size"] == len(large_content)
-
-        # File info should work
-        info_result = await get_file_info(str(large_file))
-        assert info_result["success"] is True
-        assert info_result["size"] == len(large_content)
+        # Should be efficient (low iterations for simple task)
+        assert metrics["iterations_completed"] <= 3
+        assert metrics["sampling_efficiency"] > 0

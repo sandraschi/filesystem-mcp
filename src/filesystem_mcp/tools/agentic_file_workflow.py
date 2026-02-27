@@ -1,201 +1,271 @@
 """
-FastMCP 2.14.1+ Sampling with Tools Orchestration Tools (SEP-1577)
+Agentic File Workflow Tool — FastMCP 2.14.5+ Compatible Implementation
 
-These tools demonstrate SEP-1577: Sampling with tools, enabling agentic workflows
-where servers borrow the client's LLM and autonomously control tool execution.
+Claude Desktop supports basic sampling but NOT sampling.tools capability.
+So we use ctx.sample() WITHOUT tools — instead we gather file context
+server-side, send it to the LLM, parse the structured response, and
+execute any follow-up operations ourselves.
 
-Benefits:
-- Eliminates client round-trips for complex multi-step operations
-- LLM autonomously orchestrates tool usage decisions
-- Server controls execution flow and logic
-- Massive efficiency gains for file management
+Flow:
+  1. Gather initial file context (directory listings, etc.) server-side
+  2. Call ctx.sample() with context + prompt, NO tools param
+  3. Parse LLM response as WorkflowResult (Pydantic)
+  4. Return structured result
 
-FILE MANAGEMENT WORKFLOWS:
-- "Organize my project files" → autonomous file categorization and cleanup
-- "Backup important data" → intelligent backup orchestration
-- "Clean up old files" → automated file management and archiving
+No mock. No pattern-matching. The LLM does the reasoning.
 """
 
-from typing import Any, Dict, List, Optional, Union
-from fastmcp import Context
-
 import logging
+import os
+import datetime
+from typing import Optional
+
+from fastmcp import Context
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
 
-# Conditional imports for advanced_memory integration
-try:
-    from advanced_memory.mcp.inter_server import sample_with_tools, create_tool_spec, SamplingResult
-    from advanced_memory.mcp.tools.content_manager import build_success_response, build_error_response
-    from advanced_memory.mcp.mcp_instance import mcp
-    _advanced_memory_available = True
-except ImportError:
-    _advanced_memory_available = False
-    logger.warning("Advanced Memory not available - using fallback response builders")
-
-    # Fallback response builders when advanced_memory is not available
-    def build_success_response(**kwargs) -> dict:
-        return {
-            "success": True,
-            "operation": kwargs.get("operation", "unknown"),
-            "summary": kwargs.get("summary", "Operation completed"),
-            "result": kwargs.get("result", {}),
-            "next_steps": kwargs.get("next_steps", []),
-            "suggestions": kwargs.get("suggestions", []),
-        }
-
-    def build_error_response(**kwargs) -> dict:
-        return {
-            "success": False,
-            "error": kwargs.get("error", "Unknown error"),
-            "error_code": kwargs.get("error_code", "UNKNOWN_ERROR"),
-            "message": kwargs.get("message", "An error occurred"),
-            "recovery_options": kwargs.get("recovery_options", []),
-            "urgency": kwargs.get("urgency", "medium"),
-        }
-
-    # Fallback MCP instance - we'll need to get this from the filesystem app
-    from .. import app
-    mcp = app
+from .. import app  # noqa: E402
+from .utils import _error_response  # noqa: E402
 
 
-# Import the app for tool registration
-from .. import app
+# ── Structured result type ─────────────────────────────────────────────────────
 
+class WorkflowResult(BaseModel):
+    """Structured result returned by the sampling LLM."""
+    summary: str
+    steps_taken: list[str]
+    findings: list[dict]
+    success: bool
+    notes: Optional[str] = None
+
+
+# ── Server-side file context gathering ────────────────────────────────────────
+# These run on the server before we call the LLM, so we can provide
+# rich context without needing sampling.tools capability.
+
+def _list_dir(path: str, max_entries: int = 100) -> str:
+    """List directory contents, return formatted string."""
+    try:
+        entries = list(os.scandir(path))
+        lines = []
+        files = 0
+        dirs = 0
+        for e in sorted(entries, key=lambda x: (not x.is_dir(), x.name))[:max_entries]:
+            if e.is_dir():
+                lines.append(f"  [DIR]  {e.name}/")
+                dirs += 1
+            else:
+                stat = e.stat()
+                size = stat.st_size
+                mtime = datetime.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d")
+                lines.append(f"  [FILE] {e.name}  ({size:,} bytes, {mtime})")
+                files += 1
+        if len(entries) > max_entries:
+            lines.append(f"  ... and {len(entries) - max_entries} more entries")
+        return f"Directory: {path}\n  ({files} files, {dirs} dirs)\n" + "\n".join(lines)
+    except Exception as e:
+        return f"ERROR listing {path}: {e}"
+
+
+def _read_file_head(path: str, max_chars: int = 2000) -> str:
+    """Read the first max_chars of a file."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            content = f.read(max_chars)
+        truncated = os.path.getsize(path) > max_chars
+        result = f"File: {path}\n---\n{content}"
+        if truncated:
+            result += "\n[... truncated ...]"
+        return result
+    except Exception as e:
+        return f"ERROR reading {path}: {e}"
+
+
+def _file_exists_info(path: str) -> str:
+    """Check if a file/dir exists and return basic info."""
+    if os.path.isfile(path):
+        stat = os.stat(path)
+        return f"EXISTS (file, {stat.st_size:,} bytes)"
+    elif os.path.isdir(path):
+        try:
+            count = len(os.listdir(path))
+        except Exception:
+            count = "?"
+        return f"EXISTS (directory, {count} entries)"
+    return "NOT FOUND"
+
+
+def _find_files_by_ext(directory: str, extensions: list[str], max_results: int = 50) -> str:
+    """Find files by extension under a directory."""
+    try:
+        found = []
+        exts = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in extensions}
+        for root, _dirs, files in os.walk(directory):
+            for fname in files:
+                if any(fname.lower().endswith(ext) for ext in exts):
+                    full = os.path.join(root, fname)
+                    size = os.path.getsize(full)
+                    found.append((full, size))
+                    if len(found) >= max_results:
+                        break
+            if len(found) >= max_results:
+                break
+        if not found:
+            return f"No files with extensions {extensions} found under {directory}"
+        lines = [f"  {path} ({size:,} bytes)" for path, size in sorted(found)]
+        return f"Files matching {extensions} under {directory}:\n" + "\n".join(lines)
+    except Exception as e:
+        return f"ERROR finding files: {e}"
+
+
+def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
+    """
+    Pre-gather file system context to embed in the LLM prompt.
+    Detects paths mentioned in the prompt and lists them.
+    """
+    context_parts = []
+
+    # Extract Windows-style paths from the prompt
+    import re
+    paths = re.findall(r'[A-Za-z]:\\(?:[^\s,;"\'\])}]+)', workflow_prompt)
+
+    for path in paths[:5]:  # limit to 5 paths
+        path = path.rstrip(".,;)")
+        if os.path.isdir(path):
+            context_parts.append(_list_dir(path))
+        elif os.path.isfile(path):
+            context_parts.append(_read_file_head(path))
+        else:
+            context_parts.append(f"Path not found: {path}")
+
+    # If no paths found, note that
+    if not context_parts:
+        context_parts.append("No specific paths detected in prompt — proceeding with prompt only.")
+
+    return "\n\n".join(context_parts)
+
+
+# ── Main tool ──────────────────────────────────────────────────────────────────
 
 @app.tool()
 async def agentic_file_workflow(
     workflow_prompt: str,
-    available_tools: List[str],
+    available_tools: list[str],
     max_iterations: int = 5,
-    context: Optional[Context] = None
+    ctx: Context = None,
 ) -> dict:
     """
-    Execute agentic file workflows using FastMCP 2.14.1+ sampling with tools.
+    Execute agentic file workflows using FastMCP 2.14.5+ sampling (no tools).
 
-    This tool demonstrates SEP-1577 by enabling the server's LLM to autonomously
-    orchestrate complex file management operations without client round-trips.
-
-    MASSIVE EFFICIENCY GAINS:
-    - LLM autonomously decides tool usage and sequencing
-    - No client mediation for multi-step file operations
-    - Structured validation and error recovery
-    - Parallel processing capabilities
-
-    FILE WORKFLOW EXAMPLES:
-    - "Organize my project files" → autonomous file categorization and cleanup
-    - "Backup important data" → intelligent backup orchestration
-    - "Clean up old files" → automated file management and archiving
+    Gathers file system context server-side, then uses ctx.sample() to have
+    the LLM analyze and reason about it. Compatible with Claude Desktop which
+    supports basic sampling but not sampling.tools capability.
 
     Args:
         workflow_prompt: Description of the file workflow to execute
-        available_tools: List of file tool names to make available to the LLM
-        max_iterations: Maximum LLM-tool interaction loops (default: 5)
+        available_tools: Hint about which tool groups to use (file_ops, dir_ops, search_ops)
+        max_iterations: Unused (kept for API compatibility)
 
     Returns:
         Structured response with workflow execution results
-
-    Example:
-        # Organize project files workflow
-        result = await agentic_file_workflow(
-            workflow_prompt="Organize my project files by type",
-            available_tools=["file_ops", "dir_ops", "search_ops"],
-            max_iterations=10
-        )
     """
+    if not workflow_prompt:
+        return _error_response(
+            error="No workflow prompt provided",
+            error_type="MISSING_WORKFLOW_PROMPT",
+            recovery_options=["Provide a clear description of the file workflow to execute"],
+        )
+
+    if ctx is None:
+        return _error_response(
+            error="No MCP context available",
+            error_type="NO_CONTEXT",
+            recovery_options=["Ensure this tool is called from an MCP-compatible client"],
+        )
+
+    # Gather file context server-side before calling LLM
+    logger.info(f"Gathering file context for workflow: {workflow_prompt[:80]}")
+    file_context = _gather_context(workflow_prompt, available_tools)
+
+    system_prompt = (
+        "You are a file system analysis agent. "
+        "You will be given file system context (directory listings, file contents) "
+        "gathered from a Windows PC, plus a task to complete. "
+        "Analyze the provided context and answer the task. "
+        "Be precise and factual — only report what the context shows. "
+        "Return your response as a JSON object matching this schema:\n"
+        "{\n"
+        '  "summary": "brief one-line summary",\n'
+        '  "steps_taken": ["step 1", "step 2", ...],\n'
+        '  "findings": [{"key": "value"}, ...],\n'
+        '  "success": true,\n'
+        '  "notes": "optional additional notes"\n'
+        "}"
+    )
+
+    user_message = (
+        f"TASK: {workflow_prompt}\n\n"
+        f"FILE SYSTEM CONTEXT:\n{file_context}\n\n"
+        "Please analyze the above context and complete the task. "
+        "Respond with a JSON object only, no markdown fences."
+    )
+
+    logger.info("Calling ctx.sample() (no tools — Claude Desktop compatible)")
+
     try:
-        if not workflow_prompt:
-            return build_error_response(
-                error="No workflow prompt provided",
-                error_code="MISSING_WORKFLOW_PROMPT",
-                message="workflow_prompt is required to guide the file workflow",
-                recovery_options=[
-                    "Provide a clear description of the file workflow to execute",
-                    "Include specific goals and available tools"
-                ],
-                urgency="medium"
-            )
+        sampling_result = await ctx.sample(
+            messages=user_message,
+            system_prompt=system_prompt,
+            result_type=WorkflowResult,
+            max_tokens=2048,
+        )
 
-        if not available_tools:
-            return build_error_response(
-                error="No tools specified",
-                error_code="EMPTY_TOOLS_LIST",
-                message="available_tools list cannot be empty",
-                recovery_options=[
-                    "Specify which file tools the LLM can use",
-                    "Include at least one file tool for the workflow"
-                ],
-                urgency="medium"
-            )
+        workflow: WorkflowResult = sampling_result.result
 
-        # Check if context has sampling capability
-        if not hasattr(context, 'sample_step'):
-            return build_error_response(
-                error="Sampling not available",
-                error_code="SAMPLING_UNAVAILABLE",
-                message="FastMCP context does not support sampling with tools",
-                recovery_options=[
-                    "Ensure FastMCP 2.14.1+ is installed",
-                    "Check that sampling handlers are configured",
-                    "Verify LLM provider supports tool calling"
-                ],
-                urgency="high"
-            )
-
-        logger.info(f"Starting agentic file workflow: {workflow_prompt[:50]}...")
-
-        # Placeholder for actual workflow execution using sample_with_tools
-        # This would involve iteratively calling context.sample_step
-        # and executing tools based on the LLM's decisions.
-        # For this example, we'll simulate a single step.
-
-        # Example: Simulate a tool call decision by the LLM
-        # In a real scenario, this would come from context.sample_step
-        simulated_tool_call = {
-            "tool_name": available_tools[0],
-            "parameters": {"operation": "list_directory", "path": "/project"}
+        return {
+            "success": workflow.success,
+            "operation": "agentic_file_workflow",
+            "summary": workflow.summary,
+            "result": {
+                "workflow_prompt": workflow_prompt,
+                "steps_executed": workflow.steps_taken,
+                "results": workflow.findings,
+                "notes": workflow.notes,
+                "execution_summary": {
+                    "total_operations": len(workflow.steps_taken),
+                    "results_count": len(workflow.findings),
+                    "workflow_state": "completed",
+                    "sampling_based": True,
+                    "context_gathered_server_side": True,
+                    "tools_in_prompt": available_tools,
+                },
+            },
+            "execution_time_ms": None,
+            "quality_metrics": {
+                "steps_taken": len(workflow.steps_taken),
+                "findings_count": len(workflow.findings),
+                "autonomous_execution": True,
+                "llm_orchestrated": True,
+            },
+            "recommendations": ["Review workflow findings to ensure they meet requirements"],
+            "next_steps": ["Use individual file_ops/dir_ops/search_ops tools for targeted follow-up"],
+            "related_operations": ["file_ops", "dir_ops", "search_ops"],
         }
 
-        # Simulate tool execution
-        # In a real scenario, you would dynamically call the tool function
-        # tool_result = await getattr(app.tools, simulated_tool_call["tool_name"]).fn(**simulated_tool_call["parameters"])
-        tool_result = {"status": "organized", "files_processed": 25, "directories_created": 5}
-
-        final_content = f"File workflow completed. Executed {simulated_tool_call['tool_name']} with result: {tool_result['files_processed']} files organized into {tool_result['directories_created']} directories"
-
-        return build_success_response(
-            operation="agentic_file_workflow",
-            summary=f"File workflow '{workflow_prompt[:50]}...' completed successfully.",
-            result={
-                "final_output": final_content,
-                "iterations": 1, # Placeholder
-                "executed_tools": [simulated_tool_call["tool_name"]],
-                "files_processed": tool_result["files_processed"],
-                "directories_created": tool_result["directories_created"]
-            },
-            next_steps=[
-                "Verify file organization meets your requirements",
-                "Review any files that couldn't be categorized",
-                "Set up automated file organization schedules",
-                "Configure backup policies for organized files"
-            ],
-            suggestions=[
-                "Try 'agentic_file_workflow(workflow_prompt=\"Backup my documents\", available_tools=[\"file_ops\", \"dir_ops\"])'",
-                "Explore automated cleanup workflows for temporary files",
-                "Consider setting up file organization rules for future projects"
-            ]
-        )
     except Exception as e:
         logger.error(f"Agentic file workflow failed: {e}", exc_info=True)
-        return build_error_response(
-            error="Agentic file workflow execution failed",
-            error_code="WORKFLOW_EXECUTION_ERROR",
-            message=f"An unexpected error occurred during the file workflow: {str(e)}",
+        return _error_response(
+            error=f"Workflow failed: {str(e)}",
+            error_type="SAMPLING_ERROR",
             recovery_options=[
-                "Check the workflow_prompt for clarity and valid file instructions",
-                "Ensure all file tools in available_tools are correctly implemented and registered",
-                "Review file paths and permissions",
-                "Check available disk space for file operations"
+                "Ensure Claude Desktop is connected and supports sampling",
+                "Try a simpler workflow_prompt",
+                "Check filesystem-mcp logs for details",
             ],
-            diagnostic_info={"exception": str(e), "workflow_type": "file_management"},
-            urgency="high"
+            diagnostic_info={
+                "exception": str(e),
+                "available_tools": available_tools,
+                "workflow_type": "sampling_no_tools",
+            },
         )

@@ -72,53 +72,104 @@ A **FastMCP 2.14.1+ compliant** MCP server using **portmanteau pattern** for com
 ## 🚀 Installation
 
 ### Prerequisites
-- **Python 3.9+** (FastMCP 2.14.1+ requirement)
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
+```bash
+uvx filesystem-mcp
+```
+
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "filesystem-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/filesystem-mcp", "run", "filesystem-mcp"]
+  }
+}
+```
+### Prerequisites
+- **Python 3.9+** (FastMCP 2.14.3+ requirement)
 - **Docker Engine** (for container operations)
 - **Git** (for repository operations)
-- **Node.js 20+** (for MCPB packaging)
 
-### Quick Start with MCPB (Recommended)
+### 📦 PyPI Package Install (RECOMMENDED)
 
-1. **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
-2. **Drag & Drop** the file to Claude Desktop
-3. **Configure** settings when prompted (working directory, timeouts, etc.)
-4. **Install dependencies** separately (see below)
-5. **Start using** 57+ professional tools immediately
-
-#### Dependencies Installation
-
-MCPB packages do **NOT** include Python dependencies. Install them separately:
+**Fastest Installation - Production Ready:**
 
 ```bash
-# Required for all functionality
-pip install fastmcp>=2.14.1 pydantic>=2.5.0
-
-# Docker operations (optional)
-pip install docker>=6.0.0
-
-# Git operations (optional)
-pip install gitpython>=3.1.0
-
-# All dependencies
-pip install fastmcp>=2.14.1 pydantic>=2.5.0 docker>=6.0.0 gitpython>=3.1.0 aiohttp>=3.9.0
+pip install filesystem-mcp
 ```
 
-### Alternative: Manual Installation (Advanced Users)
+**Claude Desktop Integration:**
+- Open Claude Desktop
+- Settings → MCP Servers
+- Add new MCP server:
+  ```json
+  {
+    "mcpServers": {
+      "filesystem-mcp": {
+        "command": "filesystem-mcp"
+      }
+    }
+  }
+  ```
 
-For developers or users who prefer manual setup, or for other MCP clients (Cursor, Windsurf, etc.):
+### 🎯 Claude Desktop MCPB Package
 
+1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+2.  **Drag & Drop** the file to Claude Desktop
+3.  **Configure** settings when prompted (working directory, timeouts, etc.)
+4.  **Install dependencies** separately (see below)
+5.  **Start using** 57+ professional tools immediately
+
+## 🚀 Installation
+
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
 ```bash
-# Clone the repository
-git clone https://github.com/sandr/filesystem-mcp.git
-cd filesystem-mcp
-
-# Install dependencies
-pip install fastmcp>=2.14.1 pydantic>=2.5.0 docker>=6.0.0 gitpython>=3.1.0
-
-# Install in development mode (optional)
-pip install -e .[dev,test]
+uvx filesystem-mcp
 ```
 
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "filesystem-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/filesystem-mcp", "run", "filesystem-mcp"]
+  }
+}
+```
+## 🚀 Installation
+
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
+```bash
+uvx filesystem-mcp
+```
+
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "filesystem-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/filesystem-mcp", "run", "filesystem-mcp"]
+  }
+}
+```
 ### HTTP/HTTPS Mode (For Web Apps)
 
 For web applications or custom MCP clients, run the server in HTTP mode:
@@ -209,22 +260,28 @@ For manual installation or other MCP clients, add to your Claude Desktop configu
   - `GIT_USERNAME`: Default Git username for commits
   - `GIT_EMAIL`: Default Git email for commits
 
-### Docker Installation
+## 🚀 Installation
 
-Run the MCP server in a container with all dependencies:
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
 
+### 📦 Quick Start
+Run immediately via `uvx`:
 ```bash
-# Build the multi-platform Docker image
-docker buildx build -t filesystem-mcp \
-  --platform linux/amd64,linux/arm64 .
-
-# Run the container
-docker run -d --name filesystem-mcp \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(pwd):/workspace \
-  filesystem-mcp
+uvx filesystem-mcp
 ```
 
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "filesystem-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/filesystem-mcp", "run", "filesystem-mcp"]
+  }
+}
+```
 ## 🤖 Help System & Status Tools
 
 ### System Operations (portmanteau)
@@ -313,12 +370,30 @@ python -m filesystem_mcp --debug
 #### 📂 Filesystem Operations (portmanteau)
 
 **Unified filesystem tool** with 20+ operations:
-- `read_file`, `write_file`, `list_directory`, `file_exists`, `get_file_info`
-- `head_file`, `tail_file`, `grep_file`, `count_pattern`, `extract_log_lines`
-- `edit_file`, `create_directory`, `remove_directory`, `directory_tree`
+- **file_ops**: Comprehensive file management (`read_file`, `write_file`, `edit_file`, `move_file`, `undo_edit`).
+    - **Honed Editing**: Support for Regex, Multi-occurrence, Indentation Normalization, and Atomic Batch Edits.
+    - **Reversion**: Rapid undo capability via `.bak` file restoration.
 - `calculate_directory_size`, `find_duplicate_files`, `find_large_files`
 - `find_empty_directories`, `compare_files`, `read_multiple_files`
 - `move_file`, `read_file_lines`, `search_files`
+
+#### `edit_file`
+Precise text replacement with context validation and advanced matching.
+
+**Parameters**:
+- `path` (str): Target file path.
+- `old_string` (str): Text to find.
+- `new_string` (str): Replacement text.
+- `allow_multiple` (bool): If true, replaces all occurrences. Default: `false`.
+- `is_regex` (bool): If true, treats `old_string` as a regex pattern. Default: `false`.
+- `ignore_whitespace` (bool): If true, matches regardless of indentation. Default: `false`.
+- `replacements` (list): Batch mode! List of `{old_string, new_string}` for atomic multi-chunk edits.
+
+#### `undo_edit`
+Reverts the most recent edit to a file by restoring its `.bak` backup.
+
+**Parameters**:
+- `path` (str): Target file path.
 
 ```python
 # Read a file
@@ -560,3 +635,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📄 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this project.
+
+
+## 🌐 Webapp Dashboard
+
+This MCP server includes a free, premium web interface for monitoring and control.
+By default, the web dashboard runs on port **10742**.
+*(Assigned ports: **10742** (Backend (was 13000)), **10743** (Frontend (was 13001)))*
+
+To start the webapp:
+1. Navigate to the `webapp` (or `web`, `frontend`) directory.
+2. Run `start.bat` (Windows) or `./start.ps1` (PowerShell).
+3. Open `http://localhost:10742` in your browser.

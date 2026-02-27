@@ -7,8 +7,8 @@ Tests help system and status reporting functions.
 import json
 
 import pytest
-
-from filesystem_mcp.tools.system_tools import get_help, get_system_status
+from filesystem_mcp.tools.portmanteau_host import host_ops
+from filesystem_mcp.tools.portmanteau_monitoring import monitor_ops
 
 
 def parse_tool_result(result):
@@ -22,7 +22,7 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_overview(self):
         """Test getting help overview."""
-        result = await get_help.run({})
+        result = await host_ops.run({"operation": "get_help"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -32,7 +32,9 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_category(self):
         """Test getting help for a specific category."""
-        result = await get_help.run({"category": "file_operations"})
+        result = await host_ops.run(
+            {"operation": "get_help", "category": "file_operations"}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -43,7 +45,13 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_tool(self):
         """Test getting help for a specific tool."""
-        result = await get_help.run({"category": "file_operations", "tool_name": "read_file"})
+        result = await host_ops.run(
+            {
+                "operation": "get_help",
+                "category": "file_operations",
+                "tool_name": "read_file",
+            }
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -55,7 +63,9 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_invalid_category(self):
         """Test getting help for invalid category."""
-        result = await get_help.run({"category": "invalid_category"})
+        result = await host_ops.run(
+            {"operation": "get_help", "category": "invalid_category"}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is False
@@ -65,7 +75,13 @@ class TestGetHelp:
     @pytest.mark.asyncio
     async def test_get_help_invalid_tool(self):
         """Test getting help for invalid tool in valid category."""
-        result = await get_help.run({"category": "file_operations", "tool_name": "invalid_tool"})
+        result = await host_ops.run(
+            {
+                "operation": "get_help",
+                "category": "file_operations",
+                "tool_name": "invalid_tool",
+            }
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is False
@@ -79,7 +95,7 @@ class TestGetSystemStatus:
     @pytest.mark.asyncio
     async def test_get_system_status_success(self):
         """Test getting system status successfully."""
-        result = await get_system_status.run({})
+        result = await monitor_ops.run({"operation": "get_system_status"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -91,7 +107,9 @@ class TestGetSystemStatus:
     @pytest.mark.asyncio
     async def test_get_system_status_with_processes(self):
         """Test getting system status with process information."""
-        result = await get_system_status.run({"include_processes": True})
+        result = await monitor_ops.run(
+            {"operation": "get_system_status", "include_processes": True}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -103,7 +121,9 @@ class TestGetSystemStatus:
     @pytest.mark.asyncio
     async def test_get_system_status_with_disk(self):
         """Test getting system status with disk information."""
-        result = await get_system_status.run({"include_disk": True})
+        result = await monitor_ops.run(
+            {"operation": "get_system_status", "include_disk": True}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -115,7 +135,9 @@ class TestGetSystemStatus:
     @pytest.mark.asyncio
     async def test_get_system_status_no_processes(self):
         """Test getting system status without process information."""
-        result = await get_system_status.run({"include_processes": False})
+        result = await monitor_ops.run(
+            {"operation": "get_system_status", "include_processes": False}
+        )
 
         data = parse_tool_result(result)
         assert data["success"] is True

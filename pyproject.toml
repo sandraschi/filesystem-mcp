@@ -10,7 +10,7 @@ authors = [
     {name = "Sandra Schimanovich", email = "sandra@example.com"},
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -24,11 +24,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Filesystems",
-    "Framework :: FastMCP",
 ]
 
 dependencies = [
-    "fastmcp>=2.14.1,<3.0.0",
+    "fastmcp[anthropic]>=2.14.5",
     "gitpython>=3.1.0",
     "uvicorn>=0.24.0",
     "python-multipart>=0.0.6",
@@ -36,6 +35,8 @@ dependencies = [
     "aiohttp>=3.9.0",
     "python-dotenv>=1.0.0",
     "psutil>=5.9.0",
+    "structlog>=24.1.0",
+    "ruff>=0.15.1",
 ]
 
 [project.optional-dependencies]
@@ -57,8 +58,7 @@ dev = [
 "Bug Tracker" = "https://github.com/sandraschi/filesystem-mcp/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["filesystem_mcp*"]
+where = ["src"]
 
 [tool.black]
 line-length = 100
@@ -90,6 +90,8 @@ ensure_newline_before_comments = true
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -121,4 +123,4 @@ warn_unreachable = true
 strict_equality = true
 
 [project.scripts]
-filesystem-mcp = "filesystem_mcp:run"
+filesystem-mcp = "filesystem_mcp.__main__:run"

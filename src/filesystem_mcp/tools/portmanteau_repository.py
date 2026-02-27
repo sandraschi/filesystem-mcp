@@ -228,7 +228,7 @@ async def _get_repo_status(repo_path, include_untracked, include_ignored):
                 "repo_ops(operation='commit_changes', message='...')",
                 "repo_ops(operation='diff_changes')",
             ],
-            related_ops=["get_repo_info", "git_ops(operation='list_branches')"],
+            related_operations=["get_repo_info", "git_ops(operation='list_branches')"],
         )
     except Exception as e:
         return _error_response(str(e), "git_error")
@@ -241,7 +241,17 @@ async def _commit_changes(repo_path, message, add_all, paths, amend):
             repo.git.add(all=True)
         elif paths:
             repo.index.add(paths)
-        commit = repo.index.commit(message, amend=amend)
+
+        if amend:
+            # GitPython doesn't support amend via index.commit() - use git CLI
+            if message:
+                repo.git.commit("--amend", "-m", message)
+            else:
+                repo.git.commit("--amend", "--no-edit")
+            commit = repo.head.commit
+        else:
+            commit = repo.index.commit(message)
+
         return _success_response(
             {"commit_hash": commit.hexsha, "author": commit.author.name},
             next_steps=["git_ops(operation='push_changes')"],

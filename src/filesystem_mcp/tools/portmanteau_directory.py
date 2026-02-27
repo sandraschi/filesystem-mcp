@@ -227,7 +227,7 @@ async def _list_directory(
                 },
             },
             next_steps=next_steps,
-            related_ops=["calculate_directory_size", "find_large_files", "search_ops"],
+            related_operations=["calculate_directory_size", "find_large_files", "search_ops"],
         )
     except Exception as e:
         return _error_response(f"Failed to list directory: {str(e)}", "directory_access_error")

@@ -1,0 +1,1515 @@
+[
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 23
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 23
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 23,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 38
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 38
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 53
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 53
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 53,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 68
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 68
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 68,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 83
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 83
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 83,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 98
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\analysis.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 98
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 98,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 89,
+      "row": 32
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\annas.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 32
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 60,
+      "row": 34
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\annas.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 34
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 34,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 37
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\authors.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 37
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 37,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 53
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\authors.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 53
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 53,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 75
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\authors.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 75
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 75,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 90
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\authors.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 90
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 90,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 108
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\authors.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 108
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 108,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 60,
+      "row": 51
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 51
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 51,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 99
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 99
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 99,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 158
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 158
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 158,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 174
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 174
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 174,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 193
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 193
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 193,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 214
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 214
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 214,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 236
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\books.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 236
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 236,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 32
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\bulk.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 32
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 54
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\bulk.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 54
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 74
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\bulk.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 74
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 74,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 96
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\bulk.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 96
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 96,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 25
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 25
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 25,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 41
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 41
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 41,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 57
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 57
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 57,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 77
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 77
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 77,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 97
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 97
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 97,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 113
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 113
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 113,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 129
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 129
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 129,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 149
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 149
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 149,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 165
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 165
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 165,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 187
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\collections.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 187
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 187,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 24
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\comments.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 24
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 24,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 41
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\comments.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 41
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 41,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 58
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\comments.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 58
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 58,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 75
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\comments.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 75
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 75,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 91
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\comments.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 91
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 91,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 38
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\export.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 38
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 68
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\export.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 68
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 68,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 96
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\export.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 96
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 96,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 126
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\export.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 126
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 126,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 28
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\files.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 28
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 28,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 48
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\files.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 48
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 48,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 70
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\files.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 70
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 70,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 18
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\library.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 18
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 18,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 38
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\library.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 38
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 54
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\library.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 54
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 32
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\metadata.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 32
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 48
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\metadata.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 48
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 48,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 63
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\metadata.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 63
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 63,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 78
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\metadata.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 78
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 78,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 37
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\publishers.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 37
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 37,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 59
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\search.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 59
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 59,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 38
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\series.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 38
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 54
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\series.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 54
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 65
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\series.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 65
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 65,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 81
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\series.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 81
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 81,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 23
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\specialized.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 23
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 23,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 38
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\specialized.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 38
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 53
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\specialized.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 53
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 53,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 28
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\system.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 28
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 28,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 48
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\system.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 48
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 48,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 64
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\system.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 64
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 64,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 84
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\system.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 84
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 84,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 99
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\system.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 99
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 99,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 58
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 58
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 58,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 74
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 74
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 74,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 90
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 90
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 90,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 107
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 107
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 107,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 124
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 124
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 124,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 140
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 140
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 140,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 160
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 160
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 160,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 175
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 175
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 175,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 190
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 190
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 190,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 205
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\tags.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 205
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 205,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 32
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 32
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 49
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 49
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 49,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 71
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 71
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 71,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 91
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 91
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 91,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 111
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 111
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 111,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 133
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 133
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 133,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 150
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 150
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 150,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 34,
+      "row": 167
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\api\\viewer.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 167
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 167,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 22,
+      "row": 372
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\mcp\\client.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 368
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 368,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 78,
+      "row": 461
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\mcp\\client.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 461
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 461,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 78,
+      "row": 463
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\mcp\\client.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 463
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 463,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 72,
+      "row": 465
+    },
+    "filename": "D:\\Dev\\repos\\filesystem-mcp\\webapp_legacy\\backend\\app\\mcp\\client.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 465
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 465,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  }
+]

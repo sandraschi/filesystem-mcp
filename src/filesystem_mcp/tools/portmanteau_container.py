@@ -233,7 +233,7 @@ async def _list_containers(
                 }
             },
             next_steps=["container_ops(operation='get_container', container_id='<id>')"],
-            related_ops=["infra_ops(operation='list_images')"],
+            related_operations=["infra_ops(operation='list_images')"],
         )
     except Exception as e:
         return _error_response(str(e), "docker_error")

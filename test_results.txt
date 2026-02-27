@@ -1,0 +1,48 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.11, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\sandr\miniconda3\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.13.11', 'Platform': 'Windows-11-10.0.28020-SP0', 'Packages': {'pytest': '8.4.2', 'pluggy': '1.6.0'}, 'Plugins': {'langsmith': '0.3.42', 'asyncio': '0.23.8', 'html': '4.1.1', 'metadata': '3.1.1', 'mock': '3.14.1', 'cov': '2.12.1', 'anyio': '4.12.1', 'hypothesis': '6.151.5'}, 'JAVA_HOME': 'C:\\Program Files\\Eclipse Adoptium\\jdk-25.0.1.8-hotspot'}
+hypothesis profile 'default'
+rootdir: D:\Dev\repos\filesystem-mcp
+configfile: pytest.ini
+plugins: langsmith-0.3.42, asyncio-0.23.8, html-4.1.1, metadata-3.1.1, mock-3.14.1, cov-2.12.1, anyio-4.12.1, hypothesis-6.151.5
+asyncio: mode=Mode.STRICT
+collecting ... collected 52 items / 3 errors
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/unit/test_docker_operations.py ____________
+ImportError while importing test module 'D:\Dev\repos\filesystem-mcp\tests\unit\test_docker_operations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\sandr\miniconda3\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_docker_operations.py:11: in <module>
+    from filesystem_mcp.tools.docker_operations import (
+E   ModuleNotFoundError: No module named 'filesystem_mcp.tools.docker_operations'
+_____________ ERROR collecting tests/unit/test_repo_operations.py _____________
+ImportError while importing test module 'D:\Dev\repos\filesystem-mcp\tests\unit\test_repo_operations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\sandr\miniconda3\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_repo_operations.py:12: in <module>
+    from filesystem_mcp.tools.repo_operations import (
+E   ModuleNotFoundError: No module named 'filesystem_mcp.tools.repo_operations'
+______________ ERROR collecting tests/unit/test_system_tools.py _______________
+ImportError while importing test module 'D:\Dev\repos\filesystem-mcp\tests\unit\test_system_tools.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\sandr\miniconda3\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_system_tools.py:10: in <module>
+    from filesystem_mcp.tools.system_tools import get_help, get_system_status
+E   ModuleNotFoundError: No module named 'filesystem_mcp.tools.system_tools'
+=========================== short test summary info ===========================
+ERROR tests/unit/test_docker_operations.py
+ERROR tests/unit/test_repo_operations.py
+ERROR tests/unit/test_system_tools.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!
+============================== 3 errors in 4.16s ==============================
