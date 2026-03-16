@@ -53,25 +53,47 @@ async def search_ops(
 ) -> dict[str, Any]:
     """Content Analysis, Grep, and Comparison operations.
 
-    Operations: grep_file, count_pattern, search_files, extract_log_lines,
-    compare_files, find_duplicate_files, find_large_files.
-
     Args:
-        operation: Operation to perform (required)
-        path: Base path for search/analysis
-        search_pattern: Regex or glob pattern (required for grep/count/search)
-        path2: Second file for compare_files
-        recursive: Search subdirectories. Default: False
-        case_sensitive: Pattern sensitivity. Default: False
+        operation (Literal, required): Available search operations:
+            - "grep_file": Regex search in file (requires: path, search_pattern)
+            - "count_pattern": Count occurrences (requires: path, search_pattern)
+            - "search_files": Find files by name (requires: path, search_pattern as pattern)
+            - "extract_log_lines": Filter logs (requires: path)
+            - "compare_files": Diff two files (requires: path, path2)
+            - "find_duplicate_files": Hash-based detection (requires: path)
+            - "find_large_files": Locate big files (requires: path)
+
+        --- PRIMARY PARAMETERS ---
+
+        path (str | None): Base path for search/analysis
+        encoding (str): Text encoding. Default: "utf-8"
+        recursive (bool): Search subdirectories. Default: False
+        include_hidden (bool): Include hidden items. Default: False
+
+        --- SEARCH & PATTERN MATCHING ---
+
+        search_pattern (str | None): Regex or glob pattern
+        case_sensitive (bool): Pattern sensitivity. Default: False
         max_matches (int): Limit grep results. Default: 100
-        context_lines: Lines around grep matches. Default: 0
-        start_time/end_time: ISO timestamps for extract_log_lines
-        log_levels/exclude_log_levels: Log level filters
-        min_size_mb: Threshold for find_large_files. Default: 100.0
-        min_size: Threshold for find_duplicate_files (bytes). Default: 1
-        hash_algorithm: "md5" or "sha256". Default: "md5"
-        max_duplicates: Stop after finding N duplicates. Default: None
-        early_exit: Exit early when max_results reached. Default: True
+        context_lines (int): Lines around grep matches. Default: 0
+
+        --- LOG EXTRACTION ---
+
+        start_time (str | None): ISO timestamp start
+        end_time (str | None): ISO timestamp end
+        log_levels (List[str] | None): Levels to include
+        exclude_log_levels (List[str] | None): Levels to skip
+        max_lines (int): Max log lines. Default: 100
+
+        --- COMPARISON & ANALYSIS ---
+
+        path2 (str | None): Second file for comparison
+        min_size_mb (float): Threshold for large files. Default: 100.0
+        min_size (int): Threshold for duplicates (bytes). Default: 1
+        max_results (int): Limit result count. Default: 100
+        hash_algorithm (Literal): Hashing for duplicates. Default: "md5"
+        max_duplicates (int | None): Stop after finding N duplicates. Default: None (no limit)
+        early_exit (bool): Exit early when max_results reached in find_large_files. Default: True
     """
     try:
         if not operation:

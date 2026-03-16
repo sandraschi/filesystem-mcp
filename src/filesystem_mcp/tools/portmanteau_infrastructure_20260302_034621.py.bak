@@ -62,24 +62,62 @@ async def infra_ops(
 ) -> dict[str, Any]:
     """Docker Images, Networks, and Volumes operations.
 
-    Operations: list_images, get_image, pull_image, build_image, remove_image, prune_images,
-    list_networks, get_network, create_network, remove_network, prune_networks,
-    list_volumes, get_volume, create_volume, remove_volume, prune_volumes.
-
     Args:
-        operation: Operation to perform (required)
-        image: Image name/ID
-        tag: Image tag. Default: "latest"
-        network_id: Network ID or name
-        volume_name: Volume name
-        name: Name for new network/volume
-        path: Build context path for build_image
-        dockerfile: Dockerfile filename. Default: "Dockerfile"
-        buildargs: Build variables dict
-        nocache: Bypass build cache. Default: False
-        driver: Network/volume driver type
-        force: Forced removal. Default: False
-        filters: Filter criteria dict
+        operation (Literal, required): Available infrastructure operations:
+            - "list_images": List local images
+            - "get_image": Image metadata (requires: image)
+            - "pull_image": Download image (requires: image)
+            - "build_image": Create image from Dockerfile (requires: path)
+            - "remove_image": Delete image (requires: image)
+            - "prune_images": Cleanup unused images
+            - "list_networks": List Docker networks
+            - "get_network": Network info (requires: network_id)
+            - "create_network": New network (requires: name)
+            - "remove_network": Delete network (requires: network_id)
+            - "prune_networks": Cleanup networks
+            - "list_volumes": List Docker volumes
+            - "get_volume": Volume info (requires: volume_name)
+            - "create_volume": New volume (requires: volume_name)
+            - "remove_volume": Delete volume (requires: volume_name)
+            - "prune_volumes": Cleanup volumes
+
+        --- IDENTIFIERS ---
+
+        image (str | None): Image name/ID
+        tag (str): Image tag. Default: "latest"
+        network_id (str | None): Network ID or name
+        volume_name (str | None): Volume name
+        name (str | None): Name for new net/vol
+
+        --- IMAGE OPTIONS ---
+
+        all_images (bool): Show intermediate images. Default: False
+        platform (str | None): Target platform
+        nocache (bool): Bypass build cache. Default: False
+        pull (bool): Pull fresh base images. Default: False
+        rm/forcerm (bool): Intermediate container removal
+        squash (bool): Flatten layers
+        dockerfile (str): Dockerfile filename. Default: "Dockerfile"
+        path (str | None): Build context path
+        buildargs (Dict | None): Build variables
+        noprune (bool): Keep parent images on removal. Default: False
+
+        --- NETWORK & VOLUME OPTIONS ---
+
+        driver (str | None): Driver type (bridge, overlay, local, etc.)
+        options (Dict | None): Driver-specific options
+        ipam (Dict | None): IP management config
+        internal (bool): Isolated network. Default: False
+        attachable (bool): Manual container attachment. Default: False
+        ingress (bool): Swarm routing mesh. Default: False
+        enable_ipv6 (bool): IPv6 support. Default: False
+        labels (Dict | None): Metadata labels
+        driver_opts (Dict | None): Volume driver options
+
+        --- GENERAL ---
+
+        filters (Dict | None): Filter criteria
+        force (bool): Forced removal. Default: False
     """
     try:
         if not operation:

@@ -33,8 +33,10 @@ async def file_ops(
     path: Optional[str] = None,
     content: Optional[str] = None,
     encoding: str = "utf-8",
-    old_string: Optional[str] = None,
-    new_string: Optional[str] = None,
+    old_string: Optional[str] = None,   # canonical name
+    new_string: Optional[str] = None,   # canonical name
+    old_str: Optional[str] = None,      # alias: accepted from Claude str_replace tool
+    new_str: Optional[str] = None,      # alias: accepted from Claude str_replace tool
     file_paths: Optional[list[str]] = None,
     destination_path: Optional[str] = None,
     overwrite: bool = False,
@@ -55,87 +57,9 @@ async def file_ops(
 ) -> dict[str, Any]:
     """Comprehensive file system operations with enhanced conversational responses.
 
-    SUPPORTED OPERATIONS:
-    - read_file: Read complete file contents with metadata
-    - write_file: Write content to files with backup and validation
-    - edit_file: Edit files by replacing text content
-    - delete_file: Permanently delete a file
-    - move_file: Move/rename files with path validation
-    - read_file_lines: Read specific line ranges with pagination
-    - read_multiple_files: Efficiently read multiple files in batch
-    - file_exists: Check file existence with type validation
-    - get_file_info: Get comprehensive file metadata and statistics
-    - head_file: Read first N lines of file
-    - tail_file: Read last N lines of file
-    - undo_edit: Revert the most recent edit using .bak file
-
-    OPERATIONS DETAIL:
-
-    read_file: Complete file reading with encoding detection
-    - Parameters: path (required), encoding (optional)
-    - Returns: File content, metadata, encoding info
-    - Example: file_ops("read_file", path="README.md")
-    - Error handling: File not found, permission denied, encoding errors
-
-    write_file: Safe file writing with automatic backup creation
-    - Parameters: path (required), content (required), encoding (optional)
-    - Returns: Write confirmation, backup path, file statistics
-    - Example: file_ops("write_file", path="output.txt", content="Hello World")
-    - Features: Automatic backup, parent directory creation, size validation
-
-    edit_file: Precise text replacement with context validation
-    - Parameters: path (required), old_string (required), new_string (required)
-    - Returns: Edit confirmation, change statistics, backup info
-    - Example: file_ops("edit_file", path="config.txt", old_string="old_value", new_string="new_value")
-    - Features: Exact string matching, occurrence counting, undo capability
-
-    delete_file: Permanent file deletion
-    - Parameters: path (required)
-    - Returns: Deletion confirmation, file metadata snapshot
-    - Example: file_ops("delete_file", path="old_backup.txt")
-    - Features: Pre-deletion metadata capture, clear error on missing file
-
-    move_file: Safe file movement with conflict detection
-    - Parameters: path (required), destination_path (required), overwrite (optional)
-    - Returns: Move confirmation, new path, metadata preservation status
-    - Example: file_ops("move_file", path="old.txt", destination_path="new.txt")
-    - Features: Overwrite protection, metadata preservation, cross-filesystem support
-
-    read_file_lines: Efficient line-based reading with pagination
-    - Parameters: path (required), offset (optional), limit (optional)
-    - Returns: Line range, total lines, content preview
-    - Example: file_ops("read_file_lines", path="large.log", offset=100, limit=50)
-    - Features: Memory efficient, large file support, line numbering
-
-    read_multiple_files: Batch file reading with size limits
-    - Parameters: file_paths (required), max_file_size_mb (optional)
-    - Returns: Multiple file contents, summary statistics, error handling
-    - Example: file_ops("read_multiple_files", file_paths=["file1.txt", "file2.txt"])
-    - Features: Size validation, error aggregation, performance optimization
-
-    file_exists: Comprehensive existence checking
-    - Parameters: path (required), check_type (optional)
-    - Returns: Existence status, file type, accessibility info
-    - Example: file_ops("file_exists", path="/etc/passwd", check_type="file")
-    - Features: Type checking, permission validation, symlink handling
-
-    get_file_info: Detailed file metadata and analysis
-    - Parameters: path (required), include_content (optional), max_content_size (optional)
-    - Returns: Complete file statistics, permissions, timestamps, content preview
-    - Example: file_ops("get_file_info", path="data.json", include_content=True)
-    - Features: MIME type detection, encoding analysis, security validation
-
-    head_file: Efficient first-lines reading
-    - Parameters: path (required), lines (optional)
-    - Returns: First N lines, total line count, encoding info
-    - Example: file_ops("head_file", path="access.log", lines=20)
-    - Features: Memory efficient, large file optimized, line counting
-
-    tail_file: Efficient last-lines reading
-    - Parameters: path (required), lines (optional)
-    - Returns: Last N lines, total line count, file position info
-    - Example: file_ops("tail_file", path="error.log", lines=50)
-    - Features: Memory efficient, reverse reading, line counting
+    Operations: read_file, write_file, edit_file, delete_file, move_file,
+    read_file_lines, read_multiple_files, file_exists, get_file_info,
+    head_file, tail_file, undo_edit.
 
     Args:
         operation: The file operation to perform (see SUPPORTED OPERATIONS above)
@@ -144,6 +68,8 @@ async def file_ops(
         encoding: Text encoding for file operations (default: "utf-8")
         old_string: Text to replace in edit operations
         new_string: Replacement text for edit operations
+        old_str: Alias for old_string (accepted from Claude built-in str_replace tool)
+        new_str: Alias for new_string (accepted from Claude built-in str_replace tool)
         file_paths: List of file paths for multi-file operations
         destination_path: Destination path for move operations
         overwrite: Whether to overwrite existing files (default: False)
@@ -161,52 +87,15 @@ async def file_ops(
         is_regex: Treat old_string as a regular expression (default: False)
         ignore_whitespace: Normalize indentation during matching (default: False)
         replacements: List of dicts with {old_string, new_string} for batch edits
-
-    Returns:
-        Operation-specific result with enhanced metadata:
-        - success: Boolean operation status
-        - result: Operation data and file information
-        - execution_time_ms: Performance timing
-        - quality_metrics: Operation quality indicators
-        - recommendations: Suggested next steps
-        - next_steps: Actionable follow-up operations
-        - related_operations: Suggested related file operations
-
-    Examples:
-        # Read a file
-        file_ops("read_file", path="README.md")
-
-        # Write content safely
-        file_ops("write_file", path="output.txt", content="Hello World")
-
-        # Edit with replacement
-        file_ops("edit_file", path="config.txt", old_string="old", new_string="new")
-
-        # Delete a file permanently
-        file_ops("delete_file", path="old_backup.txt")
-
-        # Move with safety checks
-        file_ops("move_file", path="old.txt", destination_path="new.txt")
-
-        # Read specific lines
-        file_ops("read_file_lines", path="log.txt", offset=100, limit=50)
-
-        # Batch read multiple files
-        file_ops("read_multiple_files", file_paths=["file1.txt", "file2.txt"])
-
-        # Check file existence
-        file_ops("file_exists", path="target.txt")
-
-        # Get detailed metadata
-        file_ops("get_file_info", path="data.json", include_content=True)
-
-        # Read first lines
-        file_ops("head_file", path="access.log", lines=20)
-
-        # Read last lines
-        file_ops("tail_file", path="error.log", lines=50)
     """
     try:
+        # Resolve parameter aliases: Claude's built-in str_replace tool passes old_str/new_str
+        # We accept both forms so Windows paths work correctly without re-routing through bash
+        if old_str is not None and old_string is None:
+            old_string = old_str
+        if new_str is not None and new_string is None:
+            new_string = new_str
+
         if not operation:
             return _clarification_response(
                 ambiguities=["operation not specified"],

@@ -66,16 +66,15 @@ async def git_ops(
 ) -> dict[str, Any]:
     """Git Administrative operations (Branches, Tags, Remotes, Stash).
 
-    Operations: create_branch, rename_branch, switch_branch, merge_branch, delete_branch,
-    list_branches, create_tag, list_tags, delete_tag, push_changes, pull_changes,
-    fetch_updates, list_remotes, add_remote, remove_remote, stash_changes, apply_stash,
-    list_stashes, resolve_conflicts, rebase_branch.
+    Operations: create_branch, switch_branch, merge_branch, delete_branch, list_branches,
+    create_tag, list_tags, delete_tag, push_changes, pull_changes, fetch_updates,
+    list_remotes, add_remote, remove_remote, stash_changes, apply_stash, list_stashes,
+    resolve_conflicts, rebase_branch.
 
     Args:
         operation: Operation to perform (required)
         repo_path: Path to local Git repo
-        branch_name: Target branch name. For rename_branch: the CURRENT name.
-        target_branch: For rename_branch: the NEW name. For merge_branch: branch to merge into.
+        branch_name: Target branch name
         tag_name: Target tag name
         tag_message: Tag annotation
         source_branch: Branch to merge/rebase FROM

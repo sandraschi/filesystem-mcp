@@ -88,21 +88,37 @@ async def orch_ops(
 ) -> dict[str, Any]:
     """Docker Compose Orchestration operations.
 
-    Operations: compose_up, compose_down, compose_ps, compose_logs, compose_config, compose_restart.
-
     Args:
-        operation: Operation to perform (required)
-        path: Path to compose file or project root. Default: "."
-        services: Specific services to target
-        detach: Run in background. Default: True
-        build: Build before start. Default: False
-        scale: Service replicas dict
-        remove_orphans: Cleanup extra containers. Default: True
-        volumes_prune: Delete volumes on down. Default: False
-        tail: Log lines. Default: 100
-        since/until: Log time range strings
-        timestamps: Include timestamps in logs. Default: False
-        timeout: Operation timeout secs. Default: 300
+        operation (Literal, required): Available compose operations:
+            - "compose_up": Start stack (requires: path)
+            - "compose_down": Stop stack (requires: path)
+            - "compose_ps": List services (requires: path)
+            - "compose_logs": View logs (requires: path)
+            - "compose_config": Validate config (requires: path)
+            - "compose_restart": Restart stack (requires: path)
+
+        --- PATH & SERVICES ---
+
+        path (str): Path to compose file or project root. Default: "."
+        services (List[str] | None): Specific services to target
+
+        --- RUNTIME OPTIONS ---
+
+        detach (bool): Run in background. Default: True
+        build (bool): Build before start. Default: False
+        scale (Dict | None): Service replicas
+        remove_orphans (bool): Cleanup extra containers. Default: True
+        volumes_prune (bool): Delete volumes on down. Default: False
+        all_services (bool): Include stopped in ps. Default: False
+        validate (bool): Check syntax. Default: True
+
+        --- LOGGING & TIMEOUT ---
+
+        tail (int | None): Log lines. Default: 100
+        since/until (str | None): Log time range
+        timestamps (bool): Include timestamps in logs. Default: False
+        follow (bool): Follow log stream. Default: False
+        timeout (int): Operation timeout. Default: 300
     """
     try:
         if not operation:

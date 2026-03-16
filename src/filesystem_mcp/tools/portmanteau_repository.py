@@ -30,6 +30,7 @@ def _get_git():
 @_get_app().tool()
 async def repo_ops(
     operation: Literal[
+        "init_repo",
         "clone_repo",
         "get_repo_status",
         "commit_changes",
@@ -67,49 +68,25 @@ async def repo_ops(
 ) -> dict[str, Any]:
     """Git Repository Core operations (Status, Commits, History).
 
+    Operations: init_repo, clone_repo, get_repo_status, commit_changes, read_repo, get_repo_info,
+    get_commit_history, show_commit, diff_changes, blame_file, get_file_history,
+    revert_commit, reset_to_commit, cherry_pick.
+
     Args:
-        operation (Literal, required): Available core operations:
-            - "clone_repo": Clone repository (requires: repo_url, target_dir)
-            - "get_repo_status": Staged/unstaged status (requires: repo_path)
-            - "commit_changes": Commit changes (requires: repo_path, message)
-            - "read_repo": Structure and contents (requires: repo_path)
-            - "get_repo_info": General metadata (requires: repo_path)
-            - "get_commit_history": Log of commits (requires: repo_path)
-            - "show_commit": Detail for one commit (requires: repo_path, commit1 as hash)
-            - "diff_changes": Show differences (requires: repo_path)
-            - "blame_file": Line-by-line modification info (requires: repo_path, file_path)
-            - "get_file_history": History for specific file (requires: repo_path, file_path)
-            - "revert_commit": Undo a commit (requires: repo_path, commit1 as hash)
-            - "reset_to_commit": Move HEAD to hash (requires: repo_path, commit1 as hash)
-            - "cherry_pick": Apply hash to current (requires: repo_path, commit1 as hash)
-
-        --- REPOSITORY PATHS ---
-
-        repo_path (str | None): Path to local Git repo
-        repo_url (str | None): URL for cloning
-        target_dir (str | None): Local destination for clone
-
-        --- COMMIT & HISTORY ---
-
-        message (str | None): Commit message
-        add_all (bool): Stage all changes. Default: False
-        paths (List | None): Specific files to stage/commit
-        amend (bool): Modify last commit. Default: False
-        max_commits (int): Max history entries. Default: 50
-        since/until (str | None): Date filters
-        author (str | None): Author filter
-
-        --- DIFF & BLAME ---
-
-        commit1/commit2 (str | None): Git hashes/refs for diff/reset
-        file_path (str | None): Target file for blame/history
-
-        --- OPTIONS ---
-
-        include_untracked/ignored (bool): Status visibility
-        max_depth (int): Tree depth for reading. Default: 3
-        include_files/dirs (bool): Reading filters
-        force (bool): Forced reset. Default: False
+        operation: Operation to perform (required)
+        repo_path: Path to local Git repo (for init_repo: directory to initialise)
+        repo_url: URL for cloning
+        target_dir: Local destination for clone
+        message: Commit message
+        add_all: Stage all changes. Default: False
+        paths: Specific files to stage/commit
+        amend: Modify last commit. Default: False
+        max_commits: Max history entries. Default: 50
+        since/until: Date filters
+        author: Author filter
+        commit1/commit2: Git hashes/refs for diff/reset
+        file_path: Target file for blame/history
+        force: Forced reset. Default: False
     """
     try:
         if not operation:
@@ -138,7 +115,11 @@ async def repo_ops(
             return _clarification_response("repo_path", f"repo_path is required for {operation}")
 
         _get_git()
-        if operation == "clone_repo":
+        if operation == "init_repo":
+            if not repo_path:
+                return _clarification_response("repo_path", "repo_path is required for init_repo")
+            return await _init_repo(repo_path)
+        elif operation == "clone_repo":
             if not repo_url:
                 return _clarification_response("repo_url", "repo_url is required for clone_repo")
             if not target_dir:
@@ -187,6 +168,25 @@ async def repo_ops(
     except Exception as e:
         logger.error(f"Repository operation '{operation}' failed: {e}", exc_info=True)
         return _error_response(str(e), "internal_error")
+
+
+async def _init_repo(repo_path):
+    try:
+        import os
+        os.makedirs(repo_path, exist_ok=True)
+        repo = git.Repo.init(repo_path)
+        return _success_response(
+            {
+                "repo_path": repo_path,
+                "git_dir": str(repo.git_dir),
+            },
+            next_steps=[
+                "repo_ops(operation='get_repo_status', repo_path='...')",
+                "git_ops(operation='add_remote', remote_url='...')",
+            ],
+        )
+    except Exception as e:
+        return _error_response(str(e), "git_error")
 
 
 async def _clone_repo(repo_url, target_dir):

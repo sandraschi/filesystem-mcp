@@ -284,15 +284,26 @@ async def host_ops(
 ) -> dict[str, Any]:
     """Host System Context (Info, Env, Help, User).
 
-    Operations: get_help, get_system_info, get_environment_info, get_security_info,
-    get_hardware_info, get_software_info, get_time_info, get_locale_info,
-    get_user_info, get_session_info, get_service_status, get_log_info.
-
     Args:
-        operation: Operation to perform (required)
-        category: Help category filter for get_help
-        tool_name: Specific tool name for get_help
-        level: Help detail level (basic, advanced). Default: "basic"
+        operation (Literal, required): Available context operations:
+            - \"get_help\": Documentation for tools and categories
+            - \"get_system_info\": OS, node, release, and python version
+            - \"get_environment_info\": Environment variables and paths
+            - \"get_security_info\": Basic user and permission info
+            - \"get_hardware_info\": Machine architecture and processor info
+            - \"get_software_info\": Python executable and loaded modules
+            - \"get_time_info\": Local and UTC time with offsets
+            - \"get_locale_info\": System language and encoding settings
+            - \"get_user_info\": Current username and home directory
+            - \"get_session_info\": Process ID and hostname
+            - \"get_service_status\": Availability of system services
+            - \"get_log_info\": Access to system logs (if permitted)
+
+        --- OPTIONS ---
+
+        category (str | None): Help category filter
+        tool_name (str | None): Specific tool documentation
+        level (str): Help detail level (basic, advanced). Default: \"basic\"
     """
     try:
         if not operation:

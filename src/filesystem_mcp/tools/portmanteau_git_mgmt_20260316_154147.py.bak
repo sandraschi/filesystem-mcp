@@ -66,16 +66,15 @@ async def git_ops(
 ) -> dict[str, Any]:
     """Git Administrative operations (Branches, Tags, Remotes, Stash).
 
-    Operations: create_branch, rename_branch, switch_branch, merge_branch, delete_branch,
-    list_branches, create_tag, list_tags, delete_tag, push_changes, pull_changes,
-    fetch_updates, list_remotes, add_remote, remove_remote, stash_changes, apply_stash,
-    list_stashes, resolve_conflicts, rebase_branch.
+    Operations: create_branch, switch_branch, merge_branch, delete_branch, list_branches,
+    create_tag, list_tags, delete_tag, push_changes, pull_changes, fetch_updates,
+    list_remotes, add_remote, remove_remote, stash_changes, apply_stash, list_stashes,
+    resolve_conflicts, rebase_branch.
 
     Args:
         operation: Operation to perform (required)
         repo_path: Path to local Git repo
-        branch_name: Target branch name. For rename_branch: the CURRENT name.
-        target_branch: For rename_branch: the NEW name. For merge_branch: branch to merge into.
+        branch_name: Target branch name
         tag_name: Target tag name
         tag_message: Tag annotation
         source_branch: Branch to merge/rebase FROM
@@ -175,19 +174,6 @@ async def git_ops(
     except Exception as e:
         logger.error(f"Git management operation '{operation}' failed: {e}", exc_info=True)
         return _error_response(str(e), "internal_error")
-
-
-async def _rename_branch(repo_path, old_name, new_name):
-    try:
-        repo = git.Repo(repo_path)
-        # git branch -m <old> <new>  (works on both current and other branches)
-        repo.git.branch("-m", old_name, new_name)
-        return _success_response(
-            {"renamed_from": old_name, "renamed_to": new_name},
-            next_steps=[f"git_ops(operation='switch_branch', branch_name='{new_name}')"],
-        )
-    except Exception as e:
-        return _error_response(str(e), "git_error")
 
 
 async def _create_branch(repo_path, branch_name):

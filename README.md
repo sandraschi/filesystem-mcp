@@ -2,13 +2,19 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.1+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.4+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
 [![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
 [![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
-A **FastMCP 2.14.1+ compliant** MCP server using **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management. Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
+A **FastMCP 2.14.4+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management.
+
+> [!IMPORTANT]
+> **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10702) for real-time visualization and management.
+
+## 🚀 Deployment & Security
+Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
 
 ## ✨ Features
 

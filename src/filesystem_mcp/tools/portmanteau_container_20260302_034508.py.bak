@@ -56,28 +56,48 @@ async def container_ops(
 ) -> dict[str, Any]:
     """Docker Container Lifecycle operations.
 
-    Operations: list_containers, get_container, create_container, start_container,
-    stop_container, restart_container, remove_container, container_exec, container_logs,
-    container_stats.
-
     Args:
-        operation: Operation to perform (required)
-        container_id: Target container ID or name
-        image: Image for create_container
-        name: Container name
-        command: Command for container_exec
-        ports: Port mappings dict
-        volumes: Volume mounts dict
-        environment: Env variables dict
-        working_dir: Work dir in container
-        detach: Run in background. Default: True
-        auto_remove: Remove when stopped. Default: False
-        timeout: Stop/restart timeout secs. Default: 10
-        force: Force removal. Default: False
-        tail: Log lines. Default: 100
-        since/until: Log time range strings
-        timestamps: Include timestamps in logs. Default: False
-        show_stats: Include stats in listing. Default: False
+        operation (Literal, required): Available container operations:
+            - "list_containers": List Docker containers with filtering
+            - "get_container": Get detailed info (requires: container_id)
+            - "create_container": Create new container (requires: image)
+            - "start_container": Start stopped container (requires: container_id)
+            - "stop_container": Stop running container (requires: container_id)
+            - "restart_container": Restart container (requires: container_id)
+            - "remove_container": Remove container (requires: container_id)
+            - "container_exec": Run command in container (requires: container_id, command)
+            - "container_logs": Stream logs (requires: container_id)
+            - "container_stats": Resource statistics (requires: container_id)
+
+        --- CORE IDENTIFIERS ---
+
+        container_id (str | None): Target container ID or name
+        image (str | None): Image for creation
+        name (str | None): Container name
+
+        --- CONTAINER CONFIGURATION ---
+
+        command (str | List[str] | None): Command to run
+        ports (Dict | None): Port mappings
+        volumes (Dict | None): Volume mounts
+        environment (Dict | None): Env variables
+        working_dir (str | None): Work dir in container
+        user (str | None): Run as user
+        detach (bool): Run in background. Default: True
+        auto_remove (bool): Remove when stopped. Default: False
+        network_mode (str | None): Network mode
+        restart_policy (str | None): Restart policy
+
+        --- RUNTIME & LOGGING ---
+
+        timeout (int): Stop/restart timeout. Default: 10
+        force (bool): Force removal. Default: False
+        tty/stdin/stdout/stderr (bool): Exec options
+        tail (int | None): Log lines. Default: 100
+        since/until (str | None): Log time range
+        timestamps (bool): Include timestamps in logs. Default: False
+        follow (bool): Follow log stream. Default: False
+        show_stats (bool): Include stats in listing. Default: False
     """
     try:
         if not operation:

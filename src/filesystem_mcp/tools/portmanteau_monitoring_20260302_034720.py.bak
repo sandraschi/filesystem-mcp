@@ -36,16 +36,24 @@ async def monitor_ops(
 ) -> dict[str, Any]:
     """Real-time System Monitoring (Metrics, Resources, Processes).
 
-    Operations: get_system_status, get_resource_usage, get_process_info,
-    get_performance_metrics, get_memory_info, get_cpu_info, get_disk_usage, get_network_info.
-
     Args:
-        operation: Operation to perform (required)
-        include_processes/disk/network: Toggle status detail levels
-        max_processes: Limit process list size. Default: 10
-        filter_pattern: Keyword search for processes
-        sort_by: Sort field (cpu_percent, memory_percent, name)
-        sort_order: "asc" or "desc". Default: "desc"
+        operation (Literal, required): Available monitoring operations:
+            - "get_system_status": Comprehensive snapshot of health
+            - "get_resource_usage": Quick CPU/RAM/Disk summary
+            - "get_process_info": List running processes with filters
+            - "get_performance_metrics": High-res usage stats
+            - "get_memory_info": Detailed RAM/Swap breakdown
+            - "get_cpu_info": Core counts, frequency, and times
+            - "get_disk_usage": Partition sizes and free space
+            - "get_network_info": Interface addresses and counters
+
+        --- OPTIONS ---
+
+        include_processes/disk/network (bool): Toggle status detail levels
+        max_processes (int): Limit process list size. Default: 10
+        filter_pattern (str | None): Keyword search for processes
+        sort_by (str): Sort field (cpu_percent, memory_percent, name)
+        sort_order (str): "asc" or "desc". Default: "desc"
     """
     try:
         if not operation:

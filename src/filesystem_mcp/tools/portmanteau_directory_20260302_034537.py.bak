@@ -40,22 +40,34 @@ async def dir_ops(
 ) -> dict[str, Any]:
     """Directory structure and management operations.
 
-    Operations: list_directory, create_directory, remove_directory, directory_tree,
-    calculate_directory_size, find_empty_directories.
-
     Args:
-        operation: Operation to perform (required)
-        path: Target directory path
-        recursive: Operate recursively. Default: False
-        include_hidden: Show hidden files. Default: False
-        create_parents: Create missing parents. Default: True
-        exist_ok: Don't error if exists. Default: True
-        max_depth: Max recursion depth for tree. Default: 3
-        pattern: Filter pattern for tree
-        exclude_patterns: Patterns to skip
-        output_format: Tree format (text/json). Default: "text"
-        human_readable: Format sizes. Default: True
-        max_files: Max items to list. Default: 1000
+        operation (Literal, required): Available directory operations:
+            - "list_directory": List contents with metadata (requires: path)
+            - "create_directory": Create new directory (requires: path)
+            - "remove_directory": Remove directory (requires: path)
+            - "directory_tree": Generate visual tree (requires: path)
+            - "calculate_directory_size": Get total size (requires: path)
+            - "find_empty_directories": Locate empty dirs (requires: path)
+
+        --- PRIMARY PARAMETERS ---
+
+        path (str | None): Target directory path
+        recursive (bool): Operate recursively. Default: False
+        include_hidden (bool): Show hidden files. Default: False
+
+        --- DIRECTORY CONFIGURATION ---
+
+        create_parents (bool): Create missing parents. Default: True
+        exist_ok (bool): Don't error if exists. Default: True
+        max_depth (int): Max recursion depth for tree. Default: 3
+        pattern (str | None): Filter pattern for tree
+        exclude_patterns (List[str] | None): Patterns to skip
+        output_format (Literal): Tree format (text/json). Default: "text"
+
+        --- SIZE & LIMITS ---
+
+        human_readable (bool): Format sizes. Default: True
+        max_files (int): Max items to list. Default: 1000
     """
     try:
         if not operation:

@@ -27,7 +27,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp[anthropic]>=3.0.0",
+    "fastmcp[anthropic]>=2.14.5",
     "gitpython>=3.1.0",
     "uvicorn>=0.24.0",
     "python-multipart>=0.0.6",
