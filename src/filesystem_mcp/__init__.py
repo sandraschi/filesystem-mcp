@@ -1,9 +1,12 @@
 """
-Filesystem MCP - A FastMCP 2.14.3+ compliant server for file system operations.
+Filesystem MCP - A FastMCP 3.2+ compliant server for file system operations with concurrency safety.
 
 This module provides a comprehensive MCP server with file system, Git repository,
 and Docker container management capabilities using the portmanteau pattern for
 consolidated tool interfaces with enhanced conversational responses and sampling.
+
+CRITICAL: All file operations now use atomic patterns and proper locking to prevent
+corruption when multiple clients access the same files simultaneously via FastMCP 3.2+ universal connect pattern.
 """
 
 import asyncio
@@ -70,6 +73,7 @@ from fastmcp import FastMCP  # noqa: E402
 async def server_lifespan(mcp_instance: FastMCP):
     """Server lifespan for startup and cleanup."""
     logger.info("Filesystem MCP server starting up", version="2.2.0")
+    logger.info("FastMCP 3.2+ with concurrency safety enabled")
     yield
     logger.info("Filesystem MCP server shutting down")
 
@@ -77,7 +81,7 @@ async def server_lifespan(mcp_instance: FastMCP):
 # Create the main application instance
 app = FastMCP(
     name="filesystem-mcp",
-    instructions="""You are a comprehensive MCP server for advanced file system, Git repository, and Docker container operations using FastMCP 2.14.3+ with conversational tool returns and sampling capabilities.
+    instructions="""You are a comprehensive MCP server for advanced file system, Git repository, and Docker container operations using FastMCP 3.2+ with concurrency safety.
 
 CORE CAPABILITIES:
 - File system operations: read, write, edit, move, search, analyze files and directories
@@ -86,22 +90,23 @@ CORE CAPABILITIES:
 - System monitoring: resources, processes, performance metrics
 - Agentic workflows: SEP-1577 compliant autonomous file operations with and without sampling
 
-AVAILABLE PORTMANTEAU TOOLS:
-\u2022 file_ops: Basic File IO and Metadata (read, write, move, exists, info)
-\u2022 dir_ops: Directory structure and management (list, mkdir, tree, size)
-\u2022 search_ops: Content analysis, grep, and comparison (grep, search, logs, diff)
-\u2022 container_ops: Docker container lifecycle (list, start, stop, exec, logs)
-\u2022 infra_ops: Docker images, networks, and volumes
-\u2022 orch_ops: Docker Compose operations (up, down, ps, config)
-\u2022 repo_ops: Git core repository operations (status, commit, history, diff, etc.)
-\u2022 git_ops: Git administrative operations (branches, tags, remotes, stash, rebase, etc.)
-\u2022 monitor_ops: Real-time system metrics, resources, and processes
-\u2022 host_ops: Host system information, environment, help, and user details
-\u2022 agentic_file_workflow: LLM-orchestrated workflows (requires client sampling support: VS Code, Cline)
-\u2022 agentic_file_workflow_nosampling: Pure Python workflows, works in ALL clients
+CONCURRENCY SAFETY:
+- All file write operations use atomic patterns to prevent corruption
+- Proper locking mechanisms prevent race conditions
+- FastMCP 3.2+ universal connect pattern support (stdio + HTTP)
+- Thread-safe operations for 5+ simultaneous clients
 
-Each portmanteau tool consolidates multiple related operations into a single interface,
-reducing tool complexity while maintaining full functionality.""",
+AVAILABLE TOOLS (grouped; Git/Compose/monitoring use one tool per operation):
+\u2022 file_ops, dir_ops, search_ops — file and directory I/O
+\u2022 container_ops, infra_ops — Docker containers, images, networks, volumes
+\u2022 compose_up, compose_down, compose_ps, compose_logs, compose_config, compose_restart — Docker Compose
+\u2022 repo_ops — Git core (status, commit, history, diff, etc.)
+\u2022 git_* — Git branches, tags, remotes, stash, merge/rebase (see tool names: git_list_branches, git_push_changes, ...)
+\u2022 monitor_get_* — system metrics and processes (e.g. monitor_get_resource_usage)
+\u2022 host_ops — host info, environment, help
+\u2022 agentic_file_workflow — LLM sampling workflow (requires client ctx.sample)
+
+Most portmanteau tools (file_ops, dir_ops, ...) use an operation enum; Git, Compose, and monitoring tools are split per operation for clearer tool selection.""",
     lifespan=server_lifespan,
     version="2.2.0",
 )
@@ -116,7 +121,8 @@ def _import_tools():
         import importlib
 
         tool_modules = [
-            ".tools.portmanteau_file",           # Basic File IO
+            ".tools.portmanteau_file_safe",        # Concurrency-safe File IO (NEW)
+            ".tools.portmanteau_file",           # Basic File IO (legacy)
             ".tools.portmanteau_directory",      # Directory structure
             ".tools.portmanteau_search",         # Search and comparison
             ".tools.portmanteau_container",      # Container lifecycle
@@ -175,9 +181,10 @@ def main():
     """Main entry point for the MCP server with unified transport handling."""
     from .transport import run_server
 
-    logger.info("Starting Filesystem MCP server v2.2.0 (FastMCP 2.14.4+)")
+    logger.info("Starting Filesystem MCP server v2.2.0 (FastMCP 3.2+)")
     logger.info("Python path", python_path=sys.executable)
     logger.info("Working directory", cwd=str(Path.cwd()))
+    logger.info("Concurrency safety: Enabled for all file operations")
 
     # Note: Some tools may not be available if optional dependencies are missing
     logger.info(

@@ -182,7 +182,7 @@ async def _init_repo(repo_path):
             },
             next_steps=[
                 "repo_ops(operation='get_repo_status', repo_path='...')",
-                "git_ops(operation='add_remote', remote_url='...')",
+                "git_add_remote(repo_path='...', remote_name='origin', remote_url='...')",
             ],
         )
     except Exception as e:
@@ -228,7 +228,7 @@ async def _get_repo_status(repo_path, include_untracked, include_ignored):
                 "repo_ops(operation='commit_changes', message='...')",
                 "repo_ops(operation='diff_changes')",
             ],
-            related_operations=["get_repo_info", "git_ops(operation='list_branches')"],
+            related_operations=["get_repo_info", "git_list_branches"],
         )
     except Exception as e:
         return _error_response(str(e), "git_error")
@@ -254,7 +254,7 @@ async def _commit_changes(repo_path, message, add_all, paths, amend):
 
         return _success_response(
             {"commit_hash": commit.hexsha, "author": commit.author.name},
-            next_steps=["git_ops(operation='push_changes')"],
+            next_steps=["git_push_changes(repo_path='...')"],
         )
     except Exception as e:
         return _error_response(str(e), "git_error")

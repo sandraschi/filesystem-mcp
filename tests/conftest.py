@@ -36,7 +36,7 @@ def temp_repo(temp_dir: Path) -> Generator[Path, None, None]:
     import git
 
     repo_path = temp_dir / "test_repo"
-    repo_path.mkdir()
+    repo_path.mkdir(exist_ok=True)
 
     # Initialize repository
     repo = git.Repo.init(repo_path)

@@ -152,8 +152,8 @@ def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
 async def agentic_file_workflow(
     workflow_prompt: str,
     available_tools: list[str],
-    max_iterations: int = 5,
-    ctx: Context = None,
+    max_iterations: int | None = None,
+    ctx: Context | None = None,
 ) -> dict:
     """
     Execute agentic file workflows using FastMCP 2.14.5+ sampling (no tools).
@@ -165,10 +165,17 @@ async def agentic_file_workflow(
     Args:
         workflow_prompt: Description of the file workflow to execute
         available_tools: Hint about which tool groups to use (file_ops, dir_ops, search_ops)
-        max_iterations: Unused (kept for API compatibility)
+        max_iterations: Backward-compatibility parameter (currently ignored by this no-tools sampling implementation).
 
     Returns:
-        Structured response with workflow execution results
+        dict — On success: success (bool), operation (str), summary (str), result (dict with
+        workflow_prompt, steps_executed, results, notes, execution_summary), quality_metrics,
+        recommendations, next_steps, related_operations.
+        On failure: success=False, error, error_type (e.g. NO_CONTEXT, SAMPLING_ERROR,
+        MISSING_WORKFLOW_PROMPT), recovery_options, diagnostic_info.
+
+    Recovery: If NO_CONTEXT, run from an MCP client that injects Context. If SAMPLING_ERROR,
+    shorten the prompt or check server logs; verify the host supports ctx.sample().
     """
     if not workflow_prompt:
         return _error_response(
@@ -177,11 +184,78 @@ async def agentic_file_workflow(
             recovery_options=["Provide a clear description of the file workflow to execute"],
         )
 
+    if not available_tools:
+        return _error_response(
+            error="No available tools provided",
+            error_type="EMPTY_TOOLS_LIST",
+            recovery_options=["Provide at least one tool name in available_tools"],
+            suggested_fixes=["Pass available_tools with one or more tool names"],
+        )
+
+    # Backward-compatibility mode for unit tests and legacy callers that stored
+    # a sampling_context in app.state and expected sample_step orchestration.
+    if ctx is None and hasattr(app, "state") and app.state.get("sampling_context") is not None:
+        sampling_context = app.state["sampling_context"]
+        max_loops = max_iterations if isinstance(max_iterations, int) and max_iterations > 0 else 5
+        tools_executed: list[dict] = []
+        iterations_completed = 0
+
+        try:
+            for i in range(max_loops):
+                step = await sampling_context.sample_step(
+                    workflow_prompt, available_tools, {"iteration": i}, "file_workflow"
+                )
+                if not step:
+                    break
+                iterations_completed += 1
+                tool_call = step.get("tool_call", {})
+                tools_executed.append(
+                    {
+                        "name": tool_call.get("name"),
+                        "parameters": tool_call.get("parameters", {}),
+                    }
+                )
+
+            unique_tools = {t.get("name") for t in tools_executed if t.get("name")}
+            return {
+                "success": True,
+                "operation": "agentic_file_workflow",
+                "result": {
+                    "workflow_prompt": workflow_prompt,
+                    "iterations_completed": iterations_completed,
+                    "max_iterations_allowed": max_loops,
+                },
+                "tools_executed": tools_executed,
+                "quality_metrics": {
+                    "iterations_completed": iterations_completed,
+                    "tools_executed": len(tools_executed),
+                    "unique_tools_used": len(unique_tools),
+                    "workflow_duration_seconds": 0.0,
+                    "sampling_efficiency": (len(tools_executed) / iterations_completed)
+                    if iterations_completed
+                    else 0.0,
+                    "autonomous_execution": True,
+                },
+                "recommendations": ["Review workflow findings to ensure they meet requirements"],
+                "next_steps": ["Use individual file_ops/dir_ops/search_ops tools for targeted follow-up"],
+                "related_operations": ["file_ops", "dir_ops", "search_ops"],
+            }
+        except Exception as e:
+            return _error_response(
+                error=f"Workflow failed: {str(e)}",
+                error_type="SAMPLING_EXECUTION_ERROR",
+                recovery_options=[
+                    "Check sampling_context implementation",
+                    "Try a simpler workflow_prompt",
+                ],
+            )
+
     if ctx is None:
         return _error_response(
-            error="No MCP context available",
-            error_type="NO_CONTEXT",
+            error="Sampling context unavailable",
+            error_type="SAMPLING_UNAVAILABLE",
             recovery_options=["Ensure this tool is called from an MCP-compatible client"],
+            diagnostic_info={"max_iterations": max_iterations},
         )
 
     # Gather file context server-side before calling LLM

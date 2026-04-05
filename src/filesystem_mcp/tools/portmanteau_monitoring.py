@@ -1,88 +1,27 @@
+"""System monitoring tools — one tool per view (CPU, memory, processes, etc.)."""
+
+from __future__ import annotations
+
 import logging
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any
 
 import psutil
 
-from .utils import (
-    _clarification_response,
-    _error_response,
-    _get_app,
-    _success_response,
-)
+from .utils import _error_response, _get_app, _success_response
 
 logger = logging.getLogger(__name__)
 
-
-@_get_app().tool()
-async def monitor_ops(
-    operation: Literal[
-        "get_system_status",
-        "get_resource_usage",
-        "get_process_info",
-        "get_performance_metrics",
-        "get_memory_info",
-        "get_cpu_info",
-        "get_disk_usage",
-        "get_network_info",
-    ],
-    include_processes: bool = False,
-    include_disk: bool = True,
-    include_network: bool = True,
-    max_processes: int = 10,
-    filter_pattern: Optional[str] = None,
-    sort_by: str = "cpu_percent",
-    sort_order: str = "desc",
+async def _get_system_status(
+    include_processes: bool,
+    include_disk: bool,
+    include_network: bool,
+    max_processes: int,
 ) -> dict[str, Any]:
-    """Real-time System Monitoring (Metrics, Resources, Processes).
-
-    Operations: get_system_status, get_resource_usage, get_process_info,
-    get_performance_metrics, get_memory_info, get_cpu_info, get_disk_usage, get_network_info.
-
-    Args:
-        operation: Operation to perform (required)
-        include_processes/disk/network: Toggle status detail levels
-        max_processes: Limit process list size. Default: 10
-        filter_pattern: Keyword search for processes
-        sort_by: Sort field (cpu_percent, memory_percent, name)
-        sort_order: "asc" or "desc". Default: "desc"
-    """
-    try:
-        if not operation:
-            return _clarification_response(
-                "operation", "No operation specified", ["get_system_status", "get_resource_usage"]
-            )
-
-        if operation == "get_system_status":
-            return await _get_system_status(
-                include_processes, include_disk, include_network, max_processes
-            )
-        elif operation == "get_resource_usage":
-            return await _get_resource_usage()
-        elif operation == "get_process_info":
-            return await _get_process_info(max_processes, filter_pattern, sort_by, sort_order)
-        elif operation == "get_performance_metrics":
-            return await _get_performance_metrics()
-        elif operation == "get_memory_info":
-            return await _get_memory_info()
-        elif operation == "get_cpu_info":
-            return await _get_cpu_info()
-        elif operation == "get_disk_usage":
-            return await _get_disk_usage()
-        elif operation == "get_network_info":
-            return await _get_network_info()
-        else:
-            return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
-    except Exception as e:
-        logger.error(f"Monitoring operation '{operation}' failed: {e}", exc_info=True)
-        return _error_response(str(e), "internal_error")
-
-
-async def _get_system_status(proc, disk, net, max_p):
     try:
         import platform
 
-        res = {
+        res: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "system": platform.system(),
             "release": platform.release(),
@@ -90,24 +29,30 @@ async def _get_system_status(proc, disk, net, max_p):
             "cpu_usage_percent": psutil.cpu_percent(interval=0.1),
             "memory": psutil.virtual_memory()._asdict(),
         }
-        if disk:
+        if include_disk:
             res["disk"] = psutil.disk_usage("/")._asdict()
-        if proc:
+        if include_processes:
             procs = []
             for p in psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]):
                 procs.append(p.info)
             res["processes"] = sorted(
                 procs, key=lambda x: x.get("cpu_percent", 0), reverse=True
-            )[:max_p]
-        if net:
+            )[:max_processes]
+        if include_network:
             res["network"] = psutil.net_io_counters()._asdict()
 
-        return _success_response(res, related_operations=["get_resource_usage", "get_process_info"])
+        return _success_response(
+            res,
+            related_operations=[
+                "monitor_get_resource_usage",
+                "monitor_get_process_info",
+            ],
+        )
     except Exception as e:
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_resource_usage():
+async def _get_resource_usage() -> dict[str, Any]:
     try:
         return _success_response(
             {
@@ -121,26 +66,34 @@ async def _get_resource_usage():
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_process_info(limit, pattern, sort, order):
+async def _get_process_info(
+    limit: int,
+    pattern: str | None,
+    sort: str,
+    order: str,
+) -> dict[str, Any]:
     try:
         procs = []
         for p in psutil.process_iter(
             ["pid", "name", "username", "status", "cpu_percent", "memory_percent"]
         ):
             try:
-                if pattern and pattern.lower() not in p.info["name"].lower():
+                if pattern and pattern.lower() not in (p.info.get("name") or "").lower():
                     continue
                 procs.append(p.info)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
-        procs.sort(key=lambda x: x.get(sort, 0) or 0, reverse=(order == "desc"))
+        procs.sort(
+            key=lambda x: x.get(sort, 0) or 0,
+            reverse=(order == "desc"),
+        )
         return _success_response({"processes": procs[:limit], "total_matching": len(procs)})
     except Exception as e:
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_performance_metrics():
+async def _get_performance_metrics() -> dict[str, Any]:
     try:
         return _success_response(
             {
@@ -155,16 +108,19 @@ async def _get_performance_metrics():
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_memory_info():
+async def _get_memory_info() -> dict[str, Any]:
     try:
         return _success_response(
-            {"virtual": psutil.virtual_memory()._asdict(), "swap": psutil.swap_memory()._asdict()}
+            {
+                "virtual": psutil.virtual_memory()._asdict(),
+                "swap": psutil.swap_memory()._asdict(),
+            }
         )
     except Exception as e:
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_cpu_info():
+async def _get_cpu_info() -> dict[str, Any]:
     try:
         return _success_response(
             {
@@ -178,13 +134,15 @@ async def _get_cpu_info():
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_disk_usage():
+async def _get_disk_usage() -> dict[str, Any]:
     try:
         partitions = []
         for p in psutil.disk_partitions():
             try:
                 usage = psutil.disk_usage(p.mountpoint)._asdict()
-                partitions.append({"device": p.device, "mountpoint": p.mountpoint, "usage": usage})
+                partitions.append(
+                    {"device": p.device, "mountpoint": p.mountpoint, "usage": usage}
+                )
             except (PermissionError, OSError):
                 continue
         return _success_response({"partitions": partitions})
@@ -192,7 +150,7 @@ async def _get_disk_usage():
         return _error_response(str(e), "psutil_error")
 
 
-async def _get_network_info():
+async def _get_network_info() -> dict[str, Any]:
     try:
         return _success_response(
             {
@@ -205,3 +163,151 @@ async def _get_network_info():
         )
     except Exception as e:
         return _error_response(str(e), "psutil_error")
+
+
+_app = _get_app()
+
+
+@_app.tool()
+async def monitor_get_system_status(
+    include_processes: bool = False,
+    include_disk: bool = True,
+    include_network: bool = True,
+    max_processes: int = 10,
+) -> dict[str, Any]:
+    """Snapshot of OS, CPU count, load, memory, optional disk/network and top processes.
+
+    Recovery: If psutil raises AccessDenied, retry with fewer options or run with appropriate permissions.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: timestamp, system, release, cpu_count, cpu_usage_percent, memory (dict),
+        optional disk, processes, network — structure matches psutil named tuples as dicts.
+    """
+    try:
+        return await _get_system_status(
+            include_processes, include_disk, include_network, max_processes
+        )
+    except Exception as e:
+        logger.exception("monitor_get_system_status failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_resource_usage() -> dict[str, Any]:
+    """CPU, memory, root disk usage, and boot time.
+
+    Idempotency: Read-only; safe to retry.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: cpu_percent, memory, disk, boot_time (ISO string).
+    """
+    try:
+        return await _get_resource_usage()
+    except Exception as e:
+        logger.exception("monitor_get_resource_usage failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_process_info(
+    max_processes: int = 10,
+    filter_pattern: str | None = None,
+    sort_by: str = "cpu_percent",
+    sort_order: str = "desc",
+) -> dict[str, Any]:
+    """List running processes with optional substring filter on the process name.
+
+    Args:
+        filter_pattern: Case-insensitive substring matched against process **name** (not regex).
+            Example: \"python\" matches \"python.exe\". Omit to include all accessible processes.
+        sort_by: One of cpu_percent, memory_percent, name (falls back to 0 if missing).
+        sort_order: \"asc\" or \"desc\".
+
+    Recovery: AccessDenied on some PIDs is normal; total_matching reflects filtered list.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: {\"processes\": [dict], \"total_matching\": int}
+    """
+    try:
+        return await _get_process_info(max_processes, filter_pattern, sort_by, sort_order)
+    except Exception as e:
+        logger.exception("monitor_get_process_info failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_performance_metrics() -> dict[str, Any]:
+    """Detailed CPU times, memory, swap, disk I/O, and network I/O counters.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: cpu_times, virtual_memory, swap_memory, disk_io, net_io (dicts).
+    """
+    try:
+        return await _get_performance_metrics()
+    except Exception as e:
+        logger.exception("monitor_get_performance_metrics failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_memory_info() -> dict[str, Any]:
+    """Virtual and swap memory breakdown.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: virtual, swap (dicts from psutil).
+    """
+    try:
+        return await _get_memory_info()
+    except Exception as e:
+        logger.exception("monitor_get_memory_info failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_cpu_info() -> dict[str, Any]:
+    """Core counts, optional frequency, and per-CPU usage.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: physical_cores, total_cores, frequency (dict | None), usage_per_cpu (list).
+    """
+    try:
+        return await _get_cpu_info()
+    except Exception as e:
+        logger.exception("monitor_get_cpu_info failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_disk_usage() -> dict[str, Any]:
+    """Per-partition usage (skips mounts that raise PermissionError).
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: {\"partitions\": [{\"device\", \"mountpoint\", \"usage\"}, ...]}
+    """
+    try:
+        return await _get_disk_usage()
+    except Exception as e:
+        logger.exception("monitor_get_disk_usage failed")
+        return _error_response(str(e), "internal_error")
+
+
+@_app.tool()
+async def monitor_get_network_info() -> dict[str, Any]:
+    """Aggregate I/O counters and per-interface addresses and stats.
+
+    Returns:
+        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
+        result: io_counters, addresses, stats.
+    """
+    try:
+        return await _get_network_info()
+    except Exception as e:
+        logger.exception("monitor_get_network_info failed")
+        return _error_response(str(e), "internal_error")

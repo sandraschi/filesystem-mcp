@@ -117,14 +117,12 @@ def _success_response(
         "operation": operation or "completed",
         "result": result,
         "timestamp": datetime.now().isoformat(),
+        "execution_time_ms": execution_time_ms if execution_time_ms is not None else 0,
         "quality_metrics": quality_metrics or {},
         "recommendations": recommendations or [],
         "next_steps": next_steps or [],
         "related_operations": related_operations or [],
     }
-
-    if execution_time_ms is not None:
-        response["execution_time_ms"] = execution_time_ms
 
     return response
 

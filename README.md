@@ -2,23 +2,24 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.14.4+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
+[![FastMCP](https://img.shields.io/badge/FastMCP-3.2+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
 [![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
 [![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
-A **FastMCP 2.14.4+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management.
+A **FastMCP 3.2+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
 
 > [!IMPORTANT]
 > **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10702) for real-time visualization and management.
 
-## 🚀 Deployment & Security
+##  Deployment & Security
 Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
 
-## ✨ Features
+##  Features
 
-### 🗂️ File System Operations (20+ Tools)
+###  File System Operations (20+ Tools)
+- **Concurrency-Safe Operations**: Atomic file writes with proper locking for multi-client access
 - **Basic Operations**: Read, write, list, copy, move, and delete files/directories
 - **Advanced Analysis**: Find large files, duplicate detection, directory size calculation
 - **File Comparison**: Side-by-side diff comparison with unified format
@@ -26,8 +27,9 @@ Built with modern Python patterns, enterprise-grade security, and extensive test
 - **Batch Operations**: Process multiple files simultaneously
 - **Path Management**: Secure path validation with configurable restrictions
 - **Metadata Analysis**: Comprehensive file information with type detection
+- **Universal Connect**: FastMCP 3.2+ support for simultaneous stdio + HTTP access
 
-### 🐳 Docker Container Management
+###  Docker Container Management
 - **Container Operations**
   - List, create, start, stop, and remove containers
   - Execute commands inside running containers
@@ -50,19 +52,19 @@ Built with modern Python patterns, enterprise-grade security, and extensive test
   - Scale services up and down
   - View service logs and status
 
-### 🔄 Git Repository Management
+###  Git Repository Management
 - Clone repositories with branch and depth control
 - Get repository status (staged, unstaged, untracked changes)
 - Commit changes with custom messages
 - Read repository structure and file contents
 - Manage branches and remotes
 
-### 🤖 System Tools & Help
+###  System Tools & Help
 - **Multilevel Help System**: Hierarchical documentation with portmanteau tool examples and use cases
 - **System Status Tool**: Comprehensive system monitoring with resource usage metrics
 - **Interactive Guidance**: Context-aware help with parameter validation and suggestions
 
-### 🚀 Advanced Features
+###  Advanced Features
 - **FastMCP 2.14.1+ Compliance**: Modern tool registration with `@app.tool()` decorators
 - **Portmanteau Pattern**: Consolidated tool interfaces reducing complexity while maintaining full functionality
 - **Enterprise Security**: Path traversal protection, permission validation, audit trails
@@ -75,19 +77,19 @@ Built with modern Python patterns, enterprise-grade security, and extensive test
 - **System Monitoring**: Resource usage tracking and performance metrics
 - **Cross-Platform**: Windows, macOS, and Linux support
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx filesystem-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -102,7 +104,7 @@ Add to your `claude_desktop_config.json`:
 - **Docker Engine** (for container operations)
 - **Git** (for repository operations)
 
-### 📦 PyPI Package Install (RECOMMENDED)
+###  PyPI Package Install (RECOMMENDED)
 
 **Fastest Installation - Production Ready:**
 
@@ -112,7 +114,7 @@ pip install filesystem-mcp
 
 **Claude Desktop Integration:**
 - Open Claude Desktop
-- Settings → MCP Servers
+- Settings  MCP Servers
 - Add new MCP server:
   ```json
   {
@@ -124,7 +126,7 @@ pip install filesystem-mcp
   }
   ```
 
-### 🎯 Claude Desktop MCPB Package
+###  Claude Desktop MCPB Package
 
 1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
 2.  **Drag & Drop** the file to Claude Desktop
@@ -132,19 +134,19 @@ pip install filesystem-mcp
 4.  **Install dependencies** separately (see below)
 5.  **Start using** 57+ professional tools immediately
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx filesystem-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -154,19 +156,19 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx filesystem-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -266,19 +268,19 @@ For manual installation or other MCP clients, add to your Claude Desktop configu
   - `GIT_USERNAME`: Default Git username for commits
   - `GIT_EMAIL`: Default Git email for commits
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx filesystem-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -288,7 +290,7 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
-## 🤖 Help System & Status Tools
+##  Help System & Status Tools
 
 ### System Operations (portmanteau)
 
@@ -356,7 +358,7 @@ system_operations("get_system_status", include_network=True)
 - Network interfaces (IP addresses, status)
 - Server health (FastMCP version, tool count, status)
 
-## 🛠️ Usage
+##  Usage
 
 ### Starting the Server
 
@@ -373,7 +375,7 @@ python -m filesystem_mcp --debug
 
 ### Available Portmanteau Tools
 
-#### 📂 Filesystem Operations (portmanteau)
+####  Filesystem Operations (portmanteau)
 
 **Unified filesystem tool** with 20+ operations:
 - **file_ops**: Comprehensive file management (`read_file`, `write_file`, `edit_file`, `move_file`, `undo_edit`).
@@ -412,7 +414,7 @@ result = filesystem_operations("list_directory", path=".", recursive=True)
 result = filesystem_operations("search_files", directory_path=".", pattern="*.py")
 ```
 
-#### 🐳 Docker Operations (portmanteau)
+####  Docker Operations (portmanteau)
 
 **Unified Docker tool** with 25+ operations:
 - **Container**: `list_containers`, `get_container`, `create_container`, `start_container`, `stop_container`, `restart_container`, `remove_container`, `container_exec`, `container_logs`, `container_stats`
@@ -433,7 +435,7 @@ result = docker_operations("start_container", container_id="web")
 result = docker_operations("container_logs", container_id="web", tail=100)
 ```
 
-#### 🔄 Repository Operations (portmanteau)
+####  Repository Operations (portmanteau)
 
 **Unified Git tool** with 30+ operations:
 - **Basic**: `clone_repo`, `get_repo_status`, `commit_changes`, `read_repo`
@@ -454,7 +456,7 @@ result = repository_operations("get_repo_status", repo_path="./project")
 result = repository_operations("commit_changes", repo_path="./project", message="Add new feature", add_all=True)
 ```
 
-#### 🛠️ Developer Tools
+####  Developer Tools
 
 **Unified Developer Toolkit** - One tool with 10 specialized commands:
 
@@ -555,34 +557,34 @@ except Exception as e:
     print(f"System error: {e}")
 ```
 
-## 🏗️ Development
+##  Development
 
 ### Project Structure
 
 ```text
 filesystem-mcp/
-├── .github/                # GitHub workflows and templates
-├── docs/                   # Documentation files
-├── filesystem_mcp/         # Main package
-│   ├── __init__.py         # Package initialization
-│   ├── app.py              # FastAPI application setup
-│   ├── config.py           # Configuration management
-│   ├── models/             # Pydantic models
-│   ├── tools/              # Tool implementations
-│   │   ├── __init__.py     # Tool registration
-│   │   ├── file_operations/  # File system tools
-│   │   ├── docker_operations/ # Docker management tools
-│   │   └── repo_operations/  # Git repository tools
-│   └── utils/              # Utility functions
-├── tests/                  # Test suite
-├── .gitignore             # Git ignore rules
-├── LICENSE                # MIT License
-├── pyproject.toml         # Project configuration and dependencies
-├── README.md              # This file
-└── requirements-dev.txt    # Development dependencies
+ .github/                # GitHub workflows and templates
+ docs/                   # Documentation files
+ filesystem_mcp/         # Main package
+    __init__.py         # Package initialization
+    app.py              # FastAPI application setup
+    config.py           # Configuration management
+    models/             # Pydantic models
+    tools/              # Tool implementations
+       __init__.py     # Tool registration
+       file_operations/  # File system tools
+       docker_operations/ # Docker management tools
+       repo_operations/  # Git repository tools
+    utils/              # Utility functions
+ tests/                  # Test suite
+ .gitignore             # Git ignore rules
+ LICENSE                # MIT License
+ pyproject.toml         # Project configuration and dependencies
+ README.md              # This file
+ requirements-dev.txt    # Development dependencies
 ```
 
-### 🧪 Running Tests
+###  Running Tests
 
 ```bash
 # Install test dependencies
@@ -598,7 +600,7 @@ pytest --cov=filesystem_mcp --cov-report=term-missing
 pytest tests/test_docker_operations.py -v
 ```
 
-### 🎨 Code Style & Quality
+###  Code Style & Quality
 
 This project enforces code quality using:
 
@@ -621,7 +623,7 @@ mypy .
 pylint filesystem_mcp/
 ```
 
-### 📦 Building and Releasing
+###  Building and Releasing
 
 1. Update the version in `pyproject.toml`
 2. Update `CHANGELOG.md`
@@ -630,20 +632,20 @@ pylint filesystem_mcp/
 5. Push the tag: `git push origin vx.y.z`
 6. GitHub Actions will automatically build and publish the package to PyPI
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, or suggest new features.
 
-## 📝 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📄 Changelog
+##  Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this project.
 
 
-## 🌐 Webapp Dashboard
+##  Webapp Dashboard
 
 This MCP server includes a free, premium web interface for monitoring and control.
 By default, the web dashboard runs on port **10742**.

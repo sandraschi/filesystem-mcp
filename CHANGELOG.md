@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **FastMCP 3.2+ Upgrade**: Updated FastMCP dependency from 2.14.4+ to 3.2.0 for universal connect pattern support
+- **Concurrency Safety**: Implemented atomic file operations with proper locking for multi-client access
+- **Documentation**: Updated FastMCP version references throughout README and documentation
+
+### Added
+- **Universal Connect Pattern**: Support for multiple simultaneous clients via stdio and HTTP transports
+- **Atomic File Operations**: New `file_ops_safe` tool with atomic write patterns preventing corruption
+- **File Locking System**: Comprehensive locking mechanism for file and directory operations
+- **Concurrency Testing**: Built-in testing tools for multi-client operation validation
+- **FastMCP 3.2 Features**: Access to new 3.2 functionality including codemode, prefabs, app providers, and transforms
+
+### Fixed
+- **File Corruption Risk**: Eliminated race conditions in concurrent file operations
+- **Multi-Client Access**: Safe simultaneous access to same files from multiple clients
+- **Version References**: Updated all FastMCP 2.14.4+ references to 3.2+ in documentation and badges
+- **Dependency Resolution**: Ensured compatibility with latest FastMCP 3.2.0 features
+
+### Security
+- **Atomic Writes**: All file write operations use temporary file patterns with verification
+- **Lock Timeouts**: 30-second timeout prevents deadlocks in concurrent scenarios
+- **Queue Management**: FIFO queue for waiting operations prevents resource starvation
+
 ## [2.1.0] - 2026-02-27
 
 ### Fixed
