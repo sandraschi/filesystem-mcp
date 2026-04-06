@@ -2,6 +2,7 @@ import logging
 import time
 from typing import Any, Literal, Optional
 
+from ..concurrency import file_manager
 from .utils import (
     _clarification_response,
     _error_response,
@@ -22,6 +23,7 @@ async def file_ops(
         "edit_file",
         "delete_file",
         "move_file",
+        "copy_file",
         "read_file_lines",
         "read_multiple_files",
         "file_exists",
@@ -55,11 +57,14 @@ async def file_ops(
     ignore_whitespace: bool = False,
     replacements: Optional[list[dict]] = None,
 ) -> dict[str, Any]:
-    """Comprehensive file system operations with enhanced conversational responses.
+    """Comprehensive file system operations with concurrency-safe writes.
 
-    Operations: read_file, write_file, edit_file, delete_file, move_file,
+    Operations: read_file, write_file, edit_file, delete_file, move_file, copy_file,
     read_file_lines, read_multiple_files, file_exists, get_file_info,
     head_file, tail_file, undo_edit.
+
+    Write operations (write_file, edit_file, move_file, copy_file) use per-path
+    asyncio.Lock + atomic os.replace() to prevent corruption under concurrent access.
 
     Args:
         operation: The file operation to perform (see SUPPORTED OPERATIONS above)
@@ -125,6 +130,7 @@ async def file_ops(
                 "edit_file",
                 "delete_file",
                 "move_file",
+                "copy_file",
                 "read_file_lines",
                 "file_exists",
                 "get_file_info",
@@ -180,6 +186,13 @@ async def file_ops(
                     suggested_questions=["Where should the file be moved to?"],
                 )
             return await _move_file(path, destination_path, overwrite)
+        elif operation == "copy_file":
+            if not destination_path:
+                return _clarification_response(
+                    ambiguities=["destination_path required for copy_file"],
+                    suggested_questions=["Where should the file be copied to?"],
+                )
+            return await _copy_file(path, destination_path, overwrite, create_parents)
         elif operation == "read_file_lines":
             return await _read_file_lines(path, offset, limit, encoding)
         elif operation == "read_multiple_files":
@@ -322,35 +335,37 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
 async def _write_file(
     file_path: str, content: str, encoding: str, create_parents: bool, no_backup: bool
 ) -> dict[str, Any]:
-    """Write content to file with optional backup."""
+    """Write content to file atomically with per-path locking and optional backup."""
     import shutil
 
     try:
         path_obj = _safe_resolve_path(file_path)
 
-        # Create backup if file exists and backup not disabled
+        # Create timestamped backup if file exists and backup not disabled
         backup_path = None
         if path_obj.exists() and path_obj.is_file() and not no_backup:
             import time as _time
-
             ts = _time.strftime("%Y%m%d_%H%M%S")
             backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
             shutil.copy2(path_obj, backup_path)
 
-        if create_parents:
-            path_obj.parent.mkdir(parents=True, exist_ok=True)
-        path_obj.write_text(content, encoding=encoding)
+        # Atomic write with per-path lock
+        result = await file_manager.write_file_atomic(
+            str(path_obj), content, create_parents=create_parents
+        )
 
-        result = {
+        response = {
             "path": str(path_obj),
             "size": len(content),
             "encoding": encoding,
+            "atomic": True,
+            "concurrency_safe": True,
         }
         if backup_path:
-            result["backup_path"] = str(backup_path)
+            response["backup_path"] = str(backup_path)
 
         return _success_response(
-            result,
+            response,
             next_steps=[f"read_file(path='{file_path}')"],
         )
     except Exception as e:
@@ -368,28 +383,16 @@ async def _edit_file(
     ignore_whitespace: bool = False,
     replacements: Optional[list[dict]] = None,
 ) -> dict[str, Any]:
-    """Edit file by replacing text with safety checks and post-write verification."""
+    """Edit file by replacing text — concurrency-safe with per-path lock, backup, and verification."""
     import re
     import shutil
     import time as _time
+    from ..concurrency import FileOperationError
 
     try:
         path_obj = _safe_resolve_path(file_path)
         if not path_obj.exists() or not path_obj.is_file():
             return _error_response(f"File not found: {file_path}", "not_found")
-
-        # Read with specified encoding
-        try:
-            content = path_obj.read_text(encoding=encoding)
-        except UnicodeDecodeError:
-            return _error_response(
-                f"Cannot read file with encoding '{encoding}'. Try a different encoding.",
-                "encoding_error",
-                [
-                    "Try encoding='utf-8-sig' for BOM files",
-                    "Try encoding='latin-1' for legacy files",
-                ],
-            )
 
         # Build list of edits to apply
         edits = []
@@ -403,70 +406,80 @@ async def _edit_file(
         if not edits:
             return _error_response("No replacement specifications provided", "invalid_arguments")
 
-        current_content = content
-        total_occurrences = 0
-
-        for tgt, repl in edits:
-            search_pattern = tgt
-            if ignore_whitespace and not is_regex:
-                # Normalize indentation for matching if requested
-                # This converts the search string into a flexible regex
-                escaped = re.escape(tgt)
-                search_pattern = re.sub(r"\\ [ \t]*", r"\\s+", escaped)
-                is_regex_for_this = True
-            else:
-                is_regex_for_this = is_regex
-
-            if is_regex_for_this:
-                count = len(re.findall(search_pattern, current_content))
-                if count == 0:
-                    return _error_response(
-                        f"Regex pattern '{search_pattern}' not found",
-                        "content_not_found",
-                    )
-
-                limit = 0 if allow_multiple else 1
-                new_content = re.sub(search_pattern, repl, current_content, count=limit)
-                actual_replaced = count if allow_multiple else 1
-            else:
-                count = current_content.count(tgt)
-                if count == 0:
-                    return _error_response(f"Text '{tgt}' not found", "content_not_found")
-
-                limit = -1 if allow_multiple else 1
-                new_content = current_content.replace(tgt, repl, limit)
-                actual_replaced = count if allow_multiple else 1
-
-            current_content = new_content
-            total_occurrences += actual_replaced
-
-        # Create timestamped backup unless disabled
-        backup_path = None
-        if not no_backup:
-            ts = _time.strftime("%Y%m%d_%H%M%S")
-            backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
-            shutil.copy2(path_obj, backup_path)
-
-        # Write the modified content
-        path_obj.write_text(current_content, encoding=encoding)
-
-        # Post-write verification
-        try:
-            verified_content = path_obj.read_text(encoding=encoding)
-            verification_ok = len(verified_content) == len(current_content)
-        except Exception:
-            verification_ok = False
-
-        if not verification_ok:
-            if backup_path and backup_path.exists():
-                shutil.copy2(backup_path, path_obj)
+        # Acquire the per-path lock for the entire read→modify→write cycle
+        lock = await file_manager._get_file_lock(str(path_obj))
+        async with lock:
+            try:
+                content = path_obj.read_text(encoding=encoding)
+            except UnicodeDecodeError:
                 return _error_response(
-                    "Verification failed - original file restored",
-                    "verification_failed",
+                    f"Cannot read file with encoding '{encoding}'. Try a different encoding.",
+                    "encoding_error",
+                    ["Try encoding='utf-8-sig' for BOM files", "Try encoding='latin-1' for legacy files"],
                 )
-            return _error_response(
-                "Verification failed and no backup available", "verification_failed"
+
+            current_content = content
+            total_occurrences = 0
+
+            for tgt, repl in edits:
+                search_pattern = tgt
+                if ignore_whitespace and not is_regex:
+                    escaped = re.escape(tgt)
+                    search_pattern = re.sub(r"\\ [ \t]*", r"\\s+", escaped)
+                    is_regex_for_this = True
+                else:
+                    is_regex_for_this = is_regex
+
+                if is_regex_for_this:
+                    count = len(re.findall(search_pattern, current_content))
+                    if count == 0:
+                        return _error_response(
+                            f"Regex pattern '{search_pattern}' not found", "content_not_found"
+                        )
+                    sub_limit = 0 if allow_multiple else 1
+                    new_content = re.sub(search_pattern, repl, current_content, count=sub_limit)
+                    actual_replaced = count if allow_multiple else 1
+                else:
+                    count = current_content.count(tgt)
+                    if count == 0:
+                        return _error_response(f"Text '{tgt}' not found", "content_not_found")
+                    sub_limit = -1 if allow_multiple else 1
+                    new_content = current_content.replace(tgt, repl, sub_limit)
+                    actual_replaced = count if allow_multiple else 1
+
+                current_content = new_content
+                total_occurrences += actual_replaced
+
+            # Timestamped backup before write
+            backup_path = None
+            if not no_backup:
+                ts = _time.strftime("%Y%m%d_%H%M%S")
+                backup_path = path_obj.with_name(
+                    path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak"
+                )
+                shutil.copy2(path_obj, backup_path)
+
+            # Atomic write — lock already held, use internal helper directly
+            await file_manager._write_atomic_unlocked(
+                str(path_obj), current_content, create_parents=False
             )
+
+            # Post-write verification
+            try:
+                verified_content = path_obj.read_text(encoding=encoding)
+                verification_ok = len(verified_content) == len(current_content)
+            except Exception:
+                verification_ok = False
+
+            if not verification_ok:
+                if backup_path and backup_path.exists():
+                    shutil.copy2(backup_path, path_obj)
+                    return _error_response(
+                        "Verification failed - original file restored", "verification_failed"
+                    )
+                return _error_response(
+                    "Verification failed and no backup available", "verification_failed"
+                )
 
         result = {
             "path": str(path_obj),
@@ -475,12 +488,15 @@ async def _edit_file(
             "new_length": len(current_content),
             "encoding": encoding,
             "verification": "passed",
+            "concurrency_safe": True,
         }
         if backup_path:
             result["backup_path"] = str(backup_path)
 
         return _success_response(result)
 
+    except FileOperationError as e:
+        return _error_response(f"Concurrency/file error: {e}", "io_error")
     except Exception as e:
         return _error_response(f"Failed to edit file: {str(e)}", "io_error")
 
@@ -565,9 +581,7 @@ async def _delete_file(file_path: str) -> dict[str, Any]:
 
 
 async def _move_file(source_path: str, destination_path: str, overwrite: bool) -> dict[str, Any]:
-    """Move file or directory."""
-    import shutil
-
+    """Move file atomically with per-path locking."""
     try:
         source = _safe_resolve_path(source_path)
         dest = _safe_resolve_path(destination_path)
@@ -575,16 +589,31 @@ async def _move_file(source_path: str, destination_path: str, overwrite: bool) -
             return _error_response(f"Source does not exist: {source_path}", "not_found")
         if dest.exists() and not overwrite:
             return _error_response(f"Destination exists: {destination_path}", "already_exists")
-        shutil.move(str(source), str(dest))
-        return _success_response(
-            {
-                "source": str(source),
-                "destination": str(dest),
-                "overwritten": dest.exists() if overwrite else False,
-            }
+        result = await file_manager.move_file_safe(
+            str(source), str(dest), create_parents=True
         )
+        return _success_response(result)
     except Exception as e:
         return _error_response(f"Failed to move: {str(e)}", "io_error")
+
+
+async def _copy_file(
+    source_path: str, destination_path: str, overwrite: bool, create_parents: bool
+) -> dict[str, Any]:
+    """Copy file atomically with per-path locking."""
+    try:
+        source = _safe_resolve_path(source_path)
+        dest = _safe_resolve_path(destination_path)
+        if not source.exists():
+            return _error_response(f"Source does not exist: {source_path}", "not_found")
+        if dest.exists() and not overwrite:
+            return _error_response(f"Destination exists: {destination_path}", "already_exists")
+        result = await file_manager.copy_file_safe(
+            str(source), str(dest), create_parents=create_parents
+        )
+        return _success_response(result)
+    except Exception as e:
+        return _error_response(f"Failed to copy: {str(e)}", "io_error")
 
 
 async def _read_file_lines(
