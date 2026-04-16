@@ -1,17 +1,17 @@
 [build-system]
-requires = ["setuptools>=42"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
 
 [project]
-name = "filesystem-mcp"
+name = "schip-mcp-filesystem"
 version = "2.1.0"
 description = "FastMCP 3.2+ compliant MCP server for comprehensive file system, Git, and Docker operations with concurrency safety"
-authors = [
-    {name = "Sandra Schimanovich", email = "sandra@example.com"},
-]
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = { text = "MIT" }
+authors = [
+    { name = "Sandra Schipal", email = "sandra@schipal.at" }
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -38,6 +38,7 @@ dependencies = [
     "structlog>=24.1.0",
     "ruff>=0.15.1",
     "aiofiles>=23.2.0",
+    "prefab-ui>=0.14.0",
 ]
 
 [project.optional-dependencies]
@@ -58,8 +59,13 @@ dev = [
 "Homepage" = "https://github.com/sandraschi/filesystem-mcp"
 "Bug Tracker" = "https://github.com/sandraschi/filesystem-mcp/issues"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/filesystem_mcp"]
+
+[tool.uv-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
 
 [tool.black]
 line-length = 100
@@ -104,7 +110,7 @@ warn_unreachable = true
 strict_equality = true
 
 [project.scripts]
-filesystem-mcp = "filesystem_mcp.__main__:run"
+schip-mcp-filesystem = "filesystem_mcp.__main__:run"
 
 [tool.ruff]
 line-length = 120
