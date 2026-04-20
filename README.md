@@ -1,5 +1,7 @@
 # Filesystem MCP
 
+[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.2.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![FastMCP](https://img.shields.io/badge/FastMCP-3.2+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
@@ -8,7 +10,7 @@
 [![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
 [![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
-A **FastMCP 3.2+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
+A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
 
 > [!IMPORTANT]
 > **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10702) for real-time visualization and management.
@@ -27,7 +29,7 @@ Built with modern Python patterns, enterprise-grade security, and extensive test
 - **Batch Operations**: Process multiple files simultaneously
 - **Path Management**: Secure path validation with configurable restrictions
 - **Metadata Analysis**: Comprehensive file information with type detection
-- **Universal Connect**: FastMCP 3.2+ support for simultaneous stdio + HTTP access
+- **Universal Connect**: FastMCP 3.2.0+ support for simultaneous stdio + HTTP access
 
 ###  Docker Container Management
 - **Container Operations**
@@ -65,7 +67,7 @@ Built with modern Python patterns, enterprise-grade security, and extensive test
 - **Interactive Guidance**: Context-aware help with parameter validation and suggestions
 
 ###  Advanced Features
-- **FastMCP 2.14.1+ Compliance**: Modern tool registration with `@app.tool()` decorators
+- **FastMCP 3.2.0+ Compliance**: Modern tool registration with `@app.tool()` decorators
 - **Portmanteau Pattern**: Consolidated tool interfaces reducing complexity while maintaining full functionality
 - **Enterprise Security**: Path traversal protection, permission validation, audit trails
 - **Extensive Testing**: Unit, integration, and performance tests with 80%+ coverage
@@ -100,7 +102,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 ### Prerequisites
-- **Python 3.9+** (FastMCP 2.14.3+ requirement)
+- **Python 3.9+** (FastMCP 3.2.0+ requirement)
 - **Docker Engine** (for container operations)
 - **Git** (for repository operations)
 
@@ -635,6 +637,17 @@ pylint filesystem_mcp/
 ##  Contributing
 
 Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, or suggest new features.
+
+
+## 🛡️ Industrial Quality Stack
+
+This project adheres to **SOTA 14.1** industrial standards for high-fidelity agentic orchestration:
+
+- **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
+- **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
+- **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
+- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
+- **Security**: Automated audits via `bandit` and `safety`.
 
 ##  License
 

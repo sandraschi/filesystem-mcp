@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "schip-mcp-filesystem"
 version = "2.1.0"
-description = "FastMCP 3.2+ compliant MCP server for comprehensive file system, Git, and Docker operations with concurrency safety"
+description = "FastMCP 3.2.0+ compliant MCP server for comprehensive file system, Git, and Docker operations with concurrency safety"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
