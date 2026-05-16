@@ -1,20 +1,16 @@
-"""file_ops_safe — DEPRECATED 2026-04-06.
+"""Concurrency safety diagnostic and test utilities.
 
-Concurrency safety has been merged into file_ops (portmanteau_file.py).
-Use file_ops for all file operations — write_file, edit_file, copy_file,
-move_file now all use per-path asyncio.Lock + atomic os.replace() internally.
-
-This stub is kept to avoid import errors in __init__.py.
-get_lock_status and test_concurrency_safety are preserved as utilities.
+get_lock_status — inspect per-path lock state for debugging concurrent access.
+test_concurrency_safety — simulate concurrent writes to verify lock integrity.
 """
 
 from __future__ import annotations
 
-from .utils import _get_app, _success_response
 from ..concurrency import file_manager
+from .utils import MUTATING, READ_ONLY, _get_app
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=READ_ONLY, version="2.2.0")
 async def get_lock_status() -> dict:
     """Get current per-path file lock status (diagnostic tool).
 
@@ -24,7 +20,7 @@ async def get_lock_status() -> dict:
     return file_manager.get_lock_status()
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def test_concurrency_safety(operation: str = "write", num_clients: int = 5) -> dict:
     """Test that file_ops write/edit locking prevents data corruption under concurrent load.
 

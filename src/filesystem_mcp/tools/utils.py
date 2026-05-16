@@ -5,6 +5,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Tool annotation constants for FastMCP 3.2+
+# Matches the MCP ToolAnnotations structure
+READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
+MUTATING = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False}
+DESTRUCTIVE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": False}
+
 
 # Shared app instance logic
 def _get_app():
@@ -104,12 +110,12 @@ def _has_upstream(repo):
 
 def _success_response(
     result: dict,
-    operation: str = None,
-    execution_time_ms: int = None,
-    quality_metrics: dict = None,
-    recommendations: list = None,
-    next_steps: list = None,
-    related_operations: list = None
+    operation: str | None = None,
+    execution_time_ms: int | None = None,
+    quality_metrics: dict | None = None,
+    recommendations: list | None = None,
+    next_steps: list | None = None,
+    related_operations: list | None = None
 ) -> dict:
     """Generate a rich success response with conversational metadata."""
     response = {
@@ -130,11 +136,11 @@ def _success_response(
 def _error_response(
     error: str,
     error_type: str = "general",
-    recovery_options: list = None,
-    diagnostic_info: dict = None,
-    suggested_fixes: list = None,
-    alternative_approaches: list = None,
-    estimated_resolution_time: str = None
+    recovery_options: list | None = None,
+    diagnostic_info: dict | None = None,
+    suggested_fixes: list | None = None,
+    alternative_approaches: list | None = None,
+    estimated_resolution_time: str | None = None
 ) -> dict:
     """Generate an intelligent error response with recovery guidance."""
     response = {
@@ -176,10 +182,10 @@ def _error_response(
 
 def _clarification_response(
     ambiguities,
-    options: dict = None,
-    suggested_questions: list = None,
-    preserved_context: dict = None,
-    estimated_completion: str = None
+    options: dict | None = None,
+    suggested_questions: list | None = None,
+    preserved_context: dict | None = None,
+    estimated_completion: str | None = None
 ) -> dict:
     """Generate a clarification response for ambiguous requests.
 
@@ -230,9 +236,9 @@ def _progress_response(
     operation: str,
     current: int,
     total: int,
-    phase: str = None,
-    estimated_completion: str = None,
-    details: dict = None
+    phase: str | None = None,
+    estimated_completion: str | None = None,
+    details: dict | None = None
 ) -> dict:
     """Generate a progress update response for long-running operations."""
     return {
@@ -253,8 +259,8 @@ def _progress_response(
 def _interactive_response(
     message: str,
     options: list,
-    context: dict = None,
-    follow_up_operations: list = None
+    context: dict | None = None,
+    follow_up_operations: list | None = None
 ) -> dict:
     """Generate an interactive response requiring user choice."""
     response = {

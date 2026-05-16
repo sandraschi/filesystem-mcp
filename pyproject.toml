@@ -3,7 +3,7 @@ requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "schip-mcp-filesystem"
+name = "filesystem-mcp"
 version = "2.1.0"
 description = "FastMCP 3.2.0+ compliant MCP server for comprehensive file system, Git, and Docker operations with concurrency safety"
 readme = "README.md"
@@ -18,9 +18,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Filesystems",
@@ -38,7 +35,7 @@ dependencies = [
     "structlog>=24.1.0",
     "ruff>=0.15.1",
     "aiofiles>=23.2.0",
-    "prefab-ui>=0.14.0",
+    "prefab-ui>=0.18.0",
 ]
 
 [project.optional-dependencies]
@@ -69,7 +66,7 @@ style = "pep440"
 
 [tool.black]
 line-length = 100
-target-version = ["py39"]
+target-version = ["py312"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -95,7 +92,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

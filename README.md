@@ -1,14 +1,16 @@
 # Filesystem MCP
 
-[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.2.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastMCP 3.2](https://img.shields.io/badge/FastMCP-3.2-7B2FBE?style=flat-square&logo=python&logoColor=white)](https://github.com/jlowin/fastmcp)
+[![License MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
+[![Biome](https://img.shields.io/badge/linted%20with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=flat-square)](https://github.com/astral-sh/uv)
+[![Built with Just](https://img.shields.io/badge/built%20with-Just-000?style=flat-square&logo=gnubash&logoColor=white)](https://github.com/casey/just)
+[![MCP Server](https://img.shields.io/badge/MCP%20Server-Filesystem-000?style=flat-square&logo=windowspowershell&logoColor=white)](https://modelcontextprotocol.io)
+[![Concurrency Safe](https://img.shields.io/badge/concurrency-safe-success?style=flat-square)]()
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-3.2+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
-[![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
-[![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
+> **Status**: Production-ready · 23 tools · Dual transport (stdio + HTTP) · Port 10742
 
 A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
 
@@ -102,7 +104,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 ### Prerequisites
-- **Python 3.9+** (FastMCP 3.2.0+ requirement)
+- **Python 3.12+** (FastMCP 3.2.0+ requirement)
 - **Docker Engine** (for container operations)
 - **Git** (for repository operations)
 
@@ -656,6 +658,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ##  Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this project.
+
+##  Topics
+
+`filesystem` `mcp-server` `fastmcp` `file-operations` `docker` `system-monitoring`
+`python` `mcp` `model-context-protocol` `portmanteau` `concurrency-safe`
 
 
 ##  Webapp Dashboard

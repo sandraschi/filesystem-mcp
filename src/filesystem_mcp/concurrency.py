@@ -17,7 +17,6 @@ import os
 import shutil
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import aiofiles
 import structlog
@@ -40,8 +39,8 @@ class ConcurrencySafeFileManager:
     """
 
     def __init__(self) -> None:
-        self._file_locks: Dict[str, asyncio.Lock] = {}
-        self._dir_locks: Dict[str, asyncio.Lock] = {}
+        self._file_locks: dict[str, asyncio.Lock] = {}
+        self._dir_locks: dict[str, asyncio.Lock] = {}
         self._meta_lock = asyncio.Lock()   # guards the dicts themselves
 
     # ── Lock accessors ────────────────────────────────────────────────────────
@@ -103,7 +102,7 @@ class ConcurrencySafeFileManager:
         }
 
     async def modify_file_safe(
-        self, file_path: str, modifications: List[dict]
+        self, file_path: str, modifications: list[dict]
     ) -> dict:
         """
         Read → apply modifications → write back atomically.
@@ -112,10 +111,10 @@ class ConcurrencySafeFileManager:
         lock = await self._get_file_lock(file_path)
         async with lock:
             try:
-                async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+                async with aiofiles.open(file_path, encoding="utf-8") as f:
                     content = await f.read()
-            except FileNotFoundError:
-                raise FileOperationError(f"File not found: {file_path}")
+            except FileNotFoundError as err:
+                raise FileOperationError(f"File not found: {file_path}") from err
 
             modified = content
             changes = 0
@@ -165,8 +164,6 @@ class ConcurrencySafeFileManager:
         self, src_path: str, dst_path: str, create_parents: bool = False
     ) -> dict:
         # Acquire both locks in canonical order to avoid cross-lock deadlock
-        src_key = str(Path(src_path).resolve())
-        dst_key = str(Path(dst_path).resolve())
         locks = sorted(
             [await self._get_file_lock(src_path), await self._get_file_lock(dst_path)],
             key=id,

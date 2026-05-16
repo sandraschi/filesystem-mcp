@@ -2,9 +2,10 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from .utils import (
+    MUTATING,
     _clarification_response,
     _error_response,
     _format_file_size,
@@ -16,7 +17,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def dir_ops(
     operation: Literal[
         "list_directory",
@@ -26,14 +27,14 @@ async def dir_ops(
         "calculate_directory_size",
         "find_empty_directories",
     ],
-    path: Optional[str] = None,
+    path: str | None = None,
     recursive: bool = False,
     include_hidden: bool = False,
     create_parents: bool = True,
     exist_ok: bool = True,
     max_depth: int = 3,
-    pattern: Optional[str] = None,
-    exclude_patterns: Optional[list[str]] = None,
+    pattern: str | None = None,
+    exclude_patterns: list[str] | None = None,
     output_format: Literal["text", "json"] = "text",
     human_readable: bool = True,
     max_files: int = 1000,
@@ -92,7 +93,7 @@ async def _list_directory(
     recursive: bool,
     include_hidden: bool,
     max_files: int,
-    exclude_patterns: Optional[list[str]],
+    exclude_patterns: list[str] | None,
     follow_symlinks: bool,
 ) -> dict[str, Any]:
     """List directory contents with FULL original metadata and logic."""
@@ -101,7 +102,14 @@ async def _list_directory(
         if not path_obj.exists():
             return _error_response(f"Directory not found: {directory_path}", "not_found")
         if not path_obj.is_dir():
-            return _error_response(f"Not a directory: {directory_path}", "not_a_directory")
+            return _error_response(
+                f"Not a directory: {directory_path}",
+                "not_a_directory",
+                [
+                    "Use fileops:file_ops with operation='read_file' to read a file",
+                    "Use fileops:file_ops with operation='get_file_info' for file metadata",
+                ],
+            )
 
         import re
 
@@ -218,7 +226,7 @@ async def _list_directory(
             related_operations=["calculate_directory_size", "find_large_files", "search_ops"],
         )
     except Exception as e:
-        return _error_response(f"Failed to list directory: {str(e)}", "directory_access_error")
+        return _error_response(f"Failed to list directory: {e!s}", "directory_access_error")
 
 
 async def _create_directory(
@@ -239,7 +247,7 @@ async def _create_directory(
             }
         )
     except Exception as e:
-        return _error_response(f"Failed to create directory: {str(e)}", "io_error")
+        return _error_response(f"Failed to create directory: {e!s}", "io_error")
 
 
 async def _remove_directory(directory_path: str, recursive: bool) -> dict[str, Any]:
@@ -249,7 +257,14 @@ async def _remove_directory(directory_path: str, recursive: bool) -> dict[str, A
         if not path_obj.exists():
             return _error_response(f"Directory does not exist: {directory_path}", "not_found")
         if not path_obj.is_dir():
-            return _error_response(f"Path is not a directory: {directory_path}", "not_a_directory")
+            return _error_response(
+                f"Path is not a directory: {directory_path}",
+                "not_a_directory",
+                [
+                    "Use fileops:file_ops with operation='read_file' to read a file",
+                    "Use fileops:file_ops with operation='get_file_info' for file metadata",
+                ],
+            )
 
         if recursive:
             shutil.rmtree(path_obj)
@@ -257,15 +272,15 @@ async def _remove_directory(directory_path: str, recursive: bool) -> dict[str, A
             path_obj.rmdir()
         return _success_response({"path": str(path_obj), "recursive": recursive})
     except Exception as e:
-        return _error_response(f"Failed to remove directory: {str(e)}", "io_error")
+        return _error_response(f"Failed to remove directory: {e!s}", "io_error")
 
 
 async def _directory_tree(
     directory_path: str,
     max_depth: int,
     include_files: bool,
-    pattern: Optional[str],
-    exclude_patterns: Optional[list[str]],
+    pattern: str | None,
+    exclude_patterns: list[str] | None,
     output_format: str,
 ) -> dict[str, Any]:
     """Generate directory tree."""
@@ -274,7 +289,14 @@ async def _directory_tree(
         if not path_obj.exists():
             return _error_response(f"Directory does not exist: {directory_path}", "not_found")
         if not path_obj.is_dir():
-            return _error_response(f"Path is not a directory: {directory_path}", "not_a_directory")
+            return _error_response(
+                f"Path is not a directory: {directory_path}",
+                "not_a_directory",
+                [
+                    "Use fileops:file_ops with operation='read_file' to read a file",
+                    "Use fileops:file_ops with operation='get_file_info' for file metadata",
+                ],
+            )
 
         import fnmatch
 
@@ -333,7 +355,7 @@ async def _directory_tree(
             }
         )
     except Exception as e:
-        return _error_response(f"Failed to generate directory tree: {str(e)}", "io_error")
+        return _error_response(f"Failed to generate directory tree: {e!s}", "io_error")
 
 
 async def _calculate_directory_size(
@@ -369,7 +391,7 @@ async def _calculate_directory_size(
 
         return _success_response(result)
     except Exception as e:
-        return _error_response(f"Failed to calculate size: {str(e)}", "io_error")
+        return _error_response(f"Failed to calculate size: {e!s}", "io_error")
 
 
 async def _find_empty_directories(
@@ -399,4 +421,4 @@ async def _find_empty_directories(
             }
         )
     except Exception as e:
-        return _error_response(f"Failed to find empty directories: {str(e)}", "io_error")
+        return _error_response(f"Failed to find empty directories: {e!s}", "io_error")

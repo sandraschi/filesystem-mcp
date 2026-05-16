@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from .utils import (
+    MUTATING,
     _clarification_response,
     _error_response,
     _get_app,
@@ -12,7 +13,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def container_ops(
     operation: Literal[
         "list_containers",
@@ -26,19 +27,19 @@ async def container_ops(
         "container_logs",
         "container_stats",
     ],
-    container_id: Optional[str] = None,
-    image: Optional[str] = None,
-    name: Optional[str] = None,
-    command: Optional[Union[str, list[str]]] = None,
-    ports: Optional[dict[str, Union[int, str]]] = None,
-    volumes: Optional[dict[str, dict[str, str]]] = None,
-    environment: Optional[dict[str, str]] = None,
-    working_dir: Optional[str] = None,
-    user: Optional[str] = None,
+    container_id: str | None = None,
+    image: str | None = None,
+    name: str | None = None,
+    command: str | list[str] | None = None,
+    ports: dict[str, int | str] | None = None,
+    volumes: dict[str, dict[str, str]] | None = None,
+    environment: dict[str, str] | None = None,
+    working_dir: str | None = None,
+    user: str | None = None,
     detach: bool = True,
     auto_remove: bool = False,
-    network_mode: Optional[str] = None,
-    restart_policy: Optional[str] = None,
+    network_mode: str | None = None,
+    restart_policy: str | None = None,
     timeout: int = 10,
     force: bool = False,
     tty: bool = False,
@@ -47,9 +48,9 @@ async def container_ops(
     stderr: bool = True,
     stream: bool = False,
     socket: bool = False,
-    tail: Optional[int] = 100,
-    since: Optional[str] = None,
-    until: Optional[str] = None,
+    tail: int | None = 100,
+    since: str | None = None,
+    until: str | None = None,
     timestamps: bool = False,
     follow: bool = False,
     show_stats: bool = False,
@@ -160,7 +161,7 @@ async def container_ops(
 
 async def _list_containers(
     all_containers: bool = False,
-    filters: Optional[dict[str, list[str]]] = None,
+    filters: dict[str, list[str]] | None = None,
     show_stats: bool = False,
 ) -> dict[str, Any]:
     """List containers with FULL metadata and status analysis."""
@@ -184,7 +185,7 @@ async def _list_containers(
                     stats = container.stats(stream=False)
                     info["stats"] = _parse_container_stats(stats)
                 except Exception:
-                    pass
+                    logger.warning("Failed to get container stats", exc_info=True)
 
             container_list.append(info)
 
@@ -241,7 +242,7 @@ async def _get_container(container_id: str, show_stats: bool = False) -> dict[st
                 stats = container.stats(stream=False)
                 info["stats"] = _parse_container_stats(stats)
             except Exception:
-                pass
+                logger.warning("Failed to get container stats", exc_info=True)
 
         return _success_response({"container": info})
     except Exception as e:
@@ -250,16 +251,16 @@ async def _get_container(container_id: str, show_stats: bool = False) -> dict[st
 
 async def _create_container(
     image: str,
-    command: Optional[Union[str, list[str]]] = None,
-    name: Optional[str] = None,
-    ports: Optional[dict[str, Union[int, str]]] = None,
-    volumes: Optional[dict[str, dict[str, str]]] = None,
-    environment: Optional[dict[str, str]] = None,
-    working_dir: Optional[str] = None,
+    command: str | list[str] | None = None,
+    name: str | None = None,
+    ports: dict[str, int | str] | None = None,
+    volumes: dict[str, dict[str, str]] | None = None,
+    environment: dict[str, str] | None = None,
+    working_dir: str | None = None,
     detach: bool = True,
     auto_remove: bool = False,
-    network_mode: Optional[str] = None,
-    restart_policy: Optional[str] = None,
+    network_mode: str | None = None,
+    restart_policy: str | None = None,
 ) -> dict[str, Any]:
     """Create container with FULL configuration options."""
     try:
@@ -333,7 +334,7 @@ async def _remove_container(container_id: str, force: bool = False) -> dict[str,
 
 async def _container_exec(
     container_id: str,
-    command: Union[str, list[str]],
+    command: str | list[str],
     detach: bool = False,
     tty: bool = False,
     stdin: bool = False,
@@ -341,9 +342,9 @@ async def _container_exec(
     stderr: bool = True,
     stream: bool = False,
     socket: bool = False,
-    environment: Optional[dict[str, str]] = None,
-    working_dir: Optional[str] = None,
-    user: Optional[str] = None,
+    environment: dict[str, str] | None = None,
+    working_dir: str | None = None,
+    user: str | None = None,
 ) -> dict[str, Any]:
     try:
         client = _get_docker_client()
@@ -381,9 +382,9 @@ async def _container_exec(
 
 async def _container_logs(
     container_id: str,
-    tail: Optional[int] = 100,
-    since: Optional[str] = None,
-    until: Optional[str] = None,
+    tail: int | None = 100,
+    since: str | None = None,
+    until: str | None = None,
     timestamps: bool = False,
     follow: bool = False,
 ) -> dict[str, Any]:

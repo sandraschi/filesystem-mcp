@@ -15,19 +15,16 @@ Flow:
 No mock. No pattern-matching. The LLM does the reasoning.
 """
 
+import datetime
 import logging
 import os
-import datetime
-from typing import Optional
 
 from fastmcp import Context
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from .. import app  # noqa: E402
-from .utils import _error_response  # noqa: E402
-
+from .utils import MUTATING, _error_response, _get_app  # noqa: E402
 
 # ── Structured result type ─────────────────────────────────────────────────────
 
@@ -37,7 +34,7 @@ class WorkflowResult(BaseModel):
     steps_taken: list[str]
     findings: list[dict]
     success: bool
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 # ── Server-side file context gathering ────────────────────────────────────────
@@ -148,7 +145,7 @@ def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
 
 # ── Main tool ──────────────────────────────────────────────────────────────────
 
-@app.tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def agentic_file_workflow(
     workflow_prompt: str,
     available_tools: list[str],
@@ -194,8 +191,9 @@ async def agentic_file_workflow(
 
     # Backward-compatibility mode for unit tests and legacy callers that stored
     # a sampling_context in app.state and expected sample_step orchestration.
-    if ctx is None and hasattr(app, "state") and app.state.get("sampling_context") is not None:
-        sampling_context = app.state["sampling_context"]
+    from .. import app as _fs_app
+    if ctx is None and hasattr(_fs_app, "state") and _fs_app.state.get("sampling_context") is not None:
+        sampling_context = _fs_app.state["sampling_context"]
         max_loops = max_iterations if isinstance(max_iterations, int) and max_iterations > 0 else 5
         tools_executed: list[dict] = []
         iterations_completed = 0
@@ -242,7 +240,7 @@ async def agentic_file_workflow(
             }
         except Exception as e:
             return _error_response(
-                error=f"Workflow failed: {str(e)}",
+                error=f"Workflow failed: {e!s}",
                 error_type="SAMPLING_EXECUTION_ERROR",
                 recovery_options=[
                     "Check sampling_context implementation",
@@ -330,7 +328,7 @@ async def agentic_file_workflow(
     except Exception as e:
         logger.error(f"Agentic file workflow failed: {e}", exc_info=True)
         return _error_response(
-            error=f"Workflow failed: {str(e)}",
+            error=f"Workflow failed: {e!s}",
             error_type="SAMPLING_ERROR",
             recovery_options=[
                 "Ensure Claude Desktop is connected and supports sampling",

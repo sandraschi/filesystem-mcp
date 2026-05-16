@@ -1,9 +1,10 @@
 import logging
 import time
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from ..concurrency import file_manager
 from .utils import (
+    MUTATING,
     _clarification_response,
     _error_response,
     _format_file_size,
@@ -15,7 +16,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def file_ops(
     operation: Literal[
         "read_file",
@@ -32,18 +33,18 @@ async def file_ops(
         "tail_file",
         "undo_edit",
     ],
-    path: Optional[str] = None,
-    content: Optional[str] = None,
+    path: str | None = None,
+    content: str | None = None,
     encoding: str = "utf-8",
-    old_string: Optional[str] = None,   # canonical name
-    new_string: Optional[str] = None,   # canonical name
-    old_str: Optional[str] = None,      # alias: accepted from Claude str_replace tool
-    new_str: Optional[str] = None,      # alias: accepted from Claude str_replace tool
-    file_paths: Optional[list[str]] = None,
-    destination_path: Optional[str] = None,
+    old_string: str | None = None,   # canonical name
+    new_string: str | None = None,   # canonical name
+    old_str: str | None = None,      # alias: accepted from Claude str_replace tool
+    new_str: str | None = None,      # alias: accepted from Claude str_replace tool
+    file_paths: list[str] | None = None,
+    destination_path: str | None = None,
     overwrite: bool = False,
     offset: int = 0,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     lines: int = 10,
     check_type: Literal["file", "any"] = "file",
     follow_symlinks: bool = True,
@@ -55,7 +56,7 @@ async def file_ops(
     allow_multiple: bool = False,
     is_regex: bool = False,
     ignore_whitespace: bool = False,
-    replacements: Optional[list[dict]] = None,
+    replacements: list[dict] | None = None,
 ) -> dict[str, Any]:
     """Comprehensive file system operations with concurrency-safe writes.
 
@@ -232,7 +233,11 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
             return _error_response(
                 f"Path is not a file: {file_path}",
                 "not_a_file",
-                ["Use list_directory for directories", "Check the path and try again"],
+                [
+                    "Use fileops:dir_ops with operation='list_directory' to list directory contents",
+                    "Use fileops:dir_ops with operation='directory_tree' for a recursive view",
+                    "Check the path and try again",
+                ],
             )
 
         content = path_obj.read_text(encoding=encoding)
@@ -314,7 +319,7 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
 
     except UnicodeDecodeError as e:
         return _error_response(
-            f"Cannot decode as {encoding}: {str(e)}",
+            f"Cannot decode as {encoding}: {e!s}",
             "encoding_error",
             [
                 "Try a different encoding (utf-8, latin-1, cp1252)",
@@ -323,7 +328,7 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
         )
     except Exception as e:
         return _error_response(
-            f"Failed to read file: {str(e)}",
+            f"Failed to read file: {e!s}",
             "io_error",
             [
                 "Check file permissions",
@@ -350,7 +355,7 @@ async def _write_file(
             shutil.copy2(path_obj, backup_path)
 
         # Atomic write with per-path lock
-        result = await file_manager.write_file_atomic(
+        await file_manager.write_file_atomic(
             str(path_obj), content, create_parents=create_parents
         )
 
@@ -369,24 +374,25 @@ async def _write_file(
             next_steps=[f"read_file(path='{file_path}')"],
         )
     except Exception as e:
-        return _error_response(f"Failed to write file: {str(e)}", "io_error")
+        return _error_response(f"Failed to write file: {e!s}", "io_error")
 
 
 async def _edit_file(
     file_path: str,
-    old_string: Optional[str],
-    new_string: Optional[str],
+    old_string: str | None,
+    new_string: str | None,
     encoding: str = "utf-8",
     no_backup: bool = False,
     allow_multiple: bool = False,
     is_regex: bool = False,
     ignore_whitespace: bool = False,
-    replacements: Optional[list[dict]] = None,
+    replacements: list[dict] | None = None,
 ) -> dict[str, Any]:
     """Edit file by replacing text — concurrency-safe with per-path lock, backup, and verification."""
     import re
     import shutil
     import time as _time
+
     from ..concurrency import FileOperationError
 
     try:
@@ -498,7 +504,7 @@ async def _edit_file(
     except FileOperationError as e:
         return _error_response(f"Concurrency/file error: {e}", "io_error")
     except Exception as e:
-        return _error_response(f"Failed to edit file: {str(e)}", "io_error")
+        return _error_response(f"Failed to edit file: {e!s}", "io_error")
 
 
 async def _undo_edit(file_path: str) -> dict[str, Any]:
@@ -532,7 +538,7 @@ async def _undo_edit(file_path: str) -> dict[str, Any]:
         )
 
     except Exception as e:
-        return _error_response(f"Undo failed: {str(e)}", "undo_error")
+        return _error_response(f"Undo failed: {e!s}", "undo_error")
 
 
 async def _delete_file(file_path: str) -> dict[str, Any]:
@@ -553,7 +559,7 @@ async def _delete_file(file_path: str) -> dict[str, Any]:
             return _error_response(
                 f"Path is not a file: {file_path}",
                 "not_a_file",
-                ["Use dir_ops remove_directory for directories"],
+                ["Use fileops:dir_ops with operation='remove_directory' to delete directories"],
             )
         file_size = path_obj.stat().st_size
         file_name = path_obj.name
@@ -594,7 +600,7 @@ async def _move_file(source_path: str, destination_path: str, overwrite: bool) -
         )
         return _success_response(result)
     except Exception as e:
-        return _error_response(f"Failed to move: {str(e)}", "io_error")
+        return _error_response(f"Failed to move: {e!s}", "io_error")
 
 
 async def _copy_file(
@@ -613,11 +619,11 @@ async def _copy_file(
         )
         return _success_response(result)
     except Exception as e:
-        return _error_response(f"Failed to copy: {str(e)}", "io_error")
+        return _error_response(f"Failed to copy: {e!s}", "io_error")
 
 
 async def _read_file_lines(
-    file_path: str, offset: int, limit: Optional[int], encoding: str
+    file_path: str, offset: int, limit: int | None, encoding: str
 ) -> dict[str, Any]:
     """Read specific lines from file."""
     try:
@@ -647,7 +653,7 @@ async def _read_file_lines(
             else [],
         )
     except Exception as e:
-        return _error_response(f"Failed to read lines: {str(e)}", "io_error")
+        return _error_response(f"Failed to read lines: {e!s}", "io_error")
 
 
 async def _read_multiple_files(
@@ -694,7 +700,7 @@ async def _read_multiple_files(
             related_operations=["read_file", "get_file_info"],
         )
     except Exception as e:
-        return _error_response(f"Failed to read multiple files: {str(e)}", "io_error")
+        return _error_response(f"Failed to read multiple files: {e!s}", "io_error")
 
 
 async def _file_exists(file_path: str, check_type: str, follow_symlinks: bool) -> dict[str, Any]:
@@ -725,7 +731,7 @@ async def _file_exists(file_path: str, check_type: str, follow_symlinks: bool) -
             next_steps=[f"read_file(path='{file_path}')"] if is_file else [],
         )
     except Exception as e:
-        return _error_response(f"Failed to check existence: {str(e)}", "io_error")
+        return _error_response(f"Failed to check existence: {e!s}", "io_error")
 
 
 async def _get_file_info(
@@ -763,7 +769,7 @@ async def _get_file_info(
 
         return _success_response(info, related_operations=["head_file", "read_file"])
     except Exception as e:
-        return _error_response(f"Failed to get file info: {str(e)}", "io_error")
+        return _error_response(f"Failed to get file info: {e!s}", "io_error")
 
 
 async def _head_file(file_path: str, lines: int, encoding: str) -> dict[str, Any]:
@@ -773,7 +779,14 @@ async def _head_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
         if not path_obj.exists():
             return _error_response(f"File does not exist: {file_path}", "not_found")
         if not path_obj.is_file():
-            return _error_response(f"Path is not a file: {file_path}", "not_a_file")
+            return _error_response(
+                f"Path is not a file: {file_path}",
+                "not_a_file",
+                [
+                    "Use fileops:dir_ops with operation='list_directory' to list directory contents",
+                    "Use fileops:dir_ops with operation='directory_tree' for a recursive view",
+                ],
+            )
 
         content = path_obj.read_text(encoding=encoding)
         all_lines = content.splitlines(keepends=True)
@@ -793,7 +806,7 @@ async def _head_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
             else [],
         )
     except Exception as e:
-        return _error_response(f"Failed to read head: {str(e)}", "io_error")
+        return _error_response(f"Failed to read head: {e!s}", "io_error")
 
 
 async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any]:
@@ -803,7 +816,14 @@ async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
         if not path_obj.exists():
             return _error_response(f"File does not exist: {file_path}", "not_found")
         if not path_obj.is_file():
-            return _error_response(f"Path is not a file: {file_path}", "not_a_file")
+            return _error_response(
+                f"Path is not a file: {file_path}",
+                "not_a_file",
+                [
+                    "Use fileops:dir_ops with operation='list_directory' to list directory contents",
+                    "Use fileops:dir_ops with operation='directory_tree' for a recursive view",
+                ],
+            )
 
         content = path_obj.read_text(encoding=encoding)
         all_lines = content.splitlines(keepends=True)
@@ -820,4 +840,4 @@ async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
             }
         )
     except Exception as e:
-        return _error_response(f"Failed to read tail: {str(e)}", "io_error")
+        return _error_response(f"Failed to read tail: {e!s}", "io_error")

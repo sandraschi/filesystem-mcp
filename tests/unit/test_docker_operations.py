@@ -8,6 +8,7 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
+
 from filesystem_mcp.tools.portmanteau_container import container_ops
 from filesystem_mcp.tools.portmanteau_infrastructure import infra_ops
 from filesystem_mcp.tools.portmanteau_orchestration import (

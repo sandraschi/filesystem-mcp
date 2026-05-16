@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from .utils import (
+    MUTATING,
     _clarification_response,
     _error_response,
     _get_app,
@@ -12,7 +13,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def infra_ops(
     operation: Literal[
         "list_images",
@@ -32,32 +33,32 @@ async def infra_ops(
         "remove_volume",
         "prune_volumes",
     ],
-    image: Optional[str] = None,
+    image: str | None = None,
     tag: str = "latest",
-    network_id: Optional[str] = None,
-    volume_name: Optional[str] = None,
-    name: Optional[str] = None,
+    network_id: str | None = None,
+    volume_name: str | None = None,
+    name: str | None = None,
     all_images: bool = False,
-    platform: Optional[str] = None,
+    platform: str | None = None,
     nocache: bool = False,
     pull: bool = False,
     rm: bool = True,
     forcerm: bool = False,
     squash: bool = False,
     dockerfile: str = "Dockerfile",
-    path: Optional[str] = None,
-    buildargs: Optional[dict[str, str]] = None,
+    path: str | None = None,
+    buildargs: dict[str, str] | None = None,
     noprune: bool = False,
-    driver: Optional[str] = None,
-    options: Optional[dict[str, str]] = None,
-    ipam: Optional[dict[str, Any]] = None,
+    driver: str | None = None,
+    options: dict[str, str] | None = None,
+    ipam: dict[str, Any] | None = None,
     internal: bool = False,
     attachable: bool = False,
     ingress: bool = False,
     enable_ipv6: bool = False,
-    labels: Optional[dict[str, str]] = None,
-    driver_opts: Optional[dict[str, str]] = None,
-    filters: Optional[dict[str, list[str]]] = None,
+    labels: dict[str, str] | None = None,
+    driver_opts: dict[str, str] | None = None,
+    filters: dict[str, list[str]] | None = None,
     force: bool = False,
 ) -> dict[str, Any]:
     """Docker Images, Networks, and Volumes operations.
@@ -89,7 +90,7 @@ async def infra_ops(
                 ["list_images", "list_networks", "list_volumes"],
             )
 
-        client = _get_docker_client()
+        _get_docker_client()
         if operation == "list_images":
             return await _list_images(all_images, filters)
         elif operation == "get_image":
@@ -188,7 +189,7 @@ async def infra_ops(
 
 
 async def _list_images(
-    all_images: bool = False, filters: Optional[dict[str, list[str]]] = None
+    all_images: bool = False, filters: dict[str, list[str]] | None = None
 ) -> dict[str, Any]:
     try:
         client = _get_docker_client()
@@ -252,10 +253,14 @@ async def _build_image(
             "forcerm": forcerm,
             "squash": squash,
         }
-        if tag: build_config["tag"] = tag
-        if labels: build_config["labels"] = labels
-        if buildargs: build_config["buildargs"] = buildargs
-        if network_mode: build_config["network_mode"] = network_mode
+        if tag:
+            build_config["tag"] = tag
+        if labels:
+            build_config["labels"] = labels
+        if buildargs:
+            build_config["buildargs"] = buildargs
+        if network_mode:
+            build_config["network_mode"] = network_mode
 
         image, build_logs = client.images.build(**build_config)
         logs_text = "".join([log.get("stream", "") for log in build_logs if "stream" in log])
@@ -320,7 +325,9 @@ async def _get_network(network_id) -> dict[str, Any]:
         return _error_response(str(e), "docker_error")
 
 
-async def _create_network(name, driver, options, ipam, internal, attachable, ingress, labels, enable_ipv6) -> dict[str, Any]:
+async def _create_network(
+    name, driver, options, ipam, internal, attachable, ingress, labels, enable_ipv6
+) -> dict[str, Any]:
     try:
         client = _get_docker_client()
         config = {
@@ -331,9 +338,12 @@ async def _create_network(name, driver, options, ipam, internal, attachable, ing
             "ingress": ingress,
             "enable_ipv6": enable_ipv6,
         }
-        if options: config["options"] = options
-        if ipam: config["ipam"] = ipam
-        if labels: config["labels"] = labels
+        if options:
+            config["options"] = options
+        if ipam:
+            config["ipam"] = ipam
+        if labels:
+            config["labels"] = labels
         n = client.networks.create(**config)
         return _success_response({"network_id": n.id, "name": n.name})
     except Exception as e:
@@ -397,8 +407,10 @@ async def _create_volume(name, driver, driver_opts, labels) -> dict[str, Any]:
     try:
         client = _get_docker_client()
         config = {"name": name, "driver": driver}
-        if driver_opts: config["driver_opts"] = driver_opts
-        if labels: config["labels"] = labels
+        if driver_opts:
+            config["driver_opts"] = driver_opts
+        if labels:
+            config["labels"] = labels
         v = client.volumes.create(**config)
         return _success_response({"volume_name": v.name, "status": "created"})
     except Exception as e:

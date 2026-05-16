@@ -5,8 +5,9 @@ This provides a simplified version of the MCP module that can be used for testin
 without requiring the actual FastMCP 2.10 package.
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -23,7 +24,7 @@ class Application:
         self._tools: dict[str, Callable] = {}
         self._routes: dict[str, dict[str, Callable]] = {}
 
-    def tool(self, func: Optional[Callable] = None, **kwargs) -> Callable:
+    def tool(self, func: Callable | None = None, **kwargs) -> Callable:
         """Mock decorator to register a tool."""
         if func is None:
             return lambda f: self.tool(f, **kwargs)
@@ -102,7 +103,7 @@ class Application:
             for name, func in self._tools.items()
         }
 
-    def get_tool(self, name: str) -> Optional[Callable]:
+    def get_tool(self, name: str) -> Callable | None:
         """Get a tool by name."""
         return self._tools.get(name)
 
@@ -111,6 +112,6 @@ class Application:
 app = Application("filesystem-mcp")
 
 
-def tool(func: Optional[Callable] = None, **kwargs) -> Callable:
+def tool(func: Callable | None = None, **kwargs) -> Callable:
     """Mock tool decorator for testing."""
     return app.tool(func, **kwargs)

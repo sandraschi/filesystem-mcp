@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
-from .utils import _error_response, _get_app, _success_response
+from .utils import MUTATING, READ_ONLY, _error_response, _get_app, _success_response
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ async def _run_compose_command(
 _app = _get_app()
 
 
-@_app.tool()
+@_app.tool(annotations=MUTATING, version="2.2.0")
 async def compose_up(
     path: str = ".",
     services: list[str] | None = None,
@@ -101,7 +101,7 @@ async def compose_up(
     return await _run_compose_command(path, cmd_args, timeout)
 
 
-@_app.tool()
+@_app.tool(annotations=MUTATING, version="2.2.0")
 async def compose_down(
     path: str = ".",
     remove_orphans: bool = True,
@@ -126,7 +126,7 @@ async def compose_down(
     return await _run_compose_command(path, cmd_args, timeout)
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def compose_ps(
     path: str = ".",
     services: list[str] | None = None,
@@ -148,7 +148,7 @@ async def compose_ps(
     return await _run_compose_command(path, cmd_args, timeout)
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def compose_logs(
     path: str = ".",
     services: list[str] | None = None,
@@ -182,7 +182,7 @@ async def compose_logs(
     return await _run_compose_command(path, cmd_args, timeout)
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def compose_config(
     path: str = ".",
     validate: bool = True,
@@ -203,7 +203,7 @@ async def compose_config(
     return await _run_compose_command(path, cmd_args, timeout)
 
 
-@_app.tool()
+@_app.tool(annotations=MUTATING, version="2.2.0")
 async def compose_restart(
     path: str = ".",
     services: list[str] | None = None,

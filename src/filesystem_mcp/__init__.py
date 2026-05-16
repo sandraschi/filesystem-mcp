@@ -9,13 +9,12 @@ CRITICAL: All file operations now use atomic patterns and proper locking to prev
 corruption when multiple clients access the same files simultaneously via FastMCP 3.2+ universal connect pattern.
 """
 
-import asyncio
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Configure structured logging for MCP compliance
 import structlog
 
 # Configure structlog for JSON output with proper MCP stderr handling
@@ -67,6 +66,7 @@ logger = structlog.get_logger(__name__)
 
 # Import FastMCP 2.14.3+ compliant server
 from fastmcp import FastMCP  # noqa: E402
+from fastmcp.server.providers import ProxyProvider  # noqa: E402
 
 
 @asynccontextmanager
@@ -81,7 +81,7 @@ async def server_lifespan(mcp_instance: FastMCP):
 # Create the main application instance
 app = FastMCP(
     name="filesystem-mcp",
-    instructions="""You are a comprehensive MCP server for advanced file system, Git repository, and Docker container operations using FastMCP 3.2+ with concurrency safety.
+    instructions="""You are an MCP server for file system and Docker operations with FastMCP 3.2+ concurrency safety.
 
 CORE CAPABILITIES:
 - File system operations: read, write, edit, move, search, analyze files and directories
@@ -96,20 +96,30 @@ CONCURRENCY SAFETY:
 - FastMCP 3.2+ universal connect pattern support (stdio + HTTP)
 - Thread-safe operations for 5+ simultaneous clients
 
-AVAILABLE TOOLS (grouped; Git/Compose/monitoring use one tool per operation):
+AVAILABLE TOOLS:
 \u2022 file_ops, dir_ops, search_ops — file and directory I/O
 \u2022 container_ops, infra_ops — Docker containers, images, networks, volumes
 \u2022 compose_up, compose_down, compose_ps, compose_logs, compose_config, compose_restart — Docker Compose
-\u2022 repo_ops — Git core (status, commit, history, diff, etc.)
-\u2022 git_* — Git branches, tags, remotes, stash, merge/rebase (see tool names: git_list_branches, git_push_changes, ...)
 \u2022 monitor_get_* — system metrics and processes (e.g. monitor_get_resource_usage)
 \u2022 host_ops — host info, environment, help
 \u2022 agentic_file_workflow — LLM sampling workflow (requires client ctx.sample)
 
-Most portmanteau tools (file_ops, dir_ops, ...) use an operation enum; Git, Compose, and monitoring tools are split per operation for clearer tool selection.""",
+Portmanteau tools (file_ops, dir_ops) use an operation enum; Compose and monitoring are atomic per operation.""",
     lifespan=server_lifespan,
     version="2.2.0",
 )
+
+_bridge_proxies = []
+bridge_urls = os.getenv("MCP_BRIDGE_URLS", "")
+if bridge_urls:
+    for url in bridge_urls.split(","):
+        url = url.strip()
+        if url:
+            try:
+                app.add_provider(ProxyProvider(url=url))
+                _bridge_proxies.append(url)
+            except Exception as exc:
+                logger.warning("Failed to register bridge proxy", url=url, error=str(exc))
 
 
 # Import and register all tool modules after app creation
@@ -121,18 +131,16 @@ def _import_tools():
         import importlib
 
         tool_modules = [
-            ".tools.portmanteau_file_safe",        # Concurrency-safe File IO (NEW)
-            ".tools.portmanteau_file",           # Basic File IO (legacy)
-            ".tools.portmanteau_directory",      # Directory structure
-            ".tools.portmanteau_search",         # Search and comparison
-            ".tools.portmanteau_container",      # Container lifecycle
-            ".tools.portmanteau_infrastructure", # Images, nets, volumes
-            ".tools.portmanteau_orchestration",  # Docker Compose
-            ".tools.portmanteau_repository",     # Git core
-            ".tools.portmanteau_git_mgmt",       # Git management
-            ".tools.portmanteau_monitoring",     # System monitoring
-            ".tools.portmanteau_host",           # Host context
-            ".tools.agentic_file_workflow",             # Sampling-based, no-tools pattern (Claude Desktop compatible)
+            ".tools.portmanteau_file_safe",        # Concurrency-safe file utilities
+            ".tools.portmanteau_file",             # File IO portmanteau
+            ".tools.portmanteau_directory",        # Directory structure
+            ".tools.portmanteau_search",           # Search and comparison
+            ".tools.portmanteau_container",        # Container lifecycle
+            ".tools.portmanteau_infrastructure",   # Images, nets, volumes
+            ".tools.portmanteau_orchestration",    # Docker Compose
+            ".tools.portmanteau_monitoring",       # System monitoring
+            ".tools.portmanteau_host",             # Host context
+            ".tools.agentic_file_workflow",        # Sampling-based autonomous workflow
         ]
 
         for module_name in tool_modules:
@@ -172,7 +180,7 @@ def http_app():
     Usage:
         from filesystem_mcp import http_app
         import uvicorn
-        uvicorn.run(http_app(), host="127.0.0.1", port=8000)
+        uvicorn.run(http_app(), host="127.0.0.1", port=10742)
     """
     return app.http_app()
 

@@ -6,9 +6,10 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from .utils import (
+    READ_ONLY,
     _clarification_response,
     _error_response,
     _get_app,
@@ -19,7 +20,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool()
+@_get_app().tool(annotations=READ_ONLY, version="2.2.0")
 async def search_ops(
     operation: Literal[
         "grep_file",
@@ -30,25 +31,25 @@ async def search_ops(
         "find_duplicate_files",
         "find_large_files",
     ],
-    path: Optional[str] = None,
+    path: str | None = None,
     encoding: str = "utf-8",
     recursive: bool = False,
     include_hidden: bool = False,
-    search_pattern: Optional[str] = None,
+    search_pattern: str | None = None,
     case_sensitive: bool = False,
     max_matches: int = 100,
     context_lines: int = 0,
-    start_time: Optional[str] = None,
-    end_time: Optional[str] = None,
-    log_levels: Optional[list[str]] = None,
-    exclude_log_levels: Optional[list[str]] = None,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    log_levels: list[str] | None = None,
+    exclude_log_levels: list[str] | None = None,
     max_lines: int = 100,
-    path2: Optional[str] = None,
+    path2: str | None = None,
     min_size_mb: float = 100.0,
     min_size: int = 1,
     max_results: int = 100,
     hash_algorithm: Literal["md5", "sha256"] = "md5",
-    max_duplicates: Optional[int] = None,
+    max_duplicates: int | None = None,
     early_exit: bool = True,
 ) -> dict[str, Any]:
     """Content Analysis, Grep, and Comparison operations.
@@ -156,7 +157,7 @@ async def _grep_file(
         try:
             regex = re.compile(pattern, flags)
         except re.error as e:
-            return _error_response(f"Invalid regex pattern: {str(e)}", "invalid_regex")
+            return _error_response(f"Invalid regex pattern: {e!s}", "invalid_regex")
 
         matches = []
         for i, line in enumerate(lines):
@@ -191,9 +192,9 @@ async def _grep_file(
         )
 
     except UnicodeDecodeError as e:
-        return _error_response(f"Cannot decode as {encoding}: {str(e)}", "encoding_error")
+        return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
     except Exception as e:
-        return _error_response(f"Failed to grep file: {str(e)}", "io_error")
+        return _error_response(f"Failed to grep file: {e!s}", "io_error")
 
 
 async def _count_pattern(
@@ -213,7 +214,7 @@ async def _count_pattern(
         try:
             regex = re.compile(pattern, flags)
         except re.error as e:
-            return _error_response(f"Invalid regex pattern: {str(e)}", "invalid_regex")
+            return _error_response(f"Invalid regex pattern: {e!s}", "invalid_regex")
 
         matches = regex.findall(content)
         count = len(matches)
@@ -228,9 +229,9 @@ async def _count_pattern(
         )
 
     except UnicodeDecodeError as e:
-        return _error_response(f"Cannot decode as {encoding}: {str(e)}", "encoding_error")
+        return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
     except Exception as e:
-        return _error_response(f"Failed to count pattern: {str(e)}", "io_error")
+        return _error_response(f"Failed to count pattern: {e!s}", "io_error")
 
 
 async def _search_files(
@@ -244,7 +245,7 @@ async def _search_files(
 
         matching_files = []
 
-        for root, dirs, files in (
+        for root, _dirs, files in (
             os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]
         ):
             for file in files:
@@ -280,17 +281,17 @@ async def _search_files(
         )
 
     except Exception as e:
-        return _error_response(f"Failed to search files: {str(e)}", "io_error")
+        return _error_response(f"Failed to search files: {e!s}", "io_error")
 
 
 async def _extract_log_lines(
     file_path: str,
-    patterns: Optional[str],
-    exclude_patterns: Optional[list[str]],
-    log_levels: Optional[list[str]],
-    exclude_log_levels: Optional[list[str]],
-    start_time: Optional[str],
-    end_time: Optional[str],
+    patterns: str | None,
+    exclude_patterns: list[str] | None,
+    log_levels: list[str] | None,
+    exclude_log_levels: list[str] | None,
+    start_time: str | None,
+    end_time: str | None,
     max_lines: int,
     encoding: str,
 ) -> dict[str, Any]:
@@ -364,9 +365,9 @@ async def _extract_log_lines(
                 )
                 if level_match:
                     level = level_match.group(1).upper()
-                    if log_levels and level not in [l.upper() for l in log_levels]:
+                    if log_levels and level not in [lv.upper() for lv in log_levels]:
                         continue
-                    if exclude_log_levels and level in [l.upper() for l in exclude_log_levels]:
+                    if exclude_log_levels and level in [lv.upper() for lv in exclude_log_levels]:
                         continue
 
             # Pattern filtering
@@ -408,9 +409,9 @@ async def _extract_log_lines(
         )
 
     except UnicodeDecodeError as e:
-        return _error_response(f"Cannot decode as {encoding}: {str(e)}", "encoding_error")
+        return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
     except Exception as e:
-        return _error_response(f"Failed to extract log lines: {str(e)}", "io_error")
+        return _error_response(f"Failed to extract log lines: {e!s}", "io_error")
 
 
 async def _compare_files(file_path_1: str, file_path_2: str, encoding: str) -> dict[str, Any]:
@@ -447,7 +448,7 @@ async def _compare_files(file_path_1: str, file_path_2: str, encoding: str) -> d
         )
 
     except Exception as e:
-        return _error_response(f"Failed to compare files: {str(e)}", "io_error")
+        return _error_response(f"Failed to compare files: {e!s}", "io_error")
 
 
 async def _find_duplicate_files(
@@ -457,7 +458,7 @@ async def _find_duplicate_files(
     include_hidden: bool,
     max_files: int,
     hash_algorithm: str,
-    max_duplicates: Optional[int],
+    max_duplicates: int | None,
 ) -> dict[str, Any]:
     """Find duplicate files with early exit protection."""
     try:
@@ -472,7 +473,7 @@ async def _find_duplicate_files(
         gen = (
             os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
         )
-        for root, dirs, files in gen:
+        for root, _dirs, files in gen:
             # Early exit if max_duplicates reached
             if max_duplicates and len(duplicates) >= max_duplicates:
                 break
@@ -522,7 +523,7 @@ async def _find_duplicate_files(
         )
 
     except Exception as e:
-        return _error_response(f"Failed to find duplicates: {str(e)}", "io_error")
+        return _error_response(f"Failed to find duplicates: {e!s}", "io_error")
 
 
 async def _find_large_files(
@@ -541,7 +542,7 @@ async def _find_large_files(
         gen = (
             os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
         )
-        for root, dirs, files in gen:
+        for root, _dirs, files in gen:
             if done and early_exit:
                 break
             for file in files:
@@ -584,4 +585,4 @@ async def _find_large_files(
         )
 
     except Exception as e:
-        return _error_response(f"Failed to find large files: {str(e)}", "io_error")
+        return _error_response(f"Failed to find large files: {e!s}", "io_error")

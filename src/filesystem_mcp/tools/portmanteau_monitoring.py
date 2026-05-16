@@ -8,7 +8,7 @@ from typing import Any
 
 import psutil
 
-from .utils import _error_response, _get_app, _success_response
+from .utils import READ_ONLY, _error_response, _get_app, _success_response
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ async def _get_network_info() -> dict[str, Any]:
 _app = _get_app()
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_system_status(
     include_processes: bool = False,
     include_disk: bool = True,
@@ -193,7 +193,7 @@ async def monitor_get_system_status(
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_resource_usage() -> dict[str, Any]:
     """CPU, memory, root disk usage, and boot time.
 
@@ -210,7 +210,7 @@ async def monitor_get_resource_usage() -> dict[str, Any]:
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_process_info(
     max_processes: int = 10,
     filter_pattern: str | None = None,
@@ -238,7 +238,7 @@ async def monitor_get_process_info(
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_performance_metrics() -> dict[str, Any]:
     """Detailed CPU times, memory, swap, disk I/O, and network I/O counters.
 
@@ -253,7 +253,7 @@ async def monitor_get_performance_metrics() -> dict[str, Any]:
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_memory_info() -> dict[str, Any]:
     """Virtual and swap memory breakdown.
 
@@ -268,7 +268,7 @@ async def monitor_get_memory_info() -> dict[str, Any]:
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_cpu_info() -> dict[str, Any]:
     """Core counts, optional frequency, and per-CPU usage.
 
@@ -283,7 +283,7 @@ async def monitor_get_cpu_info() -> dict[str, Any]:
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_disk_usage() -> dict[str, Any]:
     """Per-partition usage (skips mounts that raise PermissionError).
 
@@ -298,7 +298,7 @@ async def monitor_get_disk_usage() -> dict[str, Any]:
         return _error_response(str(e), "internal_error")
 
 
-@_app.tool()
+@_app.tool(annotations=READ_ONLY, version="2.2.0")
 async def monitor_get_network_info() -> dict[str, Any]:
     """Aggregate I/O counters and per-interface addresses and stats.
 
