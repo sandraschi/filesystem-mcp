@@ -8,6 +8,9 @@
   <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+
+> 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
+
 > **Status**: Production-ready · 23 tools · Dual transport (stdio + HTTP) · Port 10742
 
 A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
