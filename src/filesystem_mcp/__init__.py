@@ -66,7 +66,7 @@ logger = structlog.get_logger(__name__)
 
 # Import FastMCP 2.14.3+ compliant server
 from fastmcp import FastMCP  # noqa: E402
-from fastmcp.server.providers import ProxyProvider  # noqa: E402
+from fastmcp.server import create_proxy  # noqa: E402
 
 
 @asynccontextmanager
@@ -116,7 +116,7 @@ if bridge_urls:
         url = url.strip()
         if url:
             try:
-                app.add_provider(ProxyProvider(url=url))
+                app.add_provider(create_proxy(url))
                 _bridge_proxies.append(url)
             except Exception as exc:
                 logger.warning("Failed to register bridge proxy", url=url, error=str(exc))

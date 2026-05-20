@@ -1,14 +1,12 @@
 # Filesystem MCP
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastMCP 3.2](https://img.shields.io/badge/FastMCP-3.2-7B2FBE?style=flat-square&logo=python&logoColor=white)](https://github.com/jlowin/fastmcp)
-[![License MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
-[![Biome](https://img.shields.io/badge/linted%20with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=flat-square)](https://github.com/astral-sh/uv)
-[![Built with Just](https://img.shields.io/badge/built%20with-Just-000?style=flat-square&logo=gnubash&logoColor=white)](https://github.com/casey/just)
-[![MCP Server](https://img.shields.io/badge/MCP%20Server-Filesystem-000?style=flat-square&logo=windowspowershell&logoColor=white)](https://modelcontextprotocol.io)
-[![Concurrency Safe](https://img.shields.io/badge/concurrency-safe-success?style=flat-square)]()
+<p align="center">
+  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://biomejs.dev"><img src="https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white" alt="Biome"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+</p>
 
 > **Status**: Production-ready · 23 tools · Dual transport (stdio + HTTP) · Port 10742
 
@@ -16,6 +14,20 @@ A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for 
 
 > [!IMPORTANT]
 > **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10702) for real-time visualization and management.
+
+## Quick Start
+
+```powershell
+git clone https://github.com/sandraschi/filesystem-mcp
+cd filesystem-mcp
+just
+```
+
+This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
+
+### Manual Setup
+
+If you don't have `just` installed:
 
 ##  Deployment & Security
 Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.

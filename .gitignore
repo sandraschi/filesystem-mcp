@@ -105,3 +105,4 @@ docs-private/
 
 # Frontend
 node_modules/
+_dashboard/
