@@ -27,3 +27,5 @@ FastMCP 3.2+ server for file system, Docker, system monitoring, and host context
 - Concurrency-safe writes: per-path `asyncio.Lock` + atomic `os.replace()`
 - Structured responses: `_success_response`, `_error_response`, `_clarification_response`
 - Dual transport: stdio (Claude Desktop) + HTTP (webapp)
+
+Install docs: follow mcp-central-docs/standards/AGENT_INSTALL_REFERENCE.md
