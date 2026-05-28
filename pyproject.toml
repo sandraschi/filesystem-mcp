@@ -1,4 +1,4 @@
-[build-system]
+  EDITED  D:\Dev\repos\filesystem-mcp\pyproject.toml [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 
@@ -107,7 +107,7 @@ warn_unreachable = true
 strict_equality = true
 
 [project.scripts]
-schip-mcp-filesystem = "filesystem_mcp.__main__:run"
+filesystem-mcp = "filesystem_mcp.__main__:run"
 
 [tool.ruff]
 line-length = 120
