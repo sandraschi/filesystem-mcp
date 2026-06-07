@@ -1,4 +1,4 @@
-Param([switch]$Headless)
+﻿Param([switch]$Headless)
 
 # --- SOTA Headless Standard ---
 if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
@@ -9,7 +9,7 @@ $WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
 # ------------------------------
 
 $env:FASTMCP_LOG_LEVEL = 'WARNING'
-# schip-mcp-filesystem Start - Standards-Compliant SOTA
-Write-Host 'Starting schip-mcp-filesystem...' -ForegroundColor Cyan
+# filesystem-mcp Start - Standards-Compliant SOTA
+Write-Host 'Starting filesystem-mcp...' -ForegroundColor Cyan
 
-uv run -m schip_mcp_filesystem
+uv run filesystem-mcp

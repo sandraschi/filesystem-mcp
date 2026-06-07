@@ -1,8 +1,8 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 # Open the interactive recipe dashboard in the browser
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 # ── Quality ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,9 @@ fix:
 test:
     Set-Location '{{justfile_directory()}}'
     uv run pytest
+
+e2e:
+    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
 
 # Quick import check and type checking
 check:
@@ -78,3 +81,4 @@ build:
 clean:
     Set-Location '{{justfile_directory()}}'
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .ruff_cache, .pytest_cache, __pycache__, *.egg-info, dist, build
+
