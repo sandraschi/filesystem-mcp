@@ -18,12 +18,8 @@ if (-not (Test-Path -LiteralPath $FleetStartPath)) {
 $FleetStart = Initialize-FleetStartMode @PSBoundParameters
 Enter-FleetHeadlessConsole -Headless:$Headless -BackendOnly:$BackendOnly
 Stop-FleetPortSquatters -Ports @($WebPort, $BackendPort) -Label "filesystem-mcp"
-$blocked = @(Get-NetTCPConnection -LocalPort $BackendPort -State Listen -ErrorAction SilentlyContinue |
-    Where-Object { $_.OwningProcess -gt 4 } | Select-Object -ExpandProperty OwningProcess -Unique)
-if ($blocked.Count -gt 0) {
-    Write-Host "ERROR: Port $BackendPort still held by PID(s): $($blocked -join ', '). Stop that process (admin taskkill if needed) and retry." -ForegroundColor Red
-    exit 1
-}
+
+if (-not (Assert-FleetPortsAvailable -Ports @($WebPort, $BackendPort) -Label "filesystem-mcp")) { exit 1 }
 
 # 2. Setup
 Set-Location $PSScriptRoot
@@ -73,6 +69,7 @@ Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "
 Write-Host "Browser will open automatically when Vite is ready." -ForegroundColor Gray
 if (-not $FleetStart.RunFrontend) { return }
 npm run dev -- --port $WebPort --host
+
 
 
 
