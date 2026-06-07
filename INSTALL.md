@@ -1,75 +1,162 @@
-# Installation
+# Installing filesystem-mcp
 
-## 🚀 Quick Start (recommended)
+File system, Git, and Docker operations for Claude Desktop and Claude Code.
+
+---
+
+## Prerequisites
+
+Install these if you don't have them already. Windows commands use
+[winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/)
+(built into Windows 10 1809+ / Windows 11):
+
+| Tool | Required for | Windows | macOS |
+|------|-------------|---------|-------|
+| **Claude Desktop** | all options | [claude.ai/download](https://claude.ai/download) | same |
+| **uv** | Options C and D | `winget install astral-sh.uv` | `brew install uv` |
+| **git** | clone repo (Options C/D) | `winget install Git.Git` | `brew install git` |
+| **Node.js** | Option B, or web frontend | `winget install OpenJS.NodeJS` | `brew install node` |
+| **Docker Desktop** | Docker/compose tools only | [docker.com/get-started](https://www.docker.com/get-started/) | same |
+
+> **Windows:** After any winget install, **close and reopen PowerShell** so PATH updates apply.  
+> **macOS:** use `brew install uv git node` equivalents.
+
+Docker Desktop is **only needed** for the Docker container management tools (`container_ops`,
+`compose_*`). File system and Git tools work without it.
+
+---
+
+## Option A — Drag and Drop (Recommended)
+
+No Python, uv, or git required. Claude Desktop manages the runtime.
+
+1. Go to [Releases](https://github.com/sandraschi/filesystem-mcp/releases/latest)
+2. Download `filesystem-mcp-*.mcpb`
+3. Open Claude Desktop
+4. Drag the `.mcpb` file onto the Claude Desktop window and accept the install prompt
+
+**Pass criteria:** server appears in the MCP list with no terminal steps.
+
+---
+
+## Option B — mcpb CLI
+
+`mcpb` is **not** on PyPI — `uvx mcpb` will fail. Requires Node.js:
 
 ```powershell
-# Install just if you don't have it
-winget install Casey.Just    # Windows
-# scoop install just          # Windows (alternative)
-# brew install just           # macOS
-# sudo apt install just       # Debian/Ubuntu
-# cargo install just          # Linux (Rust)
+winget install OpenJS.NodeJS --accept-source-agreements --accept-package-agreements
+# Close and reopen terminal, then:
+npx @anthropic-ai/mcpb install https://github.com/sandraschi/filesystem-mcp
+```
+
+Restart Claude Desktop after install completes.
+
+---
+
+## Option C — Manual Configuration
+
+```powershell
+winget install astral-sh.uv --accept-source-agreements --accept-package-agreements
+winget install Git.Git --accept-source-agreements --accept-package-agreements
+# Close and reopen terminal
 
 git clone https://github.com/sandraschi/filesystem-mcp
 cd filesystem-mcp
-just
+uv sync --all-extras
 ```
 
-The interactive recipe dashboard opens in your browser. From there:
+Edit Claude Desktop config:
+
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "filesystem-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\path\\to\\filesystem-mcp",
+        "run",
+        "filesystem-mcp",
+        "--stdio"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
+```
+
+Replace `C:\\path\\to\\filesystem-mcp` with your actual clone path. Restart Claude Desktop.
+
+---
+
+## Option D — Developer Mode
+
+For contributing or running from source. Requires all tools in Prerequisites.
 
 ```powershell
-just bootstrap   # install all dependencies
-just serve       # start the server
-just web         # start the frontend (if applicable)
+winget install Casey.Just --accept-source-agreements --accept-package-agreements
+git clone https://github.com/sandraschi/filesystem-mcp
+cd filesystem-mcp
+uv sync --all-extras
+uv run filesystem-mcp --stdio
 ```
 
-> **Why not `pip install`?** MCP servers bundle webapps, configs, project scaffolding, and tooling that a flat Python package can't deliver. PyPI offers no safety advantage — it doesn't audit packages either. `just` gives you the complete, ready-to-run stack.
+For the optional web frontend (http://localhost:10742):
+
+```powershell
+$env:MCP_TRANSPORT = "http"
+uv run filesystem-mcp
+cd webapp && npm install && npm run dev
+```
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for linting, testing, and build steps.
 
 ---
 
-## 🐌 Traditional Setup
+## Verify Installation
 
-If you prefer not to use `just`:
+In Claude Desktop, try:
 
-1. Install [Python 3.13+](https://python.org) and [uv](https://docs.astral.sh/uv/)
-2. Clone and enter the repo:
-   ```powershell
-   git clone https://github.com/sandraschi/filesystem-mcp
-   cd filesystem-mcp
-   ```
-3. Install dependencies:
-   ```powershell
-   uv sync --all-extras
-   ```
-4. Start the server:
-   ```powershell
-   # stdio mode (for MCP clients like Claude Desktop)
-   uv run python -m filesystem_mcp.server
+> "List the files in my home directory"
 
-   # HTTP mode (for web dashboard)
-   uv run uvicorn filesystem_mcp.server:app --port 10742
-   ```
-
-4. (optional) Start the frontend:
-   ```powershell
-   cd webapp
-   npm install
-   npm run dev
-   ```
-
-5. Open `http://localhost:10742` or the frontend URL.
+You should see a directory listing from `file_ops`. If you get "tool not found",
+restart Claude Desktop and check that the server appears in Settings → MCP Servers.
 
 ---
 
-## ❓ Troubleshooting
+## Environment Variables
 
-| Issue | Fix |
-|---|---|
-| `just` not found | Install via `winget install Casey.Just`, `scoop install just`, or `brew install just` |
-| Port conflict | Run `just kill-all` to clear fleet ports (10700–11000) |
-| Dependencies out of sync | `uv sync --all-extras` |
-| Something else | [Open a GitHub issue](https://github.com/sandraschi/filesystem-mcp/issues) |
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `MCP_TRANSPORT` | `stdio` | Transport: `stdio` \| `http` \| `sse` |
+| `MCP_HOST` | `127.0.0.1` | Bind address for HTTP/SSE |
+| `MCP_PORT` | `10742` | MCP HTTP port |
+| `FASTMCP_LOG_LEVEL` | `WARNING` | Log verbosity: `DEBUG` \| `INFO` \| `WARNING` |
+| `PYTHONUNBUFFERED` | — | Set to `1` in Claude Desktop config |
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full reference.
 
 ---
 
-*See the main [README](README.md) for feature overview and documentation.*
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| Server not in Claude Desktop | Run `uv run filesystem-mcp --stdio` directly to see error; check config path |
+| `uv` not found | `winget install astral-sh.uv`; reopen terminal |
+| `git` not found | `winget install Git.Git`; reopen terminal |
+| Docker tools return "daemon not running" | Start Docker Desktop |
+| Port 10742 already in use | Set `MCP_PORT` to a free port in the `env` block |
+| `uv sync` fails | Ensure Python 3.12+: `uv python install 3.12` |
+| `uvx mcpb` fails | Expected — use Option A or `npx @anthropic-ai/mcpb` |
+
+Full diagnostics: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) · [open an issue](https://github.com/sandraschi/filesystem-mcp/issues)
+
+---
+
+*Feature overview: [README.md](README.md)*
