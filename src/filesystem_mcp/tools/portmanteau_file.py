@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from typing import Any, Literal
 
@@ -788,21 +789,30 @@ async def _head_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
                 ],
             )
 
-        content = path_obj.read_text(encoding=encoding)
-        all_lines = content.splitlines(keepends=True)
-        selected_lines = all_lines[:lines]
+        head_lines: list[str] = []
+        truncated = False
+        # Stream line-by-line: never load the whole file for a head, and never
+        # let one bad byte elsewhere in the file kill the read (errors="replace").
+        with path_obj.open("r", encoding=encoding, errors="replace") as fh:
+            for line in fh:
+                if len(head_lines) >= lines:
+                    truncated = True
+                    break
+                head_lines.append(line)
 
         return _success_response(
             {
-                "content": "".join(selected_lines),
+                "content": "".join(head_lines),
                 "lines_requested": lines,
-                "lines_returned": len(selected_lines),
-                "total_lines": len(all_lines),
+                "lines_returned": len(head_lines),
+                # Counting total lines would require reading the entire file,
+                # which defeats the point of head. None = not counted.
+                "total_lines": None if truncated else len(head_lines),
                 "encoding": encoding,
                 "path": str(path_obj),
             },
             next_steps=[f"read_file_lines(path='{file_path}', offset={lines})"]
-            if len(all_lines) > lines
+            if truncated
             else [],
         )
     except Exception as e:
@@ -825,16 +835,36 @@ async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
                 ],
             )
 
-        content = path_obj.read_text(encoding=encoding)
-        all_lines = content.splitlines(keepends=True)
-        selected_lines = all_lines[-lines:] if lines > 0 else []
+        # Read backwards from EOF in blocks: O(tail size), not O(file size).
+        # A 10MB log with one bad byte at position 500k must not kill a
+        # 10-line tail — decode the tail bytes only, with errors="replace".
+        if lines <= 0:
+            selected_text, returned = "", 0
+        else:
+            block_size = 8192
+            with path_obj.open("rb") as fh:
+                fh.seek(0, os.SEEK_END)
+                pos = fh.tell()
+                buf = b""
+                # lines + 1 newlines guarantee at least `lines` complete lines
+                # after the (possibly partial) first line in the buffer.
+                while pos > 0 and buf.count(b"\n") <= lines:
+                    step = min(block_size, pos)
+                    pos -= step
+                    fh.seek(pos)
+                    buf = fh.read(step) + buf
+            text = buf.decode(encoding, errors="replace")
+            tail_lines = text.splitlines(keepends=True)[-lines:]
+            selected_text, returned = "".join(tail_lines), len(tail_lines)
 
         return _success_response(
             {
-                "content": "".join(selected_lines),
+                "content": selected_text,
                 "lines_requested": lines,
-                "lines_returned": len(selected_lines),
-                "total_lines": len(all_lines),
+                "lines_returned": returned,
+                # Counting total lines would require reading the whole file,
+                # which defeats the point of tail. None = not counted.
+                "total_lines": None,
                 "encoding": encoding,
                 "path": str(path_obj),
             }

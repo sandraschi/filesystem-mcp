@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-06-11
+
+### Fixed — head_file / tail_file on large or mixed-encoding files
+
+Tailing real Windows logs (e.g. 10MB Claude Desktop MCP logs containing
+mixed UTF-8/cp1252 bytes) failed hard: both operations did a strict
+`read_text()` of the **entire file**, so a single bad byte anywhere — at
+position 503845 in a 10-line tail request — aborted the read, and every
+tail cost O(file size) in time and memory.
+
+- `tail_file`: rewritten as a backwards block read from EOF (8KB blocks,
+  stop after `lines + 1` newlines), decoding only the tail bytes with
+  `errors="replace"`. O(tail size) regardless of file size.
+- `head_file`: now streams line-by-line with `errors="replace"` and stops
+  after N lines instead of slurping the file.
+- `total_lines` in the response is now `None` when not counted (counting
+  would require reading the whole file, defeating head/tail). `head_file`
+  still reports it when the file was fully consumed.
+
+Verified against the failing 10.4MB `mcp-server-memops1.log` on Goliath
+(utf-8 default now succeeds; previously required latin-1 workaround).
+
 ### Changed
 - **FastMCP 3.2+ Upgrade**: Updated FastMCP dependency from 2.14.4+ to 3.2.0 for universal connect pattern support
 - **Concurrency Safety**: Implemented atomic file operations with proper locking for multi-client access
