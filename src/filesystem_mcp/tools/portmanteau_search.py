@@ -1,3 +1,4 @@
+import asyncio
 import difflib
 import fnmatch
 import hashlib
@@ -20,7 +21,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool(annotations=READ_ONLY, version="2.2.0")
+@_get_app().tool(annotations=READ_ONLY, version="2.3.0")
 async def search_ops(
     operation: Literal[
         "grep_file",
@@ -62,7 +63,8 @@ async def search_ops(
         path: Base path for search/analysis
         search_pattern: Regex or glob pattern (required for grep/count/search)
         path2: Second file for compare_files
-        recursive: Search subdirectories. Default: False
+        recursive: Search subdirectories (grep_file on a directory, search_files,
+            find_*). Default: False
         case_sensitive: Pattern sensitivity. Default: False
         max_matches (int): Limit grep results. Default: 100
         context_lines: Lines around grep matches. Default: 0
@@ -89,7 +91,14 @@ async def search_ops(
                     "search_pattern", "search_pattern is required for grep_file"
                 )
             return await _grep_file(
-                path, search_pattern, case_sensitive, max_matches, context_lines, encoding
+                path,
+                search_pattern,
+                case_sensitive,
+                max_matches,
+                context_lines,
+                encoding,
+                recursive,
+                include_hidden,
             )
         elif operation == "count_pattern":
             if not search_pattern:
@@ -134,6 +143,66 @@ async def search_ops(
         return _error_response(str(e), "internal_error")
 
 
+_GREP_EXCLUDED_DIRS = {
+    ".git",
+    ".hg",
+    ".svn",
+    "node_modules",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".mypy_cache",
+    "target",
+    "dist",
+    "build",
+    ".tox",
+    ".eggs",
+}
+_GREP_MAX_FILE_BYTES = 5 * 1024 * 1024  # skip files larger than 5 MB in directory grep
+_GREP_MAX_FILES = 10_000  # hard cap on files visited in one directory grep
+
+
+def _looks_binary(file_path: Path) -> bool:
+    """Cheap binary sniff: NUL byte in the first 1 KiB."""
+    try:
+        with open(file_path, "rb") as f:
+            return b"\x00" in f.read(1024)
+    except OSError:
+        return True
+
+
+def _grep_lines(
+    lines: list[str],
+    regex: re.Pattern,
+    max_matches: int,
+    context_lines: int,
+    file_path: str | None = None,
+) -> list[dict[str, Any]]:
+    """Collect match dicts from pre-split lines (sync, CPU-bound)."""
+    matches: list[dict[str, Any]] = []
+    for i, line in enumerate(lines):
+        m = regex.search(line)
+        if not m:
+            continue
+        match_info: dict[str, Any] = {
+            "line_number": i + 1,
+            "content": line,
+            "match": m.group(0),
+        }
+        if file_path is not None:
+            match_info["file"] = file_path
+        if context_lines > 0:
+            start = max(0, i - context_lines)
+            end = min(len(lines), i + context_lines + 1)
+            match_info["context"] = {"before": lines[start:i], "after": lines[i + 1 : end]}
+        matches.append(match_info)
+        if len(matches) >= max_matches:
+            break
+    return matches
+
+
 async def _grep_file(
     file_path: str,
     pattern: str,
@@ -141,60 +210,144 @@ async def _grep_file(
     max_matches: int,
     context_lines: int,
     encoding: str,
+    recursive: bool = False,
+    include_hidden: bool = False,
 ) -> dict[str, Any]:
-    """Search for patterns in file with original full logic."""
+    """Grep a single file, or every text file under a directory.
+
+    All file IO and regex work runs in a worker thread (asyncio.to_thread) so a
+    large file or tree can never block the server event loop.
+    """
+    path_obj = _safe_resolve_path(file_path)
+    if not path_obj.exists():
+        return _error_response(f"Path does not exist: {file_path}", "not_found")
+
+    flags = 0 if case_sensitive else re.IGNORECASE
     try:
-        path_obj = _safe_resolve_path(file_path)
-        if not path_obj.exists():
-            return _error_response(f"File does not exist: {file_path}", "not_found")
-        if not path_obj.is_file():
-            return _error_response(f"Path is not a file: {file_path}", "not_a_file")
+        regex = re.compile(pattern, flags)
+    except re.error as e:
+        return _error_response(f"Invalid regex pattern: {e!s}", "invalid_regex")
 
-        content = path_obj.read_text(encoding=encoding)
-        lines = content.splitlines()
-
-        flags = 0 if case_sensitive else re.IGNORECASE
-        try:
-            regex = re.compile(pattern, flags)
-        except re.error as e:
-            return _error_response(f"Invalid regex pattern: {e!s}", "invalid_regex")
-
-        matches = []
-        for i, line in enumerate(lines):
-            if regex.search(line):
-                match_info = {
-                    "line_number": i + 1,
-                    "content": line,
-                    "match": regex.search(line).group(0) if regex.search(line) else "",
-                }
-
-                if context_lines > 0:
-                    start = max(0, i - context_lines)
-                    end = min(len(lines), i + context_lines + 1)
-                    match_info["context"] = {"before": lines[start:i], "after": lines[i + 1 : end]}
-
-                matches.append(match_info)
-
-                if len(matches) >= max_matches:
-                    break
-
-        return _success_response(
-            {
-                "pattern": pattern,
-                "matches": matches,
-                "total_matches": len(matches),
-                "max_matches_reached": len(matches) >= max_matches,
-                "file_path": str(path_obj),
-                "encoding": encoding,
-            },
-            next_steps=[f"file_ops(operation='read_file', path='{file_path}')"],
-            related_operations=["count_pattern", "edit_file"],
+    if path_obj.is_dir():
+        return await asyncio.to_thread(
+            _grep_directory_sync,
+            path_obj,
+            regex,
+            pattern,
+            max_matches,
+            context_lines,
+            encoding,
+            recursive,
+            include_hidden,
         )
+    return await asyncio.to_thread(
+        _grep_single_file_sync, path_obj, regex, pattern, max_matches, context_lines, encoding
+    )
 
+
+def _grep_single_file_sync(
+    path_obj: Path,
+    regex: re.Pattern,
+    pattern: str,
+    max_matches: int,
+    context_lines: int,
+    encoding: str,
+) -> dict[str, Any]:
+    """Grep one file. Runs in a worker thread."""
+    try:
+        content = path_obj.read_text(encoding=encoding)
     except UnicodeDecodeError as e:
         return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
-    except Exception as e:
+    except OSError as e:
         return _error_response(f"Failed to grep file: {e!s}", "io_error")
+
+    matches = _grep_lines(content.splitlines(), regex, max_matches, context_lines)
+    return _success_response(
+        {
+            "pattern": pattern,
+            "matches": matches,
+            "total_matches": len(matches),
+            "max_matches_reached": len(matches) >= max_matches,
+            "file_path": str(path_obj),
+            "encoding": encoding,
+        },
+        next_steps=[f"file_ops(operation='read_file', path='{path_obj}')"],
+        related_operations=["count_pattern", "edit_file"],
+    )
+
+
+def _grep_directory_sync(
+    root: Path,
+    regex: re.Pattern,
+    pattern: str,
+    max_matches: int,
+    context_lines: int,
+    encoding: str,
+    recursive: bool,
+    include_hidden: bool,
+) -> dict[str, Any]:
+    """Grep every text file under a directory. Runs in a worker thread.
+
+    Prunes VCS/build/cache dirs, skips binary and oversized files, and stops at
+    max_matches or _GREP_MAX_FILES, whichever comes first.
+    """
+    matches: list[dict[str, Any]] = []
+    files_scanned = 0
+    files_skipped = 0
+    done = False
+
+    walker = os.walk(root) if recursive else [(str(root), [], os.listdir(str(root)))]
+    for dirpath, dirnames, filenames in walker:
+        if done:
+            break
+        dirnames[:] = [
+            d
+            for d in dirnames
+            if d not in _GREP_EXCLUDED_DIRS and (include_hidden or not d.startswith("."))
+        ]
+        for name in filenames:
+            if len(matches) >= max_matches or files_scanned >= _GREP_MAX_FILES:
+                done = True
+                break
+            if not include_hidden and name.startswith("."):
+                continue
+
+            file_path = Path(dirpath) / name
+            try:
+                if not file_path.is_file():
+                    continue
+                if file_path.stat().st_size > _GREP_MAX_FILE_BYTES or _looks_binary(file_path):
+                    files_skipped += 1
+                    continue
+                content = file_path.read_text(encoding=encoding)
+            except (UnicodeDecodeError, OSError):
+                files_skipped += 1
+                continue
+
+            files_scanned += 1
+            remaining = max_matches - len(matches)
+            matches.extend(
+                _grep_lines(
+                    content.splitlines(), regex, remaining, context_lines, file_path=str(file_path)
+                )
+            )
+
+    return _success_response(
+        {
+            "pattern": pattern,
+            "matches": matches,
+            "total_matches": len(matches),
+            "max_matches_reached": len(matches) >= max_matches,
+            "directory": str(root),
+            "recursive": recursive,
+            "files_scanned": files_scanned,
+            "files_skipped": files_skipped,
+            "files_cap_reached": files_scanned >= _GREP_MAX_FILES,
+            "encoding": encoding,
+        },
+        next_steps=["file_ops(operation='read_file', path='<match file>')"],
+        related_operations=["search_files", "count_pattern"],
+    )
 
 
 async def _count_pattern(
