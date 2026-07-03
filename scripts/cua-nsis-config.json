@@ -1,0 +1,13 @@
+{
+    "product_name": "Filesystem MCP",
+    "install_dir": "%LOCALAPPDATA%\\Filesystem MCP",
+    "operator_exe": "filesystem-mcp-native.exe",
+    "backend_process_names": ["filesystem-mcp-native", "filesystem-mcp-native-backend"],
+    "backend_port": 10742,
+    "health_path": "/api/v1/health",
+    "diagnostics_path": "/api/v1/diagnostics",
+    "feature_smoke_path": "/api/v1/diagnostics",
+    "window_title_re": "Filesystem MCP",
+    "nsis_glob": "native/target/release/bundle/nsis/Filesystem MCP_*_x64-setup.exe",
+    "uninstall_registry_filter": "*Filesystem MCP*"
+}

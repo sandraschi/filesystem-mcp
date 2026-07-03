@@ -1,3 +1,13 @@
+
+## [Unreleased] — 2026-06-14
+
+### Added
+- Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
+- PyInstaller frozen backend embedded in NSIS installer
+- CUA-NSIS smoke test (`scripts/cua-smoke.py`, `scripts/cua-nsis-config.json`)
+- `just cua-nsis-test` recipe
+- Tauri CORS: `tauri://localhost` origins for WebView API access
+- `GET /api/v1/diagnostics` endpoint for CUA verification
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -156,3 +166,4 @@ Verified against the failing 10.4MB `mcp-server-memops1.log` on Goliath
 - Initial project setup
 - Basic file system operations
 - Git repository management foundation
+

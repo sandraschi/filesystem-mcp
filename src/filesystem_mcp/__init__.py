@@ -182,7 +182,31 @@ def http_app():
         import uvicorn
         uvicorn.run(http_app(), host="127.0.0.1", port=10742)
     """
-    return app.http_app()
+    from starlette.routing import Route
+    from starlette.responses import JSONResponse
+    import time, os
+
+    _start = time.time()
+
+    async def diagnostics(request):
+        try:
+            import psutil
+            cpu = psutil.cpu_percent()
+            mem = psutil.virtual_memory().percent
+            disk = psutil.disk_usage("/").percent
+        except ImportError:
+            cpu = mem = disk = 0
+        return JSONResponse({
+            "success": True,
+            "backend": {"port": 10742, "status": "running", "uptime": time.time() - _start},
+            "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
+            "tools": {"total": 0},
+            "cua_status": {"tesseract_available": False, "window_found": False},
+        })
+
+    asgi = app.http_app()
+    asgi.routes.append(Route("/api/v1/diagnostics", endpoint=diagnostics))
+    return asgi
 
 
 def main():

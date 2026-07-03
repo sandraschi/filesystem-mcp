@@ -1,4 +1,5 @@
-﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+import 'scripts/just/fleet.just'
 
 # Open the interactive recipe dashboard in the browser
 default:
@@ -77,8 +78,11 @@ build:
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 
+# CUA-NSIS smoke test against installed NSIS app
+cua-nsis-test:
+    uv run python scripts/cua-smoke.py
+
 # Clean build artifacts and caches
 clean:
     Set-Location '{{justfile_directory()}}'
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .ruff_cache, .pytest_cache, __pycache__, *.egg-info, dist, build
-

@@ -1,13 +1,14 @@
+import logging
+import os
+import sys
+from contextlib import asynccontextmanager
+from typing import Literal
+
+import httpx
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Literal
-import uvicorn
-import os
-import sys
-import logging
-import httpx
-from contextlib import asynccontextmanager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -67,9 +68,9 @@ class LLMProviderConfig(BaseModel):
     name: str
     type: Literal["ollama", "lmstudio", "openai", "anthropic"]
     baseUrl: str
-    apiKey: Optional[str] = None
+    apiKey: str | None = None
     enabled: bool = False
-    defaultModel: Optional[str] = None
+    defaultModel: str | None = None
 
 
 class Message(BaseModel):
@@ -80,7 +81,7 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     provider: LLMProviderConfig
     model: str
-    messages: List[Message]
+    messages: list[Message]
 
 
 @app.post("/api/llm/chat")
