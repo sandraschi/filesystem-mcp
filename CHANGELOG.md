@@ -1,5 +1,20 @@
+# Changelog
 
-## [Unreleased] — 2026-06-14
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased] — 2026-07-06
+
+### Fixed
+- `_kill_orphaned_stdio()` startup guard: on launch, kills any stale filesystem_mcp stdio
+  processes from previous CD sessions while preserving the HTTP daemon (port 10742).
+  Prevents Claude Desktop hangs from orphaned stdio processes accumulating across reconnects.
+
+### Changed
+- README.md: synced tool count and transport architecture description.
+- MCD project page: synced FastMCP version and added reliability note.
 
 ### Added
 - Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
@@ -8,14 +23,6 @@
 - `just cua-nsis-test` recipe
 - Tauri CORS: `tauri://localhost` origins for WebView API access
 - `GET /api/v1/diagnostics` endpoint for CUA verification
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
 
 ## [2.2.0] - 2026-06-11
 

@@ -165,12 +165,12 @@ def _import_tools():
         return True
 
     except Exception as e:
-        logger.error(f"Failed to import portmanteau tool modules: {e}")
-        return False
+        logger.exception("Failed to import portmanteau tool modules: %s", e)
+        raise
 
 
-# Import tools immediately
-_tools_imported = _import_tools()
+# Import tools immediately — raises on failure, server must not start without tools
+_import_tools()
 
 
 # Export ASGI app for HTTP/HTTPS mode (for web apps)
@@ -213,6 +213,8 @@ def main():
     """Main entry point for the MCP server with unified transport handling."""
     from .transport import run_server
 
+    _kill_orphaned_stdio()
+
     logger.info("Starting Filesystem MCP server v2.2.0 (FastMCP 3.2+)")
     logger.info("Python path", python_path=sys.executable)
     logger.info("Working directory", cwd=str(Path.cwd()))
@@ -225,6 +227,61 @@ def main():
 
     # Use unified transport runner
     run_server(app, server_name="filesystem-mcp")
+
+
+def _kill_orphaned_stdio():
+    """Kill stale filesystem_mcp stdio processes left by previous CD sessions.
+
+    Skips the HTTP daemon (identified by holding port 10742) so the infrastructure
+    service is never touched. Only cleans up orphaned IDE-spawned stdio instances.
+    """
+    import subprocess
+
+    try:
+        # Find PID holding port 10742 (the HTTP daemon — never kill this)
+        result = subprocess.run(
+            ["netstat", "-ano"], capture_output=True, text=True, timeout=10
+        )
+        daemon_pid = None
+        for line in result.stdout.splitlines():
+            if ":10742" in line and "LISTENING" in line:
+                parts = line.split()
+                if parts:
+                    daemon_pid = int(parts[-1])
+                    break
+
+        # Find all filesystem_mcp Python processes
+        procs = subprocess.run(
+            ["wmic", "process", "where", "name='python.exe' or name='python3.exe'",
+             "get", "ProcessId,CommandLine", "/format:csv"],
+            capture_output=True, text=True, timeout=15,
+        )
+        my_pid = os.getpid()
+        killed = 0
+        for line in procs.stdout.splitlines():
+            if "filesystem_mcp" not in line:
+                continue
+            parts = line.rsplit(",", 1)
+            if len(parts) < 2:
+                continue
+            try:
+                pid = int(parts[-1].strip())
+            except ValueError:
+                continue
+            if pid == my_pid or pid == daemon_pid:
+                continue
+            # Kill the orphan
+            try:
+                subprocess.run(["taskkill", "/F", "/PID", str(pid)],
+                               capture_output=True, timeout=5)
+                killed += 1
+            except Exception:
+                logger.warning("Failed to kill orphan PID %d", pid, exc_info=True)
+
+        if killed:
+            logger.info("Cleaned up %d orphaned stdio process(es)", killed)
+    except Exception:
+        logger.warning("Orphan cleanup failed (non-fatal)", exc_info=True)
 
 
 def run():

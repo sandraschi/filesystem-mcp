@@ -143,6 +143,7 @@ def _error_response(
     estimated_resolution_time: str | None = None
 ) -> dict:
     """Generate an intelligent error response with recovery guidance."""
+    logger.exception("Tool error: %s [%s]", error, error_type)
     response = {
         "success": False,
         "error": error,

@@ -7,6 +7,8 @@ import os
 import sys
 from pathlib import Path
 
+import uvicorn
+
 if getattr(sys, "frozen", False):
     base = Path(sys._MEIPASS)
 else:

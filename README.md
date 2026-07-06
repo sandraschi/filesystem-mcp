@@ -12,6 +12,7 @@
 > 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
 
 > **Status**: Production-ready · 23 tools · Dual transport (stdio + HTTP) · Port 10742
+> **Reliability**: Self-cleaning startup — kills orphaned stdio processes from stale IDE sessions
 
 A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
 
