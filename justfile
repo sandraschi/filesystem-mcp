@@ -76,6 +76,14 @@ build:
     Set-Location '{{justfile_directory()}}'
     uv build
 
+# ── Native (Tauri) ──────────────────────────────────────────────────────────
+
+# Build the Tauri NSIS desktop installer (full pipeline: frontend -> Rust -> NSIS)
+build-native:
+	$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+	Set-Location '{{justfile_directory()}}\native'
+	npx @tauri-apps/cli build --bundles nsis
+
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 
 # CUA-NSIS smoke test against installed NSIS app

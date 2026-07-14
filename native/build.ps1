@@ -72,15 +72,14 @@ if ($sizeMB -lt 5) {
 }
 Write-Host "  Backend exe: $sizeMB MB"
 
-# Bundle .env into installer if it exists (survives reinstall, no manual copy needed)
-$envSrc = "$Root\.env"
-if (Test-Path $envSrc) {
-    Copy-Item $envSrc "$ResourceDir\.env" -Force
-    Write-Host "  Bundled .env ($((Get-Item $envSrc).Length) bytes)" -ForegroundColor Green
+# Bundle .env.example (NOT .env - dev .env has personal API keys)
+$envExample = "$Root\.env.example"
+if (Test-Path $envExample) {
+    Copy-Item $envExample "$ResourceDir\.env.example" -Force
+    Write-Host "  Bundled .env.example ✓" -ForegroundColor Green
 } else {
-    Write-Host "  WARNING: No .env at repo root - create one from .env.example for credentials" -ForegroundColor DarkYellow
-    Set-Content -Path "$ResourceDir\.env" -Value "# Empty - configure via Settings page" -Encoding utf8
-} -ForegroundColor Green
+    Write-Host "  WARNING: .env.example not found at repo root" -ForegroundColor DarkYellow
+}
 
 Write-Host "  Smoke-testing frozen binary..." -ForegroundColor Yellow
 $testPort = 11999
