@@ -78,18 +78,14 @@ async def search_ops(
     """
     try:
         if not operation:
-            return _clarification_response(
-                "operation", "No operation specified", ["grep_file", "search_files"]
-            )
+            return _clarification_response("operation", "No operation specified", ["grep_file", "search_files"])
 
         if not path:
             return _clarification_response("path", f"Path is required for {operation}")
 
         if operation == "grep_file":
             if not search_pattern:
-                return _clarification_response(
-                    "search_pattern", "search_pattern is required for grep_file"
-                )
+                return _clarification_response("search_pattern", "search_pattern is required for grep_file")
             return await _grep_file(
                 path,
                 search_pattern,
@@ -102,15 +98,11 @@ async def search_ops(
             )
         elif operation == "count_pattern":
             if not search_pattern:
-                return _clarification_response(
-                    "search_pattern", "search_pattern is required for count_pattern"
-                )
+                return _clarification_response("search_pattern", "search_pattern is required for count_pattern")
             return await _count_pattern(path, search_pattern, case_sensitive, encoding)
         elif operation == "search_files":
             if not search_pattern:
-                return _clarification_response(
-                    "search_pattern", "search_pattern (glob) is required for search_files"
-                )
+                return _clarification_response("search_pattern", "search_pattern (glob) is required for search_files")
             return await _search_files(path, search_pattern, recursive, include_hidden, max_results)
         elif operation == "extract_log_lines":
             return await _extract_log_lines(
@@ -133,9 +125,7 @@ async def search_ops(
                 path, recursive, min_size, include_hidden, max_results, hash_algorithm, max_duplicates
             )
         elif operation == "find_large_files":
-            return await _find_large_files(
-                path, min_size_mb, recursive, max_results, include_hidden, early_exit
-            )
+            return await _find_large_files(path, min_size_mb, recursive, max_results, include_hidden, early_exit)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
@@ -301,9 +291,7 @@ def _grep_directory_sync(
         if done:
             break
         dirnames[:] = [
-            d
-            for d in dirnames
-            if d not in _GREP_EXCLUDED_DIRS and (include_hidden or not d.startswith("."))
+            d for d in dirnames if d not in _GREP_EXCLUDED_DIRS and (include_hidden or not d.startswith("."))
         ]
         for name in filenames:
             if len(matches) >= max_matches or files_scanned >= _GREP_MAX_FILES:
@@ -326,11 +314,7 @@ def _grep_directory_sync(
 
             files_scanned += 1
             remaining = max_matches - len(matches)
-            matches.extend(
-                _grep_lines(
-                    content.splitlines(), regex, remaining, context_lines, file_path=str(file_path)
-                )
-            )
+            matches.extend(_grep_lines(content.splitlines(), regex, remaining, context_lines, file_path=str(file_path)))
 
     return _success_response(
         {
@@ -350,9 +334,7 @@ def _grep_directory_sync(
     )
 
 
-async def _count_pattern(
-    file_path: str, pattern: str, case_sensitive: bool, encoding: str
-) -> dict[str, Any]:
+async def _count_pattern(file_path: str, pattern: str, case_sensitive: bool, encoding: str) -> dict[str, Any]:
     """Count pattern occurrences in file."""
     try:
         path_obj = _safe_resolve_path(file_path)
@@ -398,9 +380,7 @@ async def _search_files(
 
         matching_files = []
 
-        for root, _dirs, files in (
-            os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]
-        ):
+        for root, _dirs, files in os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(path_obj))]:
             for file in files:
                 if not include_hidden and file.startswith("."):
                     continue
@@ -501,9 +481,7 @@ async def _extract_log_lines(
                 )
                 if timestamp_match:
                     try:
-                        line_dt = datetime.fromisoformat(
-                            timestamp_match.group(1).replace("Z", "+00:00")
-                        )
+                        line_dt = datetime.fromisoformat(timestamp_match.group(1).replace("Z", "+00:00"))
                         if start_dt and line_dt < start_dt:
                             continue
                         if end_dt and line_dt > end_dt:
@@ -623,9 +601,7 @@ async def _find_duplicate_files(
         duplicates = []
         files_processed = 0
 
-        gen = (
-            os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
-        )
+        gen = os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
         for root, _dirs, files in gen:
             # Early exit if max_duplicates reached
             if max_duplicates and len(duplicates) >= max_duplicates:
@@ -656,9 +632,7 @@ async def _find_duplicate_files(
                     file_hash = hasher.hexdigest()
 
                     if file_hash in file_hashes:
-                        duplicates.append(
-                            {"hash": file_hash, "files": [str(file_hashes[file_hash]), str(file_path)]}
-                        )
+                        duplicates.append({"hash": file_hash, "files": [str(file_hashes[file_hash]), str(file_path)]})
                     else:
                         file_hashes[file_hash] = file_path
 
@@ -692,9 +666,7 @@ async def _find_large_files(
         large_files = []
         done = False
 
-        gen = (
-            os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
-        )
+        gen = os.walk(path_obj) if recursive else [(str(path_obj), [], os.listdir(str(path_obj)))]
         for root, _dirs, files in gen:
             if done and early_exit:
                 break

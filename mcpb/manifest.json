@@ -1,63 +1,35 @@
 {
+  "manifest_version": "0.2",
   "name": "filesystem-mcp",
-  "version": "1.0.0",
-  "description": "Comprehensive file system operations, Git repository management, and Docker container management MCP server with enterprise-grade security and Austrian precision",
-  "author": "Sandra Schi",
-  "license": "MIT",
-  "homepage": "https://github.com/sandraschi/filesystem-mcp",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sandraschi/filesystem-mcp"
-  },
-  "main": "server/server.py",
-  "mcp": {
-    "version": "1.0",
-    "capabilities": ["tools"],
-    "prompts": {
-      "system": "assets/prompts/system.md",
-      "file_operations": "assets/prompts/file_operations.md",
-      "git_workflows": "assets/prompts/git_workflows.md",
-      "docker_management": "assets/prompts/docker_management.md",
-      "security_permissions": "assets/prompts/security_permissions.md",
-      "troubleshooting": "assets/prompts/troubleshooting.md"
+  "version": "2.2.0",
+  "description": "FastMCP 3.4+ server for file system, Git, Docker, and system monitoring operations with concurrency safety",
+  "author": { "name": "Sandra Schipal" },
+  "server": {
+    "type": "python",
+    "entry_point": "run_server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${PWD}", "filesystem-mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
     }
   },
-  "runtime": {
-    "python": ">=3.9"
-  },
-  "dependencies": {
-    "fastmcp": ">=2.14.1,<3.0.0",
-    "pydantic": ">=2.0.0",
-    "docker": ">=6.0.0",
-    "gitpython": ">=3.1.0"
-  },
-  "features": [
-    "File system operations (read, write, list, manage)",
-    "Directory scanning (recursive, configurable depth)",
-    "File metadata and analysis",
-    "Git repository management (clone, commit, status, branches)",
-    "Docker container operations (create, start, stop, exec)",
-    "Docker image management (pull, build, remove)",
-    "Docker networking and volumes",
-    "Docker Compose support (deploy, scale, logs)",
-    "Enterprise-grade security",
-    "Comprehensive error handling",
-    "Extensive test coverage",
-    "FastMCP 2.12+ compliance",
-    "Austrian engineering quality"
-  ],
-  "keywords": [
-    "filesystem",
-    "files",
-    "directories",
-    "git",
-    "docker",
-    "containers",
-    "devops",
-    "automation",
-    "fastmcp",
-    "mcp-server",
-    "austria"
+  "tools": [
+    { "name": "file_ops", "description": "File operations (read, write, edit, move, copy, delete)" },
+    { "name": "dir_ops", "description": "Directory operations (list, create, remove, tree)" },
+    { "name": "search_ops", "description": "Content search, grep, compare files" },
+    { "name": "container_ops", "description": "Docker container lifecycle" },
+    { "name": "infra_ops", "description": "Docker images, networks, volumes" },
+    { "name": "compose_up", "description": "Docker Compose up" },
+    { "name": "compose_down", "description": "Docker Compose down" },
+    { "name": "compose_ps", "description": "List Compose services" },
+    { "name": "compose_logs", "description": "Fetch service logs" },
+    { "name": "compose_config", "description": "Render compose config" },
+    { "name": "compose_restart", "description": "Restart services" },
+    { "name": "monitor_get_*", "description": "System metrics" },
+    { "name": "host_ops", "description": "Host system info" },
+    { "name": "agentic_file_workflow", "description": "LLM sampling file ops" }
   ]
 }
-

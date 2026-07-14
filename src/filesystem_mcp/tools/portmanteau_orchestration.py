@@ -10,9 +10,8 @@ from .utils import MUTATING, READ_ONLY, _error_response, _get_app, _success_resp
 
 logger = logging.getLogger(__name__)
 
-async def _run_compose_command(
-    path: str, command_args: list[str], timeout: int = 300
-) -> dict[str, Any]:
+
+async def _run_compose_command(path: str, command_args: list[str], timeout: int = 300) -> dict[str, Any]:
     """Execute docker compose with recovery hints on failure."""
     try:
         cmd = ["docker", "compose"]
@@ -28,9 +27,7 @@ async def _run_compose_command(
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), timeout=timeout
-            )
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
         except TimeoutError:
             process.kill()
             return _error_response(

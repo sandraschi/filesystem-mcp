@@ -36,25 +36,24 @@ async def test_concurrency_safety(operation: str = "write", num_clients: int = 5
 
     try:
         if operation == "write":
+
             async def write_client(client_id: int):
                 return await file_manager.write_file_atomic(
                     test_file, f"Content from client {client_id} at {time.time()}"
                 )
-            results = await asyncio.gather(
-                *[write_client(i) for i in range(num_clients)], return_exceptions=True
-            )
+
+            results = await asyncio.gather(*[write_client(i) for i in range(num_clients)], return_exceptions=True)
         elif operation == "edit":
             await file_manager.write_file_atomic(test_file, "Initial content for testing")
+
             async def edit_client(client_id: int):
-                return await file_manager.modify_file_safe(test_file, [
-                    {"search": "content", "replace": f"content_c{client_id}"}
-                ])
-            results = await asyncio.gather(
-                *[edit_client(i) for i in range(num_clients)], return_exceptions=True
-            )
+                return await file_manager.modify_file_safe(
+                    test_file, [{"search": "content", "replace": f"content_c{client_id}"}]
+                )
+
+            results = await asyncio.gather(*[edit_client(i) for i in range(num_clients)], return_exceptions=True)
         else:
-            return {"error": f"Test not implemented for operation: {operation}",
-                    "concurrency_safe": False}
+            return {"error": f"Test not implemented for operation: {operation}", "concurrency_safe": False}
 
         successful = sum(1 for r in results if isinstance(r, dict) and r.get("success"))
         errors = [str(r) for r in results if isinstance(r, Exception)]
@@ -67,4 +66,5 @@ async def test_concurrency_safety(operation: str = "write", num_clients: int = 5
         }
     finally:
         import shutil
+
         shutil.rmtree(test_dir, ignore_errors=True)

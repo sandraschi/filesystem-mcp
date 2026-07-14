@@ -1,0 +1,5 @@
+{
+  "timestamp": "2026-07-13",
+  "repos": ["filesystem-mcp"],
+  "fixes": [".env.example", "CORS allow_origins + regex", "MCPB manifest v0.2", "ruff import fix"]
+}

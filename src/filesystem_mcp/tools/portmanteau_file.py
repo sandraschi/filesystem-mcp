@@ -37,10 +37,10 @@ async def file_ops(
     path: str | None = None,
     content: str | None = None,
     encoding: str = "utf-8",
-    old_string: str | None = None,   # canonical name
-    new_string: str | None = None,   # canonical name
-    old_str: str | None = None,      # alias: accepted from Claude str_replace tool
-    new_str: str | None = None,      # alias: accepted from Claude str_replace tool
+    old_string: str | None = None,  # canonical name
+    new_string: str | None = None,  # canonical name
+    old_str: str | None = None,  # alias: accepted from Claude str_replace tool
+    new_str: str | None = None,  # alias: accepted from Claude str_replace tool
     file_paths: list[str] | None = None,
     destination_path: str | None = None,
     overwrite: bool = False,
@@ -158,9 +158,7 @@ async def file_ops(
         elif operation == "edit_file":
             if not replacements and (not old_string or new_string is None):
                 return _clarification_response(
-                    ambiguities=[
-                        "old_string and new_string (or replacements list) required for edit_file"
-                    ],
+                    ambiguities=["old_string and new_string (or replacements list) required for edit_file"],
                     suggested_questions=[
                         "What text should be replaced?",
                         "What should it be replaced with?",
@@ -261,9 +259,7 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
                 "File is quite large - consider using read_file_lines with offset/limit for better performance"
             )
         if file_size_mb > 10:
-            recommendations.append(
-                "Large file detected - consider processing in chunks or using head_file/tail_file"
-            )
+            recommendations.append("Large file detected - consider processing in chunks or using head_file/tail_file")
             quality_metrics["large_file"] = True
 
         # Detect file type for additional suggestions
@@ -272,14 +268,10 @@ async def _read_file(file_path: str, encoding: str) -> dict[str, Any]:
             recommendations.append("Consider using get_file_info for structured data validation")
             quality_metrics["structured_data"] = True
         elif file_extension in [".log", ".txt"]:
-            recommendations.append(
-                "Consider using grep_file for content searching or tail_file for recent entries"
-            )
+            recommendations.append("Consider using grep_file for content searching or tail_file for recent entries")
             quality_metrics["log_file"] = True
         elif file_extension in [".py", ".js", ".ts", ".java", ".cpp"]:
-            recommendations.append(
-                "Code file detected - consider using agentic_file_workflow for advanced operations"
-            )
+            recommendations.append("Code file detected - consider using agentic_file_workflow for advanced operations")
             quality_metrics["code_file"] = True
 
         next_steps = []
@@ -351,14 +343,13 @@ async def _write_file(
         backup_path = None
         if path_obj.exists() and path_obj.is_file() and not no_backup:
             import time as _time
+
             ts = _time.strftime("%Y%m%d_%H%M%S")
             backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
             shutil.copy2(path_obj, backup_path)
 
         # Atomic write with per-path lock
-        await file_manager.write_file_atomic(
-            str(path_obj), content, create_parents=create_parents
-        )
+        await file_manager.write_file_atomic(str(path_obj), content, create_parents=create_parents)
 
         response = {
             "path": str(path_obj),
@@ -440,9 +431,7 @@ async def _edit_file(
                 if is_regex_for_this:
                     count = len(re.findall(search_pattern, current_content))
                     if count == 0:
-                        return _error_response(
-                            f"Regex pattern '{search_pattern}' not found", "content_not_found"
-                        )
+                        return _error_response(f"Regex pattern '{search_pattern}' not found", "content_not_found")
                     sub_limit = 0 if allow_multiple else 1
                     new_content = re.sub(search_pattern, repl, current_content, count=sub_limit)
                     actual_replaced = count if allow_multiple else 1
@@ -461,15 +450,11 @@ async def _edit_file(
             backup_path = None
             if not no_backup:
                 ts = _time.strftime("%Y%m%d_%H%M%S")
-                backup_path = path_obj.with_name(
-                    path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak"
-                )
+                backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
                 shutil.copy2(path_obj, backup_path)
 
             # Atomic write — lock already held, use internal helper directly
-            await file_manager._write_atomic_unlocked(
-                str(path_obj), current_content, create_parents=False
-            )
+            await file_manager._write_atomic_unlocked(str(path_obj), current_content, create_parents=False)
 
             # Post-write verification
             try:
@@ -481,12 +466,8 @@ async def _edit_file(
             if not verification_ok:
                 if backup_path and backup_path.exists():
                     shutil.copy2(backup_path, path_obj)
-                    return _error_response(
-                        "Verification failed - original file restored", "verification_failed"
-                    )
-                return _error_response(
-                    "Verification failed and no backup available", "verification_failed"
-                )
+                    return _error_response("Verification failed - original file restored", "verification_failed")
+                return _error_response("Verification failed and no backup available", "verification_failed")
 
         result = {
             "path": str(path_obj),
@@ -531,9 +512,7 @@ async def _undo_edit(file_path: str) -> dict[str, Any]:
             {
                 "restored_from": str(latest_backup),
                 "path": str(path_obj),
-                "backup_timestamp": datetime.fromtimestamp(
-                    latest_backup.stat().st_mtime
-                ).isoformat(),
+                "backup_timestamp": datetime.fromtimestamp(latest_backup.stat().st_mtime).isoformat(),
             },
             "undo_edit",
         )
@@ -596,17 +575,13 @@ async def _move_file(source_path: str, destination_path: str, overwrite: bool) -
             return _error_response(f"Source does not exist: {source_path}", "not_found")
         if dest.exists() and not overwrite:
             return _error_response(f"Destination exists: {destination_path}", "already_exists")
-        result = await file_manager.move_file_safe(
-            str(source), str(dest), create_parents=True
-        )
+        result = await file_manager.move_file_safe(str(source), str(dest), create_parents=True)
         return _success_response(result)
     except Exception as e:
         return _error_response(f"Failed to move: {e!s}", "io_error")
 
 
-async def _copy_file(
-    source_path: str, destination_path: str, overwrite: bool, create_parents: bool
-) -> dict[str, Any]:
+async def _copy_file(source_path: str, destination_path: str, overwrite: bool, create_parents: bool) -> dict[str, Any]:
     """Copy file atomically with per-path locking."""
     try:
         source = _safe_resolve_path(source_path)
@@ -615,17 +590,13 @@ async def _copy_file(
             return _error_response(f"Source does not exist: {source_path}", "not_found")
         if dest.exists() and not overwrite:
             return _error_response(f"Destination exists: {destination_path}", "already_exists")
-        result = await file_manager.copy_file_safe(
-            str(source), str(dest), create_parents=create_parents
-        )
+        result = await file_manager.copy_file_safe(str(source), str(dest), create_parents=create_parents)
         return _success_response(result)
     except Exception as e:
         return _error_response(f"Failed to copy: {e!s}", "io_error")
 
 
-async def _read_file_lines(
-    file_path: str, offset: int, limit: int | None, encoding: str
-) -> dict[str, Any]:
+async def _read_file_lines(file_path: str, offset: int, limit: int | None, encoding: str) -> dict[str, Any]:
     """Read specific lines from file."""
     try:
         path_obj = _safe_resolve_path(file_path)
@@ -657,9 +628,7 @@ async def _read_file_lines(
         return _error_response(f"Failed to read lines: {e!s}", "io_error")
 
 
-async def _read_multiple_files(
-    file_paths: list[str], encoding: str, max_file_size_mb: float
-) -> dict[str, Any]:
+async def _read_multiple_files(file_paths: list[str], encoding: str, max_file_size_mb: float) -> dict[str, Any]:
     """Read multiple files with size protection."""
     try:
         results = {}
@@ -715,9 +684,7 @@ async def _file_exists(file_path: str, check_type: str, follow_symlinks: bool) -
         is_file = path_obj.is_file()
         is_dir = path_obj.is_dir()
         type_matches = (
-            (check_type == "any")
-            or (check_type == "file" and is_file)
-            or (check_type == "directory" and is_dir)
+            (check_type == "any") or (check_type == "file" and is_file) or (check_type == "directory" and is_dir)
         )
 
         return _success_response(
@@ -811,9 +778,7 @@ async def _head_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
                 "encoding": encoding,
                 "path": str(path_obj),
             },
-            next_steps=[f"read_file_lines(path='{file_path}', offset={lines})"]
-            if truncated
-            else [],
+            next_steps=[f"read_file_lines(path='{file_path}', offset={lines})"] if truncated else [],
         )
     except Exception as e:
         return _error_response(f"Failed to read head: {e!s}", "io_error")

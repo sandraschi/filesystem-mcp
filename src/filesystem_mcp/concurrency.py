@@ -26,6 +26,7 @@ logger = structlog.get_logger(__name__)
 
 class FileOperationError(Exception):
     """Raised when file operations fail due to concurrency or I/O issues."""
+
     pass
 
 
@@ -41,7 +42,7 @@ class ConcurrencySafeFileManager:
     def __init__(self) -> None:
         self._file_locks: dict[str, asyncio.Lock] = {}
         self._dir_locks: dict[str, asyncio.Lock] = {}
-        self._meta_lock = asyncio.Lock()   # guards the dicts themselves
+        self._meta_lock = asyncio.Lock()  # guards the dicts themselves
 
     # ── Lock accessors ────────────────────────────────────────────────────────
 
@@ -87,9 +88,7 @@ class ConcurrencySafeFileManager:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    async def write_file_atomic(
-        self, file_path: str, content: str, create_parents: bool = False
-    ) -> dict:
+    async def write_file_atomic(self, file_path: str, content: str, create_parents: bool = False) -> dict:
         lock = await self._get_file_lock(file_path)
         async with lock:
             await self._write_atomic_unlocked(file_path, content, create_parents)
@@ -101,9 +100,7 @@ class ConcurrencySafeFileManager:
             "concurrency_safe": True,
         }
 
-    async def modify_file_safe(
-        self, file_path: str, modifications: list[dict]
-    ) -> dict:
+    async def modify_file_safe(self, file_path: str, modifications: list[dict]) -> dict:
         """
         Read → apply modifications → write back atomically.
         Does NOT call write_file_atomic to avoid re-acquiring the lock (deadlock).
@@ -133,8 +130,7 @@ class ConcurrencySafeFileManager:
                         modified = modified.replace(search, replace, 1)
                         changes += 1
                 else:
-                    logger.warning("modify_file_safe: text not found",
-                                   path=file_path, search=search[:60])
+                    logger.warning("modify_file_safe: text not found", path=file_path, search=search[:60])
 
             if changes > 0:
                 # Write directly — lock already held, don't call write_file_atomic
@@ -160,9 +156,7 @@ class ConcurrencySafeFileManager:
                 raise FileOperationError(f"Delete failed for {file_path}: {exc}") from exc
         return {"success": True, "path": file_path, "deleted": deleted, "concurrency_safe": True}
 
-    async def copy_file_safe(
-        self, src_path: str, dst_path: str, create_parents: bool = False
-    ) -> dict:
+    async def copy_file_safe(self, src_path: str, dst_path: str, create_parents: bool = False) -> dict:
         # Acquire both locks in canonical order to avoid cross-lock deadlock
         locks = sorted(
             [await self._get_file_lock(src_path), await self._get_file_lock(dst_path)],
@@ -171,22 +165,20 @@ class ConcurrencySafeFileManager:
         async with locks[0]:
             async with locks[1]:
                 if create_parents:
-                    await asyncio.to_thread(Path(dst_path).parent.mkdir,
-                                            parents=True, exist_ok=True)
+                    await asyncio.to_thread(Path(dst_path).parent.mkdir, parents=True, exist_ok=True)
                 try:
                     await asyncio.to_thread(shutil.copy2, src_path, dst_path)
                 except OSError as exc:
-                    raise FileOperationError(
-                        f"Copy failed {src_path} → {dst_path}: {exc}"
-                    ) from exc
+                    raise FileOperationError(f"Copy failed {src_path} → {dst_path}: {exc}") from exc
         return {
-            "success": True, "source": src_path, "destination": dst_path,
-            "copied": True, "concurrency_safe": True,
+            "success": True,
+            "source": src_path,
+            "destination": dst_path,
+            "copied": True,
+            "concurrency_safe": True,
         }
 
-    async def move_file_safe(
-        self, src_path: str, dst_path: str, create_parents: bool = False
-    ) -> dict:
+    async def move_file_safe(self, src_path: str, dst_path: str, create_parents: bool = False) -> dict:
         locks = sorted(
             [await self._get_file_lock(src_path), await self._get_file_lock(dst_path)],
             key=id,
@@ -194,17 +186,17 @@ class ConcurrencySafeFileManager:
         async with locks[0]:
             async with locks[1]:
                 if create_parents:
-                    await asyncio.to_thread(Path(dst_path).parent.mkdir,
-                                            parents=True, exist_ok=True)
+                    await asyncio.to_thread(Path(dst_path).parent.mkdir, parents=True, exist_ok=True)
                 try:
                     await asyncio.to_thread(os.replace, src_path, dst_path)
                 except OSError as exc:
-                    raise FileOperationError(
-                        f"Move failed {src_path} → {dst_path}: {exc}"
-                    ) from exc
+                    raise FileOperationError(f"Move failed {src_path} → {dst_path}: {exc}") from exc
         return {
-            "success": True, "source": src_path, "destination": dst_path,
-            "moved": True, "concurrency_safe": True,
+            "success": True,
+            "source": src_path,
+            "destination": dst_path,
+            "moved": True,
+            "concurrency_safe": True,
         }
 
     async def create_directory_safe(self, dir_path: str, parents: bool = True) -> dict:
@@ -213,39 +205,28 @@ class ConcurrencySafeFileManager:
             try:
                 await asyncio.to_thread(Path(dir_path).mkdir, parents=parents, exist_ok=True)
             except OSError as exc:
-                raise FileOperationError(
-                    f"Directory creation failed for {dir_path}: {exc}"
-                ) from exc
-        return {"success": True, "path": dir_path, "created": True,
-                "parents": parents, "concurrency_safe": True}
+                raise FileOperationError(f"Directory creation failed for {dir_path}: {exc}") from exc
+        return {"success": True, "path": dir_path, "created": True, "parents": parents, "concurrency_safe": True}
 
     async def delete_directory_safe(self, dir_path: str, recursive: bool = False) -> dict:
         lock = await self._get_dir_lock(dir_path)
         async with lock:
             if not os.path.exists(dir_path):
-                return {"success": True, "path": dir_path, "deleted": False,
-                        "concurrency_safe": True}
+                return {"success": True, "path": dir_path, "deleted": False, "concurrency_safe": True}
             try:
                 if recursive:
                     await asyncio.to_thread(shutil.rmtree, dir_path)
                 else:
                     await asyncio.to_thread(os.rmdir, dir_path)
             except OSError as exc:
-                raise FileOperationError(
-                    f"Directory deletion failed for {dir_path}: {exc}"
-                ) from exc
-        return {"success": True, "path": dir_path, "deleted": True,
-                "recursive": recursive, "concurrency_safe": True}
+                raise FileOperationError(f"Directory deletion failed for {dir_path}: {exc}") from exc
+        return {"success": True, "path": dir_path, "deleted": True, "recursive": recursive, "concurrency_safe": True}
 
     def get_lock_status(self) -> dict:
         """Return current lock state for debugging."""
         return {
-            "file_locks": {
-                k: {"locked": v.locked()} for k, v in self._file_locks.items()
-            },
-            "dir_locks": {
-                k: {"locked": v.locked()} for k, v in self._dir_locks.items()
-            },
+            "file_locks": {k: {"locked": v.locked()} for k, v in self._file_locks.items()},
+            "dir_locks": {k: {"locked": v.locked()} for k, v in self._dir_locks.items()},
             "total_file_locks": len(self._file_locks),
             "total_dir_locks": len(self._dir_locks),
         }

@@ -99,9 +99,7 @@ async def container_ops(
             ]
             and not container_id
         ):
-            return _clarification_response(
-                "container_id", f"container_id is required for {operation}"
-            )
+            return _clarification_response("container_id", f"container_id is required for {operation}")
 
         if operation == "list_containers":
             return await _list_containers(all_containers=True, show_stats=show_stats)
@@ -210,8 +208,8 @@ async def _list_containers(
                 "recommendations": recommendations,
                 "summary": {
                     "health_status": "healthy" if running_count >= stopped_count else "attention_needed",
-                    "activity": "high" if running_count > 10 else "medium" if running_count > 0 else "low"
-                }
+                    "activity": "high" if running_count > 10 else "medium" if running_count > 0 else "low",
+                },
             },
             next_steps=["container_ops(operation='get_container', container_id='<id>')"],
             related_operations=["infra_ops(operation='list_images')"],
@@ -285,9 +283,7 @@ async def _create_container(
             config["restart_policy"] = {"Name": restart_policy}
 
         container = client.containers.create(**config)
-        return _success_response(
-            {"container_id": container.id, "container_name": container.name, "status": "created"}
-        )
+        return _success_response({"container_id": container.id, "container_name": container.name, "status": "created"})
     except Exception as e:
         return _error_response(str(e), "docker_error")
 
@@ -391,9 +387,7 @@ async def _container_logs(
     try:
         client = _get_docker_client()
         container = client.containers.get(container_id)
-        logs = container.logs(
-            tail=tail, since=since, until=until, timestamps=timestamps, follow=follow, stream=False
-        )
+        logs = container.logs(tail=tail, since=since, until=until, timestamps=timestamps, follow=follow, stream=False)
         return _success_response(
             {
                 "container_id": container_id,
@@ -411,9 +405,7 @@ async def _container_stats(container_id: str) -> dict[str, Any]:
         client = _get_docker_client()
         container = client.containers.get(container_id)
         stats = container.stats(stream=False)
-        return _success_response(
-            {"container_id": container_id, "stats": _parse_container_stats(stats)}
-        )
+        return _success_response({"container_id": container_id, "stats": _parse_container_stats(stats)})
     except Exception as e:
         return _error_response(str(e), "docker_error")
 
@@ -429,9 +421,7 @@ def _parse_container_stats(stats_data: dict[str, Any]) -> dict[str, Any]:
             "memory": {
                 "usage": memory_stats.get("usage", 0),
                 "limit": memory_stats.get("limit", 0),
-                "percentage": round(
-                    memory_stats.get("usage", 0) / max(memory_stats.get("limit", 1), 1) * 100, 2
-                ),
+                "percentage": round(memory_stats.get("usage", 0) / max(memory_stats.get("limit", 1), 1) * 100, 2),
             },
             "cpu": {
                 "usage": cpu_stats.get("cpu_usage", {}).get("total_usage", 0),

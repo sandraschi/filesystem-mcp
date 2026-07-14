@@ -88,9 +88,7 @@ def _get_docker_client():
 
             _docker_client = docker.from_env()
         except ImportError as e:
-            raise RuntimeError(
-                "Docker operations require 'docker' package. Install with: pip install docker"
-            ) from e
+            raise RuntimeError("Docker operations require 'docker' package. Install with: pip install docker") from e
         except Exception as e:
             raise RuntimeError(f"Failed to connect to Docker: {e}") from e
     return _docker_client
@@ -108,6 +106,7 @@ def _has_upstream(repo):
 
 # Enhanced Response Patterns (FastMCP 2.14.3+)
 
+
 def _success_response(
     result: dict,
     operation: str | None = None,
@@ -115,7 +114,7 @@ def _success_response(
     quality_metrics: dict | None = None,
     recommendations: list | None = None,
     next_steps: list | None = None,
-    related_operations: list | None = None
+    related_operations: list | None = None,
 ) -> dict:
     """Generate a rich success response with conversational metadata."""
     response = {
@@ -140,7 +139,7 @@ def _error_response(
     diagnostic_info: dict | None = None,
     suggested_fixes: list | None = None,
     alternative_approaches: list | None = None,
-    estimated_resolution_time: str | None = None
+    estimated_resolution_time: str | None = None,
 ) -> dict:
     """Generate an intelligent error response with recovery guidance."""
     logger.exception("Tool error: %s [%s]", error, error_type)
@@ -157,7 +156,7 @@ def _error_response(
         response["recovery_options"] = [
             "Check your inputs and try again",
             "Consult the tool documentation for correct usage",
-            "Verify file/directory permissions and paths"
+            "Verify file/directory permissions and paths",
         ]
 
     if diagnostic_info:
@@ -186,7 +185,7 @@ def _clarification_response(
     options: dict | None = None,
     suggested_questions: list | None = None,
     preserved_context: dict | None = None,
-    estimated_completion: str | None = None
+    estimated_completion: str | None = None,
 ) -> dict:
     """Generate a clarification response for ambiguous requests.
 
@@ -221,7 +220,7 @@ def _clarification_response(
         response["suggested_questions"] = [
             "Could you please clarify what you'd like me to do?",
             "What specific operation are you looking for?",
-            "Would you like me to show you the available options?"
+            "Would you like me to show you the available options?",
         ]
 
     if preserved_context:
@@ -239,7 +238,7 @@ def _progress_response(
     total: int,
     phase: str | None = None,
     estimated_completion: str | None = None,
-    details: dict | None = None
+    details: dict | None = None,
 ) -> dict:
     """Generate a progress update response for long-running operations."""
     return {
@@ -258,10 +257,7 @@ def _progress_response(
 
 
 def _interactive_response(
-    message: str,
-    options: list,
-    context: dict | None = None,
-    follow_up_operations: list | None = None
+    message: str, options: list, context: dict | None = None, follow_up_operations: list | None = None
 ) -> dict:
     """Generate an interactive response requiring user choice."""
     response = {

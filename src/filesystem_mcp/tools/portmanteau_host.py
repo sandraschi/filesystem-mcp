@@ -22,111 +22,111 @@ _TOOL_HELP = {
         "category": "filesystem",
         "description": "Comprehensive file operations with enhanced conversational responses.",
         "operations": {
-            "read_file":          "Read complete file contents. Params: path, encoding(opt)",
-            "write_file":         "Write content to file with auto-backup. "
-                                   "Params: path, content, encoding(opt), no_backup(opt)",
-            "edit_file":          "Replace unique string in file. Params: path, old_string, new_string",
-            "move_file":          "Move/rename file. Params: path, destination_path, overwrite(opt)",
-            "read_file_lines":    "Read specific line range. Params: path, offset(opt), limit(opt)",
-            "read_multiple_files":"Batch read multiple files. Params: file_paths, max_file_size_mb(opt)",
-            "file_exists":        "Check file existence. Params: path, check_type(opt: file|any)",
-            "get_file_info":      "Detailed metadata. Params: path, include_content(opt), max_content_size(opt)",
-            "head_file":          "Read first N lines. Params: path, lines(opt, default 10)",
-            "tail_file":          "Read last N lines. Params: path, lines(opt, default 10)",
+            "read_file": "Read complete file contents. Params: path, encoding(opt)",
+            "write_file": "Write content to file with auto-backup. "
+            "Params: path, content, encoding(opt), no_backup(opt)",
+            "edit_file": "Replace unique string in file. Params: path, old_string, new_string",
+            "move_file": "Move/rename file. Params: path, destination_path, overwrite(opt)",
+            "read_file_lines": "Read specific line range. Params: path, offset(opt), limit(opt)",
+            "read_multiple_files": "Batch read multiple files. Params: file_paths, max_file_size_mb(opt)",
+            "file_exists": "Check file existence. Params: path, check_type(opt: file|any)",
+            "get_file_info": "Detailed metadata. Params: path, include_content(opt), max_content_size(opt)",
+            "head_file": "Read first N lines. Params: path, lines(opt, default 10)",
+            "tail_file": "Read last N lines. Params: path, lines(opt, default 10)",
         },
         "examples": {
-            "basic":        "file_ops(operation='read_file', path='D:/myfile.txt')",
+            "basic": "file_ops(operation='read_file', path='D:/myfile.txt')",
             "intermediate": "file_ops(operation='edit_file', path='D:/config.json', "
-                             "old_string='old_value', new_string='new_value')",
-            "advanced":     "file_ops(operation='read_multiple_files', "
-                             "file_paths=['D:/a.py','D:/b.py'], max_file_size_mb=5.0)",
+            "old_string='old_value', new_string='new_value')",
+            "advanced": "file_ops(operation='read_multiple_files', "
+            "file_paths=['D:/a.py','D:/b.py'], max_file_size_mb=5.0)",
         },
     },
     "dir_ops": {
         "category": "filesystem",
         "description": "Directory structure and management operations.",
         "operations": {
-            "list_directory":          "List directory contents with metadata. "
-                                         "Params: path, recursive(opt), include_hidden(opt)",
-            "create_directory":        "Create new directory. Params: path, create_parents(opt), exist_ok(opt)",
-            "remove_directory":        "Remove directory. Params: path, recursive(opt)",
-            "directory_tree":          "Visual tree of directory. "
-                                         "Params: path, max_depth(opt), pattern(opt), output_format(opt: text|json)",
-            "calculate_directory_size":"Get total size. Params: path",
-            "find_empty_directories":  "Locate empty dirs. Params: path",
+            "list_directory": "List directory contents with metadata. "
+            "Params: path, recursive(opt), include_hidden(opt)",
+            "create_directory": "Create new directory. Params: path, create_parents(opt), exist_ok(opt)",
+            "remove_directory": "Remove directory. Params: path, recursive(opt)",
+            "directory_tree": "Visual tree of directory. "
+            "Params: path, max_depth(opt), pattern(opt), output_format(opt: text|json)",
+            "calculate_directory_size": "Get total size. Params: path",
+            "find_empty_directories": "Locate empty dirs. Params: path",
         },
         "examples": {
-            "basic":        "dir_ops(operation='list_directory', path='D:/Dev/repos')",
+            "basic": "dir_ops(operation='list_directory', path='D:/Dev/repos')",
             "intermediate": "dir_ops(operation='directory_tree', path='D:/project', max_depth=3)",
-            "advanced":     "dir_ops(operation='list_directory', path='D:/Dev', recursive=True, include_hidden=True)",
+            "advanced": "dir_ops(operation='list_directory', path='D:/Dev', recursive=True, include_hidden=True)",
         },
     },
     "search_ops": {
         "category": "filesystem",
         "description": "Content analysis, grep, and file comparison operations.",
         "operations": {
-            "grep_file":           "Regex search in file. Params: path, search_pattern, "
-                                     "case_sensitive(opt), max_matches(opt), context_lines(opt)",
-            "count_pattern":       "Count pattern occurrences. Params: path, search_pattern",
-            "search_files":        "Find files by name/glob. Params: path, search_pattern, recursive(opt)",
-            "extract_log_lines":   "Filter log lines by level/time. Params: path, start_time(opt), "
-                                     "end_time(opt), log_levels(opt), max_lines(opt)",
-            "compare_files":       "Diff two files. Params: path, path2",
-            "find_duplicate_files":"Hash-based duplicate detection. Params: path, min_size(opt), "
-                                    "hash_algorithm(opt), max_duplicates(opt)",
-            "find_large_files":    "Locate large files. Params: path, min_size_mb(opt), max_results(opt)",
+            "grep_file": "Regex search in file. Params: path, search_pattern, "
+            "case_sensitive(opt), max_matches(opt), context_lines(opt)",
+            "count_pattern": "Count pattern occurrences. Params: path, search_pattern",
+            "search_files": "Find files by name/glob. Params: path, search_pattern, recursive(opt)",
+            "extract_log_lines": "Filter log lines by level/time. Params: path, start_time(opt), "
+            "end_time(opt), log_levels(opt), max_lines(opt)",
+            "compare_files": "Diff two files. Params: path, path2",
+            "find_duplicate_files": "Hash-based duplicate detection. Params: path, min_size(opt), "
+            "hash_algorithm(opt), max_duplicates(opt)",
+            "find_large_files": "Locate large files. Params: path, min_size_mb(opt), max_results(opt)",
         },
         "examples": {
-            "basic":        "search_ops(operation='grep_file', path='D:/myfile.py', search_pattern='TODO')",
+            "basic": "search_ops(operation='grep_file', path='D:/myfile.py', search_pattern='TODO')",
             "intermediate": "search_ops(operation='search_files', path='D:/Dev/repos', "
-                             "search_pattern='*.py', recursive=True)",
-            "advanced":     "search_ops(operation='extract_log_lines', path='D:/app.log', "
-                             "log_levels=['ERROR','CRITICAL'], start_time='2026-02-20')",
+            "search_pattern='*.py', recursive=True)",
+            "advanced": "search_ops(operation='extract_log_lines', path='D:/app.log', "
+            "log_levels=['ERROR','CRITICAL'], start_time='2026-02-20')",
         },
     },
     "container_ops": {
         "category": "docker",
         "description": "Docker container lifecycle management.",
         "operations": {
-            "list_containers":  "List containers with optional stats. Params: show_stats(opt)",
-            "get_container":    "Detailed container info. Params: container_id",
+            "list_containers": "List containers with optional stats. Params: show_stats(opt)",
+            "get_container": "Detailed container info. Params: container_id",
             "create_container": "Create container. Params: image, name(opt), ports(opt), "
-                                 "volumes(opt), environment(opt), detach(opt)",
-            "start_container":  "Start stopped container. Params: container_id",
-            "stop_container":   "Stop running container. Params: container_id, timeout(opt)",
-            "restart_container":"Restart container. Params: container_id, timeout(opt)",
+            "volumes(opt), environment(opt), detach(opt)",
+            "start_container": "Start stopped container. Params: container_id",
+            "stop_container": "Stop running container. Params: container_id, timeout(opt)",
+            "restart_container": "Restart container. Params: container_id, timeout(opt)",
             "remove_container": "Remove container. Params: container_id, force(opt)",
-            "container_exec":   "Run command in container. Params: container_id, command",
-            "container_logs":   "Stream container logs. Params: container_id, tail(opt), since(opt), timestamps(opt)",
-            "container_stats":  "Resource statistics. Params: container_id",
+            "container_exec": "Run command in container. Params: container_id, command",
+            "container_logs": "Stream container logs. Params: container_id, tail(opt), since(opt), timestamps(opt)",
+            "container_stats": "Resource statistics. Params: container_id",
         },
         "examples": {
-            "basic":        "container_ops(operation='list_containers')",
+            "basic": "container_ops(operation='list_containers')",
             "intermediate": "container_ops(operation='container_logs', container_id='myapp', "
-                             "tail=100, timestamps=True)",
+            "tail=100, timestamps=True)",
         },
     },
     "infra_ops": {
         "category": "docker",
         "description": "Docker images, networks, and volumes management.",
         "operations": {
-            "list_images":   "List local images. Params: all_images(opt)",
-            "get_image":     "Image metadata. Params: image",
-            "pull_image":    "Download image. Params: image, tag(opt)",
-            "build_image":   "Build from Dockerfile. Params: path, dockerfile(opt), tag(opt), nocache(opt)",
-            "remove_image":  "Delete image. Params: image, force(opt)",
-            "prune_images":  "Cleanup unused images.",
+            "list_images": "List local images. Params: all_images(opt)",
+            "get_image": "Image metadata. Params: image",
+            "pull_image": "Download image. Params: image, tag(opt)",
+            "build_image": "Build from Dockerfile. Params: path, dockerfile(opt), tag(opt), nocache(opt)",
+            "remove_image": "Delete image. Params: image, force(opt)",
+            "prune_images": "Cleanup unused images.",
             "list_networks": "List Docker networks.",
-            "create_network":"Create network. Params: name, driver(opt)",
-            "remove_network":"Delete network. Params: network_id, force(opt)",
-            "prune_networks":"Cleanup unused networks.",
-            "list_volumes":  "List Docker volumes.",
+            "create_network": "Create network. Params: name, driver(opt)",
+            "remove_network": "Delete network. Params: network_id, force(opt)",
+            "prune_networks": "Cleanup unused networks.",
+            "list_volumes": "List Docker volumes.",
             "create_volume": "Create volume. Params: volume_name, driver(opt)",
             "remove_volume": "Delete volume. Params: volume_name, force(opt)",
             "prune_volumes": "Cleanup unused volumes.",
         },
         "examples": {
-            "basic":        "infra_ops(operation='list_images')",
+            "basic": "infra_ops(operation='list_images')",
             "intermediate": "infra_ops(operation='pull_image', image='python', tag='3.13-slim')",
         },
     },
@@ -170,24 +170,24 @@ _TOOL_HELP = {
         "category": "repository",
         "description": "Git core repository operations (status, commits, history).",
         "operations": {
-            "clone_repo":       "Clone repository. Params: repo_url, target_dir",
-            "get_repo_status":  "Staged/unstaged status. Params: repo_path",
-            "commit_changes":   "Commit changes. Params: repo_path, message, add_all(opt), paths(opt)",
-            "read_repo":        "Read repo structure. Params: repo_path, max_depth(opt)",
-            "get_repo_info":    "General repo metadata. Params: repo_path",
-            "get_commit_history":"Log of commits. Params: repo_path, max_commits(opt), author(opt), since(opt)",
-            "show_commit":      "Detail for one commit. Params: repo_path, commit1 (hash)",
-            "diff_changes":     "Show differences. Params: repo_path, commit1(opt), commit2(opt)",
-            "blame_file":       "Line-by-line modification info. Params: repo_path, file_path",
+            "clone_repo": "Clone repository. Params: repo_url, target_dir",
+            "get_repo_status": "Staged/unstaged status. Params: repo_path",
+            "commit_changes": "Commit changes. Params: repo_path, message, add_all(opt), paths(opt)",
+            "read_repo": "Read repo structure. Params: repo_path, max_depth(opt)",
+            "get_repo_info": "General repo metadata. Params: repo_path",
+            "get_commit_history": "Log of commits. Params: repo_path, max_commits(opt), author(opt), since(opt)",
+            "show_commit": "Detail for one commit. Params: repo_path, commit1 (hash)",
+            "diff_changes": "Show differences. Params: repo_path, commit1(opt), commit2(opt)",
+            "blame_file": "Line-by-line modification info. Params: repo_path, file_path",
             "get_file_history": "History for file. Params: repo_path, file_path",
-            "revert_commit":    "Undo a commit. Params: repo_path, commit1 (hash)",
-            "reset_to_commit":  "Move HEAD to hash. Params: repo_path, commit1 (hash), force(opt)",
-            "cherry_pick":      "Apply hash to current branch. Params: repo_path, commit1 (hash)",
+            "revert_commit": "Undo a commit. Params: repo_path, commit1 (hash)",
+            "reset_to_commit": "Move HEAD to hash. Params: repo_path, commit1 (hash), force(opt)",
+            "cherry_pick": "Apply hash to current branch. Params: repo_path, commit1 (hash)",
         },
         "examples": {
-            "basic":        "repo_ops(operation='get_repo_status', repo_path='D:/Dev/repos/myproject')",
+            "basic": "repo_ops(operation='get_repo_status', repo_path='D:/Dev/repos/myproject')",
             "intermediate": "repo_ops(operation='commit_changes', repo_path='D:/Dev/repos/myproject', "
-                             "message='fix: update config', add_all=True)",
+            "message='fix: update config', add_all=True)",
         },
     },
     "git_create_branch": {
@@ -362,29 +362,29 @@ _TOOL_HELP = {
         "category": "system",
         "description": "Host system context: info, environment, help, and user details.",
         "operations": {
-            "get_help":            "This help system. Params: category(opt), tool_name(opt), "
-                                     "level(opt: basic|intermediate|advanced)",
-            "get_system_info":     "OS, node, release, Python version.",
-            "get_environment_info":"Environment variables and PATH.",
-            "get_security_info":   "Current user and permissions.",
-            "get_hardware_info":   "CPU count and total RAM (via psutil).",
-            "get_software_info":   "Python version and loaded module count.",
-            "get_time_info":       "Local and UTC time with timezone.",
-            "get_locale_info":     "System language and encoding.",
-            "get_user_info":       "Username and home directory.",
-            "get_session_info":    "Process ID and hostname.",
-            "get_service_status":  "Check availability of system services.",
-            "get_log_info":        "Access system logs (if permitted).",
+            "get_help": "This help system. Params: category(opt), tool_name(opt), "
+            "level(opt: basic|intermediate|advanced)",
+            "get_system_info": "OS, node, release, Python version.",
+            "get_environment_info": "Environment variables and PATH.",
+            "get_security_info": "Current user and permissions.",
+            "get_hardware_info": "CPU count and total RAM (via psutil).",
+            "get_software_info": "Python version and loaded module count.",
+            "get_time_info": "Local and UTC time with timezone.",
+            "get_locale_info": "System language and encoding.",
+            "get_user_info": "Username and home directory.",
+            "get_session_info": "Process ID and hostname.",
+            "get_service_status": "Check availability of system services.",
+            "get_log_info": "Access system logs (if permitted).",
         },
         "examples": {
-            "basic":        "host_ops(operation='get_system_info')",
+            "basic": "host_ops(operation='get_system_info')",
             "intermediate": "host_ops(operation='get_help', category='filesystem', level='intermediate')",
         },
     },
     "agentic_file_workflow": {
         "category": "sampling",
         "description": "LLM-orchestrated file workflows using ctx.sample() "
-                        "(no sampling.tools — Claude Desktop compatible).",
+        "(no sampling.tools — Claude Desktop compatible).",
         "operations": {
             "agentic_file_workflow": (
                 "Execute a high-level file workflow. "
@@ -460,6 +460,7 @@ _CATEGORIES = {
 
 # ── Tool registration ──────────────────────────────────────────────────────────
 
+
 @_get_app().tool(annotations=READ_ONLY, version="2.2.0")
 async def host_ops(
     operation: Literal[
@@ -525,15 +526,14 @@ async def host_ops(
         elif operation == "get_log_info":
             return await _get_log_info()
         else:
-            return _error_response(
-                f"Unknown operation: {operation}", "unsupported_operation"
-            )
+            return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
         logger.error(f"Host context operation '{operation}' failed: {e}", exc_info=True)
         return _error_response(str(e), "internal_error")
 
 
 # ── Help implementation ────────────────────────────────────────────────────────
+
 
 async def _get_help(category, tool_name, level):
     try:
@@ -543,8 +543,7 @@ async def _get_help(category, tool_name, level):
             info = _TOOL_HELP.get(tool_key)
             if not info:
                 return _error_response(
-                    f"Unknown tool: {tool_name!r}. "
-                    f"Valid tools: {', '.join(sorted(_TOOL_HELP))}",
+                    f"Unknown tool: {tool_name!r}. Valid tools: {', '.join(sorted(_TOOL_HELP))}",
                     "not_found",
                 )
             result = {
@@ -557,13 +556,13 @@ async def _get_help(category, tool_name, level):
                 result["notes"] = info["notes"]
             if "examples" in info:
                 example_levels = (
-                    ["basic"] if level == "basic"
-                    else ["basic", "intermediate"] if level == "intermediate"
+                    ["basic"]
+                    if level == "basic"
+                    else ["basic", "intermediate"]
+                    if level == "intermediate"
                     else list(info["examples"].keys())
                 )
-                result["examples"] = {
-                    k: v for k, v in info["examples"].items() if k in example_levels
-                }
+                result["examples"] = {k: v for k, v in info["examples"].items() if k in example_levels}
             return _success_response(result)
 
         # ── category drill-down ────────────────────────────────────────────────
@@ -571,8 +570,7 @@ async def _get_help(category, tool_name, level):
             cat_key = category.lower().strip()
             if cat_key not in _CATEGORIES:
                 return _error_response(
-                    f"Unknown category: {category!r}. "
-                    f"Valid categories: {', '.join(sorted(_CATEGORIES))}",
+                    f"Unknown category: {category!r}. Valid categories: {', '.join(sorted(_CATEGORIES))}",
                     "not_found",
                 )
             tools_in_cat = _CATEGORIES[cat_key]
@@ -624,6 +622,7 @@ async def _get_help(category, tool_name, level):
 
 # ── System info helpers ────────────────────────────────────────────────────────
 
+
 async def _get_system_info():
     try:
         return _success_response(
@@ -648,10 +647,7 @@ async def _get_environment_info():
 
         env = dict(os.environ)
         sensitive = ["pass", "key", "secret", "token", "auth"]
-        filtered = {
-            k: ("***" if any(s in k.lower() for s in sensitive) else v)
-            for k, v in env.items()
-        }
+        filtered = {k: ("***" if any(s in k.lower() for s in sensitive) else v) for k, v in env.items()}
         return _success_response(
             {
                 "env": filtered,
@@ -695,9 +691,7 @@ async def _get_hardware_info():
 
 async def _get_software_info():
     try:
-        return _success_response(
-            {"python_version": sys.version, "loaded_modules_count": len(sys.modules)}
-        )
+        return _success_response({"python_version": sys.version, "loaded_modules_count": len(sys.modules)})
     except Exception as e:
         return _error_response(str(e), "internal_error")
 

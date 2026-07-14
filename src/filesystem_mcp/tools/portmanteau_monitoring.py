@@ -12,6 +12,7 @@ from .utils import READ_ONLY, _error_response, _get_app, _success_response
 
 logger = logging.getLogger(__name__)
 
+
 async def _get_system_status(
     include_processes: bool,
     include_disk: bool,
@@ -35,9 +36,7 @@ async def _get_system_status(
             procs = []
             for p in psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]):
                 procs.append(p.info)
-            res["processes"] = sorted(
-                procs, key=lambda x: x.get("cpu_percent", 0), reverse=True
-            )[:max_processes]
+            res["processes"] = sorted(procs, key=lambda x: x.get("cpu_percent", 0), reverse=True)[:max_processes]
         if include_network:
             res["network"] = psutil.net_io_counters()._asdict()
 
@@ -74,9 +73,7 @@ async def _get_process_info(
 ) -> dict[str, Any]:
     try:
         procs = []
-        for p in psutil.process_iter(
-            ["pid", "name", "username", "status", "cpu_percent", "memory_percent"]
-        ):
+        for p in psutil.process_iter(["pid", "name", "username", "status", "cpu_percent", "memory_percent"]):
             try:
                 if pattern and pattern.lower() not in (p.info.get("name") or "").lower():
                     continue
@@ -140,9 +137,7 @@ async def _get_disk_usage() -> dict[str, Any]:
         for p in psutil.disk_partitions():
             try:
                 usage = psutil.disk_usage(p.mountpoint)._asdict()
-                partitions.append(
-                    {"device": p.device, "mountpoint": p.mountpoint, "usage": usage}
-                )
+                partitions.append({"device": p.device, "mountpoint": p.mountpoint, "usage": usage})
             except (PermissionError, OSError):
                 continue
         return _success_response({"partitions": partitions})
@@ -155,9 +150,7 @@ async def _get_network_info() -> dict[str, Any]:
         return _success_response(
             {
                 "io_counters": psutil.net_io_counters()._asdict(),
-                "addresses": {
-                    k: [a._asdict() for a in v] for k, v in psutil.net_if_addrs().items()
-                },
+                "addresses": {k: [a._asdict() for a in v] for k, v in psutil.net_if_addrs().items()},
                 "stats": {k: v._asdict() for k, v in psutil.net_if_stats().items()},
             }
         )
@@ -185,9 +178,7 @@ async def monitor_get_system_status(
         optional disk, processes, network — structure matches psutil named tuples as dicts.
     """
     try:
-        return await _get_system_status(
-            include_processes, include_disk, include_network, max_processes
-        )
+        return await _get_system_status(include_processes, include_disk, include_network, max_processes)
     except Exception as e:
         logger.exception("monitor_get_system_status failed")
         return _error_response(str(e), "internal_error")

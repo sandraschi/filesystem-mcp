@@ -131,33 +131,29 @@ def _import_tools():
         import importlib
 
         tool_modules = [
-            ".tools.portmanteau_file_safe",        # Concurrency-safe file utilities
-            ".tools.portmanteau_file",             # File IO portmanteau
-            ".tools.portmanteau_directory",        # Directory structure
-            ".tools.portmanteau_search",           # Search and comparison
-            ".tools.portmanteau_container",        # Container lifecycle
-            ".tools.portmanteau_infrastructure",   # Images, nets, volumes
-            ".tools.portmanteau_orchestration",    # Docker Compose
-            ".tools.portmanteau_monitoring",       # System monitoring
-            ".tools.portmanteau_host",             # Host context
-            ".tools.agentic_file_workflow",        # Sampling-based autonomous workflow
+            ".tools.portmanteau_file_safe",  # Concurrency-safe file utilities
+            ".tools.portmanteau_file",  # File IO portmanteau
+            ".tools.portmanteau_directory",  # Directory structure
+            ".tools.portmanteau_search",  # Search and comparison
+            ".tools.portmanteau_container",  # Container lifecycle
+            ".tools.portmanteau_infrastructure",  # Images, nets, volumes
+            ".tools.portmanteau_orchestration",  # Docker Compose
+            ".tools.portmanteau_monitoring",  # System monitoring
+            ".tools.portmanteau_host",  # Host context
+            ".tools.agentic_file_workflow",  # Sampling-based autonomous workflow
         ]
 
         for module_name in tool_modules:
             try:
                 importlib.import_module(module_name, package=__name__)
-                logger.debug(
-                    f"Portmanteau tool module {module_name} imported successfully"
-                )
+                logger.debug(f"Portmanteau tool module {module_name} imported successfully")
             except ImportError as e:
                 # Log warning but don't fail - some modules may have optional dependencies
                 logger.warning(
                     f"Failed to import portmanteau tool module {module_name}: {e}. Some tools may not be available."
                 )
             except Exception as e:
-                logger.error(
-                    f"Failed to import portmanteau tool module {module_name}: {e}"
-                )
+                logger.error(f"Failed to import portmanteau tool module {module_name}: {e}")
                 # Only raise for non-import errors
                 raise
 
@@ -182,27 +178,32 @@ def http_app():
         import uvicorn
         uvicorn.run(http_app(), host="127.0.0.1", port=10742)
     """
-    from starlette.routing import Route
+    import os
+    import time
+
     from starlette.responses import JSONResponse
-    import time, os
+    from starlette.routing import Route
 
     _start = time.time()
 
     async def diagnostics(request):
         try:
             import psutil
+
             cpu = psutil.cpu_percent()
             mem = psutil.virtual_memory().percent
             disk = psutil.disk_usage("/").percent
         except ImportError:
             cpu = mem = disk = 0
-        return JSONResponse({
-            "success": True,
-            "backend": {"port": 10742, "status": "running", "uptime": time.time() - _start},
-            "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
-            "tools": {"total": 0},
-            "cua_status": {"tesseract_available": False, "window_found": False},
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "backend": {"port": 10742, "status": "running", "uptime": time.time() - _start},
+                "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
+                "tools": {"total": 0},
+                "cua_status": {"tesseract_available": False, "window_found": False},
+            }
+        )
 
     asgi = app.http_app()
     asgi.routes.append(Route("/api/v1/diagnostics", endpoint=diagnostics))
@@ -221,9 +222,7 @@ def main():
     logger.info("Concurrency safety: Enabled for all file operations")
 
     # Note: Some tools may not be available if optional dependencies are missing
-    logger.info(
-        "Note: Some tools may not be available if optional dependencies are missing"
-    )
+    logger.info("Note: Some tools may not be available if optional dependencies are missing")
 
     # Use unified transport runner
     run_server(app, server_name="filesystem-mcp")
@@ -239,9 +238,7 @@ def _kill_orphaned_stdio():
 
     try:
         # Find PID holding port 10742 (the HTTP daemon — never kill this)
-        result = subprocess.run(
-            ["netstat", "-ano"], capture_output=True, text=True, timeout=10
-        )
+        result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True, timeout=10)
         daemon_pid = None
         for line in result.stdout.splitlines():
             if ":10742" in line and "LISTENING" in line:
@@ -252,9 +249,18 @@ def _kill_orphaned_stdio():
 
         # Find all filesystem_mcp Python processes
         procs = subprocess.run(
-            ["wmic", "process", "where", "name='python.exe' or name='python3.exe'",
-             "get", "ProcessId,CommandLine", "/format:csv"],
-            capture_output=True, text=True, timeout=15,
+            [
+                "wmic",
+                "process",
+                "where",
+                "name='python.exe' or name='python3.exe'",
+                "get",
+                "ProcessId,CommandLine",
+                "/format:csv",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         my_pid = os.getpid()
         killed = 0
@@ -272,8 +278,7 @@ def _kill_orphaned_stdio():
                 continue
             # Kill the orphan
             try:
-                subprocess.run(["taskkill", "/F", "/PID", str(pid)],
-                               capture_output=True, timeout=5)
+                subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=5)
                 killed += 1
             except Exception:
                 logger.warning("Failed to kill orphan PID %d", pid, exc_info=True)

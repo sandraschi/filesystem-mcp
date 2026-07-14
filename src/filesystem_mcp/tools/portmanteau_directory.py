@@ -68,9 +68,7 @@ async def dir_ops(
             return _clarification_response("path", f"Path is required for {operation}")
 
         if operation == "list_directory":
-            return await _list_directory(
-                path, recursive, include_hidden, max_files, exclude_patterns, True
-            )
+            return await _list_directory(path, recursive, include_hidden, max_files, exclude_patterns, True)
         elif operation == "create_directory":
             return await _create_directory(path, create_parents, exist_ok)
         elif operation == "remove_directory":
@@ -190,9 +188,7 @@ async def _list_directory(
                 "Directory-heavy structure detected - consider recursive=true for deeper exploration"
             )
         if total_size > 100 * 1024 * 1024:  # 100MB
-            recommendations.append(
-                "Large directory detected - consider find_large_files to identify space usage"
-            )
+            recommendations.append("Large directory detected - consider find_large_files to identify space usage")
 
         next_steps = []
         if file_count > 0:
@@ -229,9 +225,7 @@ async def _list_directory(
         return _error_response(f"Failed to list directory: {e!s}", "directory_access_error")
 
 
-async def _create_directory(
-    directory_path: str, create_parents: bool, exist_ok: bool
-) -> dict[str, Any]:
+async def _create_directory(directory_path: str, create_parents: bool, exist_ok: bool) -> dict[str, Any]:
     """Create directory."""
     try:
         path_obj = _safe_resolve_path(directory_path)
@@ -358,9 +352,7 @@ async def _directory_tree(
         return _error_response(f"Failed to generate directory tree: {e!s}", "io_error")
 
 
-async def _calculate_directory_size(
-    directory_path: str, include_hidden: bool, human_readable: bool
-) -> dict[str, Any]:
+async def _calculate_directory_size(directory_path: str, include_hidden: bool, human_readable: bool) -> dict[str, Any]:
     """Calculate directory size."""
     try:
         path_obj = _safe_resolve_path(directory_path)
@@ -394,9 +386,7 @@ async def _calculate_directory_size(
         return _error_response(f"Failed to calculate size: {e!s}", "io_error")
 
 
-async def _find_empty_directories(
-    directory_path: str, recursive: bool, include_hidden: bool
-) -> dict[str, Any]:
+async def _find_empty_directories(directory_path: str, recursive: bool, include_hidden: bool) -> dict[str, Any]:
     """Find empty directories."""
     try:
         path_obj = _safe_resolve_path(directory_path)

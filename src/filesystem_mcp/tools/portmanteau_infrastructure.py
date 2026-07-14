@@ -103,9 +103,7 @@ async def infra_ops(
             return await _pull_image(image, tag, all_images, platform)
         elif operation == "build_image":
             if not path:
-                return _clarification_response(
-                    "path", "path to Dockerfile context is required for build_image"
-                )
+                return _clarification_response("path", "path to Dockerfile context is required for build_image")
             return await _build_image(
                 path,
                 dockerfile,
@@ -121,9 +119,7 @@ async def infra_ops(
             )
         elif operation == "remove_image":
             if not image:
-                return _clarification_response(
-                    "image", "image name or ID is required for remove_image"
-                )
+                return _clarification_response("image", "image name or ID is required for remove_image")
             return await _remove_image(image, force, noprune)
         elif operation == "prune_images":
             return await _prune_images(all_images, filters)
@@ -131,15 +127,11 @@ async def infra_ops(
             return await _list_networks(filters)
         elif operation == "get_network":
             if not network_id:
-                return _clarification_response(
-                    "network_id", "network_id is required for get_network"
-                )
+                return _clarification_response("network_id", "network_id is required for get_network")
             return await _get_network(network_id)
         elif operation == "create_network":
             if not name:
-                return _clarification_response(
-                    "name", "network name is required for create_network"
-                )
+                return _clarification_response("name", "network name is required for create_network")
             return await _create_network(
                 name,
                 driver or "bridge",
@@ -153,9 +145,7 @@ async def infra_ops(
             )
         elif operation == "remove_network":
             if not network_id:
-                return _clarification_response(
-                    "network_id", "network_id is required for remove_network"
-                )
+                return _clarification_response("network_id", "network_id is required for remove_network")
             return await _remove_network(network_id)
         elif operation == "prune_networks":
             return await _prune_networks(filters)
@@ -163,21 +153,15 @@ async def infra_ops(
             return await _list_volumes(filters)
         elif operation == "get_volume":
             if not volume_name:
-                return _clarification_response(
-                    "volume_name", "volume_name is required for get_volume"
-                )
+                return _clarification_response("volume_name", "volume_name is required for get_volume")
             return await _get_volume(volume_name)
         elif operation == "create_volume":
             if not volume_name:
-                return _clarification_response(
-                    "volume_name", "volume_name is required for create_volume"
-                )
+                return _clarification_response("volume_name", "volume_name is required for create_volume")
             return await _create_volume(volume_name, driver or "local", driver_opts, labels)
         elif operation == "remove_volume":
             if not volume_name:
-                return _clarification_response(
-                    "volume_name", "volume_name is required for remove_volume"
-                )
+                return _clarification_response("volume_name", "volume_name is required for remove_volume")
             return await _remove_volume(volume_name, force)
         elif operation == "prune_volumes":
             return await _prune_volumes(filters)
@@ -188,9 +172,7 @@ async def infra_ops(
         return _error_response(str(e), "docker_error")
 
 
-async def _list_images(
-    all_images: bool = False, filters: dict[str, list[str]] | None = None
-) -> dict[str, Any]:
+async def _list_images(all_images: bool = False, filters: dict[str, list[str]] | None = None) -> dict[str, Any]:
     try:
         client = _get_docker_client()
         images = client.images.list(all=all_images, filters=filters)
@@ -264,9 +246,7 @@ async def _build_image(
 
         image, build_logs = client.images.build(**build_config)
         logs_text = "".join([log.get("stream", "") for log in build_logs if "stream" in log])
-        return _success_response(
-            {"image_id": image.id, "tag": tag, "build_logs": logs_text}
-        )
+        return _success_response({"image_id": image.id, "tag": tag, "build_logs": logs_text})
     except Exception as e:
         return _error_response(str(e), "docker_error")
 

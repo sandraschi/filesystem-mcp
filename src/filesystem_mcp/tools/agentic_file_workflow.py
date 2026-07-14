@@ -28,8 +28,10 @@ from .utils import MUTATING, _error_response, _get_app  # noqa: E402
 
 # ── Structured result type ─────────────────────────────────────────────────────
 
+
 class WorkflowResult(BaseModel):
     """Structured result returned by the sampling LLM."""
+
     summary: str
     steps_taken: list[str]
     findings: list[dict]
@@ -40,6 +42,7 @@ class WorkflowResult(BaseModel):
 # ── Server-side file context gathering ────────────────────────────────────────
 # These run on the server before we call the LLM, so we can provide
 # rich context without needing sampling.tools capability.
+
 
 def _list_dir(path: str, max_entries: int = 100) -> str:
     """List directory contents, return formatted string."""
@@ -125,6 +128,7 @@ def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
 
     # Extract Windows-style paths from the prompt
     import re
+
     paths = re.findall(r'[A-Za-z]:\\(?:[^\s,;"\'\])}]+)', workflow_prompt)
 
     for path in paths[:5]:  # limit to 5 paths
@@ -144,6 +148,7 @@ def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
 
 
 # ── Main tool ──────────────────────────────────────────────────────────────────
+
 
 @_get_app().tool(annotations=MUTATING, version="2.2.0")
 async def agentic_file_workflow(
@@ -192,6 +197,7 @@ async def agentic_file_workflow(
     # Backward-compatibility mode for unit tests and legacy callers that stored
     # a sampling_context in app.state and expected sample_step orchestration.
     from .. import app as _fs_app
+
     if ctx is None and hasattr(_fs_app, "state") and _fs_app.state.get("sampling_context") is not None:
         sampling_context = _fs_app.state["sampling_context"]
         max_loops = max_iterations if isinstance(max_iterations, int) and max_iterations > 0 else 5

@@ -45,10 +45,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Filesystem MCP Backend", lifespan=lifespan)
 
 # CORS Configuration
-origins = ["http://localhost:10743", "http://127.0.0.1:10743", "*"]
+origins = [
+    "http://localhost:10743", "http://127.0.0.1:10743",
+    "http://localhost:10742", "http://127.0.0.1:10742",
+    "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost",
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -159,7 +164,7 @@ async def chat(request: ChatRequest):
 if mcp_instance:
     try:
         # Create the ASGI app from FastMCP instance (Plex Pattern)
-        # FastMCP.http_app() returns a Starlette/FastAPI compatible app
+        # Fastmcp.http_app(path="/") returns a Starlette/FastAPI compatible app
         mcp_asgi_app = mcp_instance.http_app()
         app.mount("/mcp", mcp_asgi_app)
         logger.info("Mounting MCP app at /mcp")
