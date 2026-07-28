@@ -1,4 +1,4 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 import 'scripts/just/fleet.just'
 
 # Open the interactive recipe dashboard in the browser
@@ -28,7 +28,7 @@ test:
     uv run pytest
 
 e2e:
-    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+    powershell.exe -NoProfile -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
 
 # Quick import check and type checking
 check:
@@ -40,7 +40,13 @@ check:
 # Install all dependencies
 install:
     Set-Location '{{justfile_directory()}}'
-    uv sync
+    uv sync --extra dev
+
+bootstrap: install
+    Set-Location '{{justfile_directory()}}'
+    uv run pre-commit install
+    Set-Location webapp; npm ci; if ($LASTEXITCODE -ne 0) { npm install }
+    Write-Host "Pre-commit hooks installed." -ForegroundColor Green
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 
@@ -85,10 +91,6 @@ build-native:
 	npx @tauri-apps/cli build --bundles nsis
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
-
-# CUA-NSIS smoke test against installed NSIS app
-cua-nsis-test:
-    uv run python scripts/cua-smoke.py
 
 # Clean build artifacts and caches
 clean:
