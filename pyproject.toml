@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Sandra Schipal", email = "sandra@schipal.at" }
+    { name = "Sandra Schipal", email = "sandraschipal@gmail.com" }
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "fastmcp>=3.4.3,<4",
+    "fastmcp>=3.4.4,<4",
     "gitpython>=3.1.0",
     "uvicorn>=0.24.0",
     "python-multipart>=0.0.6",
@@ -33,7 +33,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "psutil>=5.9.0",
     "structlog>=24.1.0",
-    "ruff>=0.15.1",
     "aiofiles>=23.2.0",
     "prefab-ui>=0.18.0",
     "fastapi>=0.109.0",
@@ -48,7 +47,7 @@ dev = [
     "black>=23.0.0",
     "isort>=5.12.0",
     "mypy>=1.5.0",
-    "ruff>=0.1.0",
+    "ruff>=0.16.0,<0.17",
     "pre-commit>=3.5.0",
     "types-python-dateutil>=2.8.0",
     "pytest-mock>=3.12.0",
