@@ -307,6 +307,7 @@ def http_app():
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["mcp-session-id", "Mcp-Session-Id"],
     )
     asgi.routes.append(Route("/api/v1/diagnostics", endpoint=diagnostics))
     asgi.routes.append(Route("/api/status", endpoint=status))

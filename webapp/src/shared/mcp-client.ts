@@ -1,5 +1,3 @@
-import { EventSourcePolyfill } from "event-source-polyfill";
-
 export type McpTool = {
   name: string;
   description?: string;
@@ -20,109 +18,127 @@ const isProduction =
   import.meta.env.PROD || (typeof window !== "undefined" && !window.location.hostname.includes("localhost"));
 
 function getMCPBaseUrl(): string {
-  if (isProduction) {
-    return "http://127.0.0.1:10742/mcp";
-  }
-  return "/mcp";
+  // Always talk to the backend directly (cross-origin is covered by fleet CORS).
+  // The Vite proxy path drops response headers (e.g. mcp-session-id) in some
+  // dev setups, which breaks streamable-HTTP session handshakes.
+  return "http://127.0.0.1:10742/mcp";
 }
 
+type JsonRpcResponse = {
+  jsonrpc: string;
+  id: string | number | null;
+  result?: any;
+  error?: { code: number; message: string };
+};
+
 export class McpClient {
-  private sse: EventSourcePolyfill | null = null;
-  private endpoint: string | null = null;
   private sessionId: string | null = null;
   private tools: McpTool[] = [];
   private onToolsChanged: ((tools: McpTool[]) => void)[] = [];
+  private connecting: Promise<void> | null = null;
 
   constructor(private baseUrl = getMCPBaseUrl()) {}
 
-  async connect() {
-    return new Promise<void>((resolve, reject) => {
-      // FastMCP uses /sse for the stream
-      const sseUrl = `${this.baseUrl}/sse`;
+  private async post(payload: Record<string, unknown>, expectResult = true): Promise<JsonRpcResponse> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+    };
+    if (this.sessionId) headers["Mcp-Session-Id"] = this.sessionId;
 
-      this.sse = new EventSourcePolyfill(sseUrl);
-
-      this.sse.onmessage = (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (event.type === "endpoint") {
-            this.endpoint = data;
-            // Once we have an endpoint, we can identify and list tools
-            this.initializeSession().then(resolve).catch(reject);
-          } else if (event.type === "initialization") {
-            // Handle initialization if distinct from endpoint
-          }
-        } catch (e) {
-          console.error("Failed to parse SSE message:", e);
-        }
-      };
-
-      this.sse.onerror = (e: any) => {
-        console.error("MCP SSE Error:", e);
-        // Don't reject immediately on error if we are already connected, but do for initial connect
-        if (!this.endpoint) reject(e);
-      };
-
-      this.sse.addEventListener("endpoint", (e: any) => {
-        this.endpoint = e.data;
-        this.initializeSession().then(resolve).catch(reject);
-      });
+    const response = await fetch(this.baseUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      throw new Error(`MCP request failed: HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const nextSession = response.headers.get("mcp-session-id");
+    if (nextSession) this.sessionId = nextSession;
+
+    const text = await response.text();
+    if (!text.trim()) return { jsonrpc: "2.0", id: null, result: undefined };
+
+    // Streamable HTTP may return SSE events; parse the first JSON line if so.
+    if (text.trimStart().startsWith("event:")) {
+      const lines = text.split("\n").filter((l) => l.startsWith("data:"));
+      for (const line of lines) {
+        try {
+          return JSON.parse(line.slice(5).trim());
+        } catch {
+          // skip malformed SSE data frames
+        }
+      }
+      return { jsonrpc: "2.0", id: null, result: undefined };
+    }
+
+    return JSON.parse(text) as JsonRpcResponse;
   }
 
-  private async initializeSession() {
-    if (!this.endpoint) throw new Error("No endpoint received from SSE");
+  async connect() {
+    // Serialize concurrent connect() calls (React StrictMode double-mounts in dev)
+    // so two in-flight initializes cannot clobber each other's session id.
+    if (this.connecting) return this.connecting;
+    this.connecting = this.doConnect().finally(() => {
+      this.connecting = null;
+    });
+    return this.connecting;
+  }
+
+  private async doConnect() {
+    const response = await this.post({
+      jsonrpc: "2.0",
+      id: "init-1",
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-11-25",
+        capabilities: {},
+        clientInfo: { name: "filesystem-mcp-webapp", version: "2.2.0" },
+      },
+    });
+
+    if (response.error) {
+      throw new Error(`MCP initialize failed: ${response.error.message}`);
+    }
+
+    // Notify the server the session is initialized (notification, no id).
+    await this.post({ jsonrpc: "2.0", method: "notifications/initialized" }, false).catch(() => {
+      // notification failures are non-fatal
+    });
+
     await this.refreshTools();
   }
 
   async callTool(name: string, args: any): Promise<McpCallResult> {
-    if (!this.endpoint) throw new Error("Not connected");
-
-    const response = await fetch(`${this.baseUrl}/messages?sessionId=${this.sessionId || ""}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: crypto.randomUUID(),
-        method: "tools/call",
-        params: {
-          name,
-          arguments: args,
-        },
-      }),
+    const response = await this.post({
+      jsonrpc: "2.0",
+      id: crypto.randomUUID(),
+      method: "tools/call",
+      params: { name, arguments: args },
     });
 
-    if (!response.ok) {
-      throw new Error(`MCP Call Failed: ${response.statusText}`);
+    if (response.error) {
+      throw new Error(response.error.message);
     }
-
-    const result = await response.json();
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-
-    return result.result;
+    return response.result as McpCallResult;
   }
 
   async refreshTools() {
-    if (!this.endpoint) return;
-
-    // Standard list_tools call
-    const response = await fetch(`${this.baseUrl}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: crypto.randomUUID(),
-        method: "tools/list",
-        params: {},
-      }),
+    const response = await this.post({
+      jsonrpc: "2.0",
+      id: crypto.randomUUID(),
+      method: "tools/list",
+      params: {},
     });
 
-    const data = await response.json();
-    if (data.result?.tools) {
-      this.tools = data.result.tools;
+    if (response.error) {
+      throw new Error(`MCP tools/list failed: ${response.error.message}`);
+    }
+    if (response.result?.tools) {
+      this.tools = response.result.tools;
       this.notifyToolsChanged();
     }
   }

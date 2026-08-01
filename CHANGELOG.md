@@ -46,6 +46,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - GitHub Actions was disabled on the repo (`actions/permissions.enabled=false`) —
   enabled; CI now runs on the reusable `sandraschi/fleet-ci` hybrid workflow
+- **Webapp MCP connection was broken**: the frontend spoke legacy SSE while FastMCP 3.4
+  only serves Streamable HTTP — rewrote `mcp-client.ts` to the streamable protocol
+  (initialize → notifications/initialized → tools/list with Mcp-Session-Id)
+- CORS: `expose_headers` now includes `mcp-session-id` — without it the browser could
+  not read the session header cross-origin (webapp → 127.0.0.1:10742), so every MCP
+  call after initialize failed with "Missing session ID"
+- `server.py` now uses the module-level `http_app()` (was calling the FastMCP instance
+  method, which never included the appended routes — `/api/v1/diagnostics` and friends
+  404'd under real uvicorn)
+- `run_server.py` was calling `uvicorn.run` without importing uvicorn (F821) — fixed
 - `console.log` removed from production JS
 - Dead `href="#"` links on Tools page; "(Mock)" apps replaced with real chat presets
 - Low-contrast/`text-xs` UI text bumped where unjustified
