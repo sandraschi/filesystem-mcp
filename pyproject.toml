@@ -41,16 +41,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.21.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.5.0",
-    "ruff>=0.16.0,<0.17",
-    "pre-commit>=3.5.0",
     "types-python-dateutil>=2.8.0",
-    "pytest-mock>=3.12.0",
 ]
 
 [project.urls]
@@ -118,11 +109,26 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
 ignore = ["S101", "B008", "S106", "S110", "S112", "S101", "B008", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402", "E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures use 0.0.0.0 bindings and /tmp paths as mock data
+"tests/**" = ["S104", "S108"]
+# Webapp bridge intentionally binds 0.0.0.0 for LAN/Tailscale access
+"webapp/**" = ["S104"]
+# CUA smoke test probes localhost via urllib (fleet template pattern)
+"scripts/cua-smoke.py" = ["S310"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 
 [dependency-groups]
 dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.16.0,<0.17",
+    "pre-commit>=3.5.0",
+    "pyright>=1.1.390",
     "pyinstaller>=6.21.0",
 ]

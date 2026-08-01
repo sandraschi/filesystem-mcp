@@ -1,7 +1,7 @@
 # 🔧 Development Pain Points & Solutions
 
-**Real-World Issues and Practical Solutions**  
-**Based on Actual Development Experience**  
+**Real-World Issues and Practical Solutions**
+**Based on Actual Development Experience**
 **Timeline**: September 2025
 
 ---
@@ -33,7 +33,7 @@ npm start  # Another React app on 3000 - CONFLICT!
 ```yaml
 # Port allocation scheme
 Frontend Apps:     3000-3099
-Backend APIs:      8000-8099  
+Backend APIs:      8000-8099
 Databases:         5000-5099
 Monitoring:        9000-9099
 Cache/Redis:       6000-6099
@@ -57,7 +57,7 @@ services:
     ports:
       - "6001:6379"
 
-# monitoring stack - docker-compose.monitoring.yml  
+# monitoring stack - docker-compose.monitoring.yml
 services:
   grafana:
     ports:
@@ -65,7 +65,7 @@ services:
   prometheus:
     ports:
       - "9002:9090"
-  
+
 # nest-protect development
 # Uses: 8002 for metrics endpoint
 ```
@@ -270,7 +270,7 @@ fetch('http://localhost:8000/api/devices')
 # Error: CORS policy blocked request
 
 # Console shows:
-# "Access to fetch at 'http://localhost:8000/api/devices' from origin 
+# "Access to fetch at 'http://localhost:8000/api/devices' from origin
 # 'http://localhost:3000' has been blocked by CORS policy"
 ```
 
@@ -311,7 +311,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'http://localhost:3001', 
+    'http://localhost:3001',
     'http://127.0.0.1:3000',
     /^http:\/\/100\.64\.0\.\d+:\d+$/  // Tailscale network regex
   ],
@@ -503,7 +503,7 @@ mcpjam debug-tool get_device_status
 
 # Shows:
 # - Parameter validation
-# - Function execution 
+# - Function execution
 # - Return value validation
 # - Error stack traces
 # - Performance metrics
@@ -516,7 +516,7 @@ mcpjam validate
 
 # Output shows:
 # ✅ list_devices: Valid schema
-# ✅ get_device_status: Valid schema  
+# ✅ get_device_status: Valid schema
 # ❌ sound_alarm: Missing required parameter description
 # ✅ about_server: Valid schema
 ```
@@ -547,13 +547,13 @@ services:
     volumes:
       - .:/workspace
     command: mcpjam serve --port 4000
-    
+
   nest-protect-mcp:
     build: .
     volumes:
       - .:/app
     command: python -m nest_protect_mcp
-    
+
   monitoring:
     # Grafana + Prometheus stack
     # Monitor MCPJam testing metrics
@@ -582,27 +582,27 @@ services:
   # Application stack (3000-3099)
   frontend:
     ports: ["3001:3000"]
-  
-  # Backend APIs (8000-8099)  
+
+  # Backend APIs (8000-8099)
   backend:
     ports: ["8001:8000"]
   mcp-server:
     ports: ["8002:8000"]
-    
+
   # Databases (5000-5099)
   postgres:
     ports: ["5001:5432"]
-  
+
   # Cache/Redis (6000-6099)
   redis:
     ports: ["6001:6379"]
-    
+
   # Monitoring (9000-9099)
   grafana:
     ports: ["9001:3000"]
   prometheus:
     ports: ["9002:9090"]
-  
+
   # Development tools (4000-4099)
   mcpjam:
     ports: ["4001:4000"]

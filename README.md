@@ -17,7 +17,7 @@
 A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
 
 > [!IMPORTANT]
-> **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10702) for real-time visualization and management.
+> **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10743) for real-time visualization and management.
 
 ## Quick Start
 
@@ -35,6 +35,15 @@ If you don't have `just` installed:
 
 ##  Deployment & Security
 Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.
+
+##  Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Python 3.12, FastMCP 3.4+, FastAPI/Starlette, uvicorn, structlog, psutil, GitPython |
+| Frontend | React 19, Vite 7, TailwindCSS 3, Lucide, Framer Motion, Zustand, Radix UI |
+| Desktop | Tauri 2 (Rust), NSIS installer, embedded PyInstaller backend |
+| Tooling | uv, just, ruff, Biome, pytest, pre-commit, Playwright |
 
 ##  Features
 

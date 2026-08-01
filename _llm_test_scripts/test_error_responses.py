@@ -5,7 +5,8 @@ Test script to verify error response functions work correctly.
 
 import sys
 
-sys.path.insert(0, 'src')
+sys.path.insert(0, "src")
+
 
 def test_error_response_functions():
     """Test that our error response functions work correctly."""
@@ -19,10 +20,7 @@ def test_error_response_functions():
         print("Testing _error_response function...")
 
         # Test basic error response
-        result = _error_response(
-            error="Test error message",
-            error_type="test_error"
-        )
+        result = _error_response(error="Test error message", error_type="test_error")
 
         assert result["success"] is False
         assert result["error"] == "Test error message"
@@ -41,7 +39,7 @@ def test_error_response_functions():
             diagnostic_info={"test": "data"},
             suggested_fixes=["Fix 1", "Fix 2"],
             alternative_approaches=["Approach A", "Approach B"],
-            estimated_resolution_time="5 minutes"
+            estimated_resolution_time="5 minutes",
         )
 
         assert result["success"] is False
@@ -58,10 +56,7 @@ def test_error_response_functions():
         print("Testing _success_response function...")
 
         # Test success response
-        result = _success_response(
-            result={"test": "data"},
-            operation="test_operation"
-        )
+        result = _success_response(result={"test": "data"}, operation="test_operation")
 
         assert result["success"] is True
         assert result["operation"] == "test_operation"
@@ -77,10 +72,7 @@ def test_error_response_functions():
         print("Testing _clarification_response function...")
 
         # Test clarification response
-        result = _clarification_response(
-            ambiguities=["Unclear parameter"],
-            suggested_questions=["What do you mean?"]
-        )
+        result = _clarification_response(ambiguities=["Unclear parameter"], suggested_questions=["What do you mean?"])
 
         assert result["status"] == "clarification_needed"
         assert result["ambiguities"] == ["Unclear parameter"]
@@ -96,8 +88,10 @@ def test_error_response_functions():
     except Exception as e:
         print(f"\n[FAILED] ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     success = test_error_response_functions()

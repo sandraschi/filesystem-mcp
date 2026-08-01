@@ -67,20 +67,18 @@ async def infra_ops(
     list_networks, get_network, create_network, remove_network, prune_networks,
     list_volumes, get_volume, create_volume, remove_volume, prune_volumes.
 
-    Args:
-        operation: Operation to perform (required)
-        image: Image name/ID
-        tag: Image tag. Default: "latest"
-        network_id: Network ID or name
-        volume_name: Volume name
-        name: Name for new network/volume
-        path: Build context path for build_image
-        dockerfile: Dockerfile filename. Default: "Dockerfile"
-        buildargs: Build variables dict
-        nocache: Bypass build cache. Default: False
-        driver: Network/volume driver type
-        force: Forced removal. Default: False
-        filters: Filter criteria dict
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - list_images: {"images": [{"id", "name", "tag", "size", ...}]}
+    - pull_image: {"status": str, "image": str}
+    - list_volumes: {"volumes": [{"name", "driver", ...}]}
+
+    ## Examples
+    infra_ops(operation="list_images", all_images=True)
+    infra_ops(operation="pull_image", image="nginx", tag="alpine")
+    infra_ops(operation="create_network", name="app-net", driver="bridge")
     """
     try:
         if not operation:

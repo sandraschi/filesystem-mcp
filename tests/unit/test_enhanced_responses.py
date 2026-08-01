@@ -45,7 +45,7 @@ class TestEnhancedSuccessResponse:
             quality_metrics={"efficiency": 0.95},
             recommendations=recommendations,
             next_steps=next_steps,
-            related_operations=related_ops
+            related_operations=related_ops,
         )
 
         assert response["success"] is True
@@ -64,7 +64,7 @@ class TestEnhancedSuccessResponse:
             "content": "test content",
             "size_bytes": 12,
             "line_count": 1,
-            "file_info": {"extension": ".txt", "readable": True}
+            "file_info": {"extension": ".txt", "readable": True},
         }
 
         response = _success_response(
@@ -75,11 +75,11 @@ class TestEnhancedSuccessResponse:
                 "line_count": 1,
                 "file_size_mb": 0.0,
                 "encoding_detected": "utf-8",
-                "content_type": "text"
+                "content_type": "text",
             },
             recommendations=["File is small - quick processing"],
             next_steps=["Use content for analysis"],
-            related_operations=["grep_file", "get_file_info"]
+            related_operations=["grep_file", "get_file_info"],
         )
 
         assert response["success"] is True
@@ -97,10 +97,7 @@ class TestEnhancedErrorResponse:
 
     def test_basic_error_response(self):
         """Test basic error response structure."""
-        response = _error_response(
-            error="File not found",
-            error_type="file_not_found"
-        )
+        response = _error_response(error="File not found", error_type="file_not_found")
 
         assert response["success"] is False
         assert response["error"] == "File not found"
@@ -114,21 +111,10 @@ class TestEnhancedErrorResponse:
         response = _error_response(
             error="Permission denied accessing system directory",
             error_type="permission_denied",
-            recovery_options=[
-                "Check file permissions",
-                "Run with elevated privileges",
-                "Use alternative location"
-            ],
-            suggested_fixes=[
-                "chmod +r file.txt",
-                "Use sudo for system files"
-            ],
-            diagnostic_info={
-                "path": "/etc/passwd",
-                "operation": "read",
-                "platform": "linux"
-            },
-            estimated_resolution_time="2-5 minutes"
+            recovery_options=["Check file permissions", "Run with elevated privileges", "Use alternative location"],
+            suggested_fixes=["chmod +r file.txt", "Use sudo for system files"],
+            diagnostic_info={"path": "/etc/passwd", "operation": "read", "platform": "linux"},
+            estimated_resolution_time="2-5 minutes",
         )
 
         assert response["success"] is False
@@ -146,12 +132,9 @@ class TestEnhancedErrorResponse:
             recovery_options=[
                 "Try different encoding (latin-1, cp1252)",
                 "Check if file is binary",
-                "Use binary read mode"
+                "Use binary read mode",
             ],
-            suggested_fixes=[
-                "Specify encoding parameter",
-                "Use 'latin-1' for binary-like text"
-            ]
+            suggested_fixes=["Specify encoding parameter", "Use 'latin-1' for binary-like text"],
         )
 
         assert response["error_type"] == "encoding_error"
@@ -168,8 +151,8 @@ class TestClarificationResponse:
             ambiguities=["operation parameter unclear"],
             suggested_questions=[
                 "What operation would you like to perform?",
-                "Did you mean 'read_file' or 'list_directory'?"
-            ]
+                "Did you mean 'read_file' or 'list_directory'?",
+            ],
         )
 
         assert response["status"] == "clarification_needed"
@@ -182,15 +165,9 @@ class TestClarificationResponse:
         operations = ["read_file", "write_file", "list_directory", "delete_file"]
         response = _clarification_response(
             ambiguities=["Unclear which file operation to perform"],
-            options={
-                "operation": operations,
-                "confirmation": ["yes", "no", "cancel"]
-            },
-            suggested_questions=[
-                "Which file operation do you need?",
-                "Would you like to read, write, or list files?"
-            ],
-            preserved_context={"attempted_path": "/tmp/test.txt"}
+            options={"operation": operations, "confirmation": ["yes", "no", "cancel"]},
+            suggested_questions=["Which file operation do you need?", "Would you like to read, write, or list files?"],
+            preserved_context={"attempted_path": "/tmp/test.txt"},
         )
 
         assert response["status"] == "clarification_needed"
@@ -203,12 +180,7 @@ class TestProgressResponse:
 
     def test_basic_progress_response(self):
         """Test basic progress response structure."""
-        response = _progress_response(
-            operation="file_analysis",
-            current=5,
-            total=10,
-            phase="analyzing_files"
-        )
+        response = _progress_response(operation="file_analysis", current=5, total=10, phase="analyzing_files")
 
         assert response["status"] == "in_progress"
         assert response["operation"] == "file_analysis"
@@ -220,12 +192,7 @@ class TestProgressResponse:
 
     def test_progress_response_with_details(self):
         """Test progress response with detailed information."""
-        details = {
-            "current_file": "data.json",
-            "files_processed": 5,
-            "total_files": 10,
-            "bytes_processed": 1024000
-        }
+        details = {"current_file": "data.json", "files_processed": 5, "total_files": 10, "bytes_processed": 1024000}
 
         response = _progress_response(
             operation="batch_file_processing",
@@ -233,7 +200,7 @@ class TestProgressResponse:
             total=10,
             phase="processing_files",
             estimated_completion="2 minutes remaining",
-            details=details
+            details=details,
         )
 
         assert response["operation"] == "batch_file_processing"
@@ -248,10 +215,7 @@ class TestInteractiveResponse:
     def test_basic_interactive_response(self):
         """Test basic interactive response structure."""
         options = ["proceed", "cancel", "retry"]
-        response = _interactive_response(
-            message="File already exists. What would you like to do?",
-            options=options
-        )
+        response = _interactive_response(message="File already exists. What would you like to do?", options=options)
 
         assert response["status"] == "interactive"
         assert "File already exists" in response["message"]
@@ -267,8 +231,8 @@ class TestInteractiveResponse:
             follow_up_operations=[
                 "read_file(path='file1.txt')",
                 "read_file(path='file2.txt')",
-                "batch_process_files()"
-            ]
+                "batch_process_files()",
+            ],
         )
 
         assert response["status"] == "interactive"
@@ -286,7 +250,7 @@ class TestResponseIntegration:
             error="Ambiguous file operation requested",
             error_type="ambiguous_request",
             recovery_options=["Provide more specific operation details"],
-            suggested_fixes=["Specify exact file operation needed"]
+            suggested_fixes=["Specify exact file operation needed"],
         )
 
         assert error_response["success"] is False
@@ -295,11 +259,9 @@ class TestResponseIntegration:
         # Follow-up clarification response
         clarification_response = _clarification_response(
             ambiguities=["File operation not clearly specified"],
-            options={
-                "operation": ["read_file", "write_file", "edit_file", "list_directory"]
-            },
+            options={"operation": ["read_file", "write_file", "edit_file", "list_directory"]},
             suggested_questions=["What specific file operation do you need?"],
-            preserved_context={"original_request": "process file"}
+            preserved_context={"original_request": "process file"},
         )
 
         assert clarification_response["status"] == "clarification_needed"
@@ -309,37 +271,19 @@ class TestResponseIntegration:
         """Test success response that includes progress context."""
         # Progress update
         progress_response = _progress_response(
-            operation="file_backup",
-            current=7,
-            total=10,
-            phase="copying_files",
-            estimated_completion="30 seconds"
+            operation="file_backup", current=7, total=10, phase="copying_files", estimated_completion="30 seconds"
         )
 
         assert progress_response["progress"]["percentage"] == 70.0
 
         # Final success response
         success_response = _success_response(
-            result={
-                "files_backed_up": 10,
-                "total_size_mb": 50.5,
-                "backup_location": "/backup/2024-01-22"
-            },
+            result={"files_backed_up": 10, "total_size_mb": 50.5, "backup_location": "/backup/2024-01-22"},
             operation="file_backup",
             execution_time_ms=45000,
-            quality_metrics={
-                "success_rate": 1.0,
-                "compression_ratio": 0.8,
-                "verification_passed": True
-            },
-            recommendations=[
-                "Verify backup integrity",
-                "Update backup rotation policy"
-            ],
-            next_steps=[
-                "Test backup restoration",
-                "Update documentation"
-            ]
+            quality_metrics={"success_rate": 1.0, "compression_ratio": 0.8, "verification_passed": True},
+            recommendations=["Verify backup integrity", "Update backup rotation policy"],
+            next_steps=["Test backup restoration", "Update documentation"],
         )
 
         assert success_response["success"] is True

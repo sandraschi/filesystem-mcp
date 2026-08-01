@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "text",
+            "text": "## Session Context (Filesystem MCP)\n\nYou have access to Filesystem MCP: 24 tools for file operations, Docker containers, and system monitoring.\n\n**Before starting work:**\n1. Check system status: monitor_get_system_status(include_processes=False)\n2. Explore relevant directories: dir_ops(operation=\"list_directory\", path=\"D:/Dev/repos\")\n\n**At end of work, clean up:**\n- Close long-running containers you started, verify locks with get_lock_status()\n- Prefer atomic writes through file_ops(operation=\"write_file\") over raw file APIs"
+          }
+        ]
+      }
+    ]
+  }
+}

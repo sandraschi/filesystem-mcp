@@ -108,7 +108,3 @@ export FILESYSTEM_MCP_TIMEOUT="60"
 - Integrate with your development process
 
 **Happy coding! 🎉**
-
-
-
-

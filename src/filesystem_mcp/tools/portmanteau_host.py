@@ -487,11 +487,17 @@ async def host_ops(
     get_hardware_info, get_software_info, get_time_info, get_locale_info,
     get_user_info, get_session_info, get_service_status, get_log_info.
 
-    Args:
-        operation: Operation to perform (required)
-        category: Help category filter for get_help
-        tool_name: Specific tool name for get_help
-        level: Help detail level (basic, advanced). Default: "basic"
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - result for get_system_info: {"platform", "python", "machine", "cpu_cores", "memory_total"}
+    - result for get_environment_info: {"variables": {...}}
+
+    ## Examples
+    host_ops(operation="get_help", category="filesystem")
+    host_ops(operation="get_system_info", detailed=True)
+    host_ops(operation="get_environment_info")
     """
     try:
         if not operation:

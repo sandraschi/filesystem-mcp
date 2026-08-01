@@ -46,9 +46,13 @@ app = FastAPI(title="Filesystem MCP Backend", lifespan=lifespan)
 
 # CORS Configuration
 origins = [
-    "http://localhost:10743", "http://127.0.0.1:10743",
-    "http://localhost:10742", "http://127.0.0.1:10742",
-    "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost",
+    "http://localhost:10743",
+    "http://127.0.0.1:10743",
+    "http://localhost:10742",
+    "http://127.0.0.1:10742",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+    "tauri://localhost",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -87,6 +91,7 @@ class ChatRequest(BaseModel):
     provider: LLMProviderConfig
     model: str
     messages: list[Message]
+    tools: list[dict] | None = None
 
 
 @app.post("/api/llm/chat")
@@ -99,36 +104,28 @@ async def chat(request: ChatRequest):
             if provider.type == "ollama":
                 payload = {
                     "model": request.model,
-                    "messages": [
-                        {"role": m.role, "content": m.content} for m in request.messages
-                    ],
+                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                     "stream": False,
                 }
-                response = await client.post(
-                    f"{provider.baseUrl}/api/chat", json=payload
-                )
+                if request.tools:
+                    payload["tools"] = request.tools
+                response = await client.post(f"{provider.baseUrl}/api/chat", json=payload)
             elif provider.type == "lmstudio":
                 payload = {
                     "model": request.model,
-                    "messages": [
-                        {"role": m.role, "content": m.content} for m in request.messages
-                    ],
+                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                 }
-                response = await client.post(
-                    f"{provider.baseUrl}/v1/chat/completions", json=payload
-                )
+                if request.tools:
+                    payload["tools"] = request.tools
+                response = await client.post(f"{provider.baseUrl}/v1/chat/completions", json=payload)
             elif provider.type == "openai":
-                headers = (
-                    {"Authorization": f"Bearer {provider.apiKey}"}
-                    if provider.apiKey
-                    else {}
-                )
+                headers = {"Authorization": f"Bearer {provider.apiKey}"} if provider.apiKey else {}
                 payload = {
                     "model": request.model,
-                    "messages": [
-                        {"role": m.role, "content": m.content} for m in request.messages
-                    ],
+                    "messages": [{"role": m.role, "content": m.content} for m in request.messages],
                 }
+                if request.tools:
+                    payload["tools"] = request.tools
                 response = await client.post(
                     "https://api.openai.com/v1/chat/completions",
                     json=payload,
@@ -141,23 +138,27 @@ async def chat(request: ChatRequest):
                 return {"error": "Unknown provider"}
 
             if response.status_code != 200:
-                raise HTTPException(
-                    status_code=response.status_code, detail=response.text
-                )
+                raise HTTPException(status_code=response.status_code, detail=response.text)
 
             data = response.json()
             # Normalize response
             content = ""
+            tool_calls = None
             if "message" in data:  # Ollama
-                content = data["message"]["content"]
+                content = data["message"].get("content") or ""
+                if data["message"].get("tool_calls"):
+                    tool_calls = data["message"]["tool_calls"]
             elif "choices" in data:  # OpenAI/LM Studio
-                content = data["choices"][0]["message"]["content"]
+                msg = data["choices"][0]["message"]
+                content = msg.get("content") or ""
+                if msg.get("tool_calls"):
+                    tool_calls = msg["tool_calls"]
 
-            return {"content": content}
+            return {"content": content, "tool_calls": tool_calls}
 
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from None
 
 
 # --- Mount MCP Endpoint ---

@@ -5,9 +5,7 @@ export default function Help() {
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Documentation</h1>
-        <p className="text-muted-foreground mt-2">
-          Guides and references for filesystem-mcp.
-        </p>
+        <p className="text-muted-foreground mt-2">Guides and references for filesystem-mcp.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -19,8 +17,7 @@ export default function Help() {
             <h2 className="text-xl font-semibold">File Operations</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Learn how to safely read, write, move, and edit files. Calls are
-            sandboxed and backed up by default.
+            Learn how to safely read, write, move, and edit files. Calls are sandboxed and backed up by default.
           </p>
           <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground/80 pl-2">
             <li>read_file / write_file</li>
@@ -37,8 +34,7 @@ export default function Help() {
             <h2 className="text-xl font-semibold">Git Integration</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Manage repositories, branches, and commits directly from the
-            interface.
+            Manage repositories, branches, and commits directly from the interface.
           </p>
           <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground/80 pl-2">
             <li>clone_repo / init_repo</li>
@@ -55,8 +51,7 @@ export default function Help() {
             <h2 className="text-xl font-semibold">Docker Management</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Control containers, images, and volumes. View logs and stats in
-            real-time.
+            Control containers, images, and volumes. View logs and stats in real-time.
           </p>
           <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground/80 pl-2">
             <li>list_containers</li>
@@ -72,9 +67,7 @@ export default function Help() {
             </div>
             <h2 className="text-xl font-semibold">CLI Reference</h2>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Complete reference for all MCP tools and their arguments.
-          </p>
+          <p className="text-sm text-muted-foreground">Complete reference for all MCP tools and their arguments.</p>
           <button className="flex items-center gap-2 text-sm text-primary hover:underline">
             View CLI Docs <ExternalLink className="w-3 h-3" />
           </button>
@@ -85,8 +78,13 @@ export default function Help() {
         <h3 className="font-semibold mb-2">Need more help?</h3>
         <p className="text-sm text-muted-foreground">
           Check the{" "}
-          <a href="#" className="text-primary hover:underline">
-            Support Channel
+          <a
+            href="https://github.com/sandraschi/filesystem-mcp/issues"
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary hover:underline"
+          >
+            Issue Tracker
           </a>{" "}
           or open an issue on GitHub.
         </p>

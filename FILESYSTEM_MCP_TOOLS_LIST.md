@@ -1,6 +1,6 @@
 # Filesystem MCP Tools List
 
-**Date:** 2025-10-30  
+**Date:** 2025-10-30
 **Status:** Actual tools available in this repo
 
 ## Available Tools

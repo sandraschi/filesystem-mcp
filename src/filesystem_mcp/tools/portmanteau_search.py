@@ -58,23 +58,18 @@ async def search_ops(
     Operations: grep_file, count_pattern, search_files, extract_log_lines,
     compare_files, find_duplicate_files, find_large_files.
 
-    Args:
-        operation: Operation to perform (required)
-        path: Base path for search/analysis
-        search_pattern: Regex or glob pattern (required for grep/count/search)
-        path2: Second file for compare_files
-        recursive: Search subdirectories (grep_file on a directory, search_files,
-            find_*). Default: False
-        case_sensitive: Pattern sensitivity. Default: False
-        max_matches (int): Limit grep results. Default: 100
-        context_lines: Lines around grep matches. Default: 0
-        start_time/end_time: ISO timestamps for extract_log_lines
-        log_levels/exclude_log_levels: Log level filters
-        min_size_mb: Threshold for find_large_files. Default: 100.0
-        min_size: Threshold for find_duplicate_files (bytes). Default: 1
-        hash_algorithm: "md5" or "sha256". Default: "md5"
-        max_duplicates: Stop after finding N duplicates. Default: None
-        early_exit: Exit early when max_results reached. Default: True
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - grep_file: {"matches": [{"file": str, "line": int, "text": str}], "count": int}
+    - count_pattern: {"count": int}
+    - compare_files: {"diff": str, "lines": int}
+
+    ## Examples
+    search_ops(operation="grep_file", path="D:/Dev/repos", search_pattern="assfix", recursive=True)
+    search_ops(operation="find_large_files", path="D:/data", min_size_mb=500)
+    search_ops(operation="compare_files", path="a.txt", path2="b.txt")
     """
     try:
         if not operation:

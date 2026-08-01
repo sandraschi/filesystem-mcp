@@ -44,19 +44,17 @@ async def dir_ops(
     Operations: list_directory, create_directory, remove_directory, directory_tree,
     calculate_directory_size, find_empty_directories.
 
-    Args:
-        operation: Operation to perform (required)
-        path: Target directory path
-        recursive: Operate recursively. Default: False
-        include_hidden: Show hidden files. Default: False
-        create_parents: Create missing parents. Default: True
-        exist_ok: Don't error if exists. Default: True
-        max_depth: Max recursion depth for tree. Default: 3
-        pattern: Filter pattern for tree
-        exclude_patterns: Patterns to skip
-        output_format: Tree format (text/json). Default: "text"
-        human_readable: Format sizes. Default: True
-        max_files: Max items to list. Default: 1000
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - result for list_directory: {"items": [...], "total": int}
+    - result for calculate_directory_size: {"size_bytes": int, "human_readable": str}
+
+    ## Examples
+    dir_ops(operation="list_directory", path="D:/Dev/repos", recursive=True)
+    dir_ops(operation="directory_tree", path="D:/Dev/repos/arxiv-mcp/src", max_depth=2)
+    dir_ops(operation="calculate_directory_size", path="D:/data", human_readable=True)
     """
     try:
         if not operation:

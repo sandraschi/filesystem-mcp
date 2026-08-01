@@ -97,8 +97,17 @@ $RECYCLE.BIN/
 *~
 *.bak
 *.bak.*
+*.bak-*
 local_settings.py
 target/
+gen/
+
+# Assessment / audit reports (regenerable snapshots)
+reports/
+
+# MCPB build artifacts
+mcpb/
+*.mcpb
 
 # Private docs
 docs-private/
@@ -106,3 +115,5 @@ docs-private/
 # Frontend
 node_modules/
 _dashboard/
+webapp/dist/
+webapp/playwright-report/

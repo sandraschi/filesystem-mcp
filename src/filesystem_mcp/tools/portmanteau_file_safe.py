@@ -16,6 +16,12 @@ async def get_lock_status() -> dict:
 
     Returns which file paths currently have active locks — useful for debugging
     concurrent write contention between Claude Desktop, Cursor, and Windsurf sessions.
+
+    ## Return Format
+    {"locked_paths": [str], "lock_count": int}
+
+    ## Examples
+    get_lock_status()
     """
     return file_manager.get_lock_status()
 
@@ -26,6 +32,14 @@ async def test_concurrency_safety(operation: str = "write", num_clients: int = 5
 
     Simulates num_clients simultaneously writing or editing the same temp file.
     All should succeed without data corruption if locking is working correctly.
+
+    ## Return Format
+    {"test_operation": str, "num_clients": int, "successful": int, "errors": [str],
+     "concurrency_safe": bool}
+
+    ## Examples
+    test_concurrency_safety(operation="write", num_clients=5)
+    test_concurrency_safety(operation="edit", num_clients=10)
     """
     import asyncio
     import tempfile

@@ -1,12 +1,29 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
   "organizeImports": {
     "enabled": true
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+  "css": {
+    "linter": {
+      "enabled": true,
+      "rules": {
+        "recommended": false
+      }
     }
   },
   "formatter": {
@@ -21,5 +38,8 @@
       "semicolons": "always"
     }
   },
-  "include": ["webapp/src/**/*.ts", "webapp/src/**/*.tsx"]
+  "include": [
+    "webapp/src/**/*.ts",
+    "webapp/src/**/*.tsx"
+  ]
 }

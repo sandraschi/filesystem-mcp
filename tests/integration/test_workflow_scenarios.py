@@ -4,7 +4,6 @@ Integration tests for autonomous file workflow scenarios.
 Tests end-to-end sampling-based workflows using FastMCP 2.14.3+ autonomous execution.
 """
 
-
 import pytest
 
 from filesystem_mcp.tools.agentic_file_workflow import agentic_file_workflow
@@ -32,17 +31,12 @@ class TestFileOrganizationWorkflow:
         # Setup mock sampling to simulate file organization
         mock_sampling_context.sample_step.side_effect = [
             # Step 1: Analyze current structure
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": str(temp_dir)}}},
             # Step 2: Create organized directories
             {
                 "tool_call": {
                     "name": "dir_ops",
-                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "scripts")}
+                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "scripts")},
                 }
             },
             # Step 3: Move Python files to scripts
@@ -52,8 +46,8 @@ class TestFileOrganizationWorkflow:
                     "parameters": {
                         "operation": "move_file",
                         "path": str(temp_dir / "script.py"),
-                        "destination_path": str(temp_dir / "scripts" / "script.py")
-                    }
+                        "destination_path": str(temp_dir / "scripts" / "script.py"),
+                    },
                 }
             },
             # Step 4: Move data files
@@ -63,27 +57,24 @@ class TestFileOrganizationWorkflow:
                     "parameters": {
                         "operation": "move_file",
                         "path": str(temp_dir / "data.txt"),
-                        "destination_path": str(temp_dir / "data" / "data.txt")
-                    }
+                        "destination_path": str(temp_dir / "data" / "data.txt"),
+                    },
                 }
             },
             # Step 5: Remove temp files
             {
                 "tool_call": {
                     "name": "file_ops",
-                    "parameters": {
-                        "operation": "delete_file",
-                        "path": str(temp_dir / "temp.tmp")
-                    }
+                    "parameters": {"operation": "delete_file", "path": str(temp_dir / "temp.tmp")},
                 }
             },
-            None  # Complete workflow
+            None,  # Complete workflow
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Organize this project by moving Python files to a scripts directory, data files to a data directory, and remove temporary files",
             available_tools=["dir_ops", "file_ops"],
-            max_iterations=10
+            max_iterations=10,
         )
 
         assert result["success"] is True
@@ -136,28 +127,14 @@ def list_directory(path):
         # Setup mock sampling for code analysis
         mock_sampling_context.sample_step.side_effect = [
             # Step 1: Analyze project structure
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": str(temp_dir)}}},
             # Step 2: Read main file
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": str(main_py)}
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(main_py)}}},
             # Step 3: Analyze functions
             {
                 "tool_call": {
                     "name": "search_ops",
-                    "parameters": {
-                        "operation": "find_symbols",
-                        "path": str(temp_dir),
-                        "pattern": "def "
-                    }
+                    "parameters": {"operation": "find_symbols", "path": str(temp_dir), "pattern": "def "},
                 }
             },
             # Step 4: Generate documentation
@@ -167,17 +144,17 @@ def list_directory(path):
                     "parameters": {
                         "operation": "write_file",
                         "path": str(temp_dir / "README.md"),
-                        "content": "# Sample Python Project\n\nContains utility functions and a main script."
-                    }
+                        "content": "# Sample Python Project\n\nContains utility functions and a main script.",
+                    },
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Analyze this Python codebase, identify all functions, and generate project documentation",
             available_tools=["dir_ops", "file_ops", "search_ops"],
-            max_iterations=8
+            max_iterations=8,
         )
 
         assert result["success"] is True
@@ -210,26 +187,11 @@ class TestDataProcessingWorkflow:
         # Setup mock sampling for data validation
         mock_sampling_context.sample_step.side_effect = [
             # Step 1: List data files
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": str(temp_dir)}}},
             # Step 2: Validate JSON files
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": str(valid_json)}
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(valid_json)}}},
             # Step 3: Check invalid JSON
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": str(invalid_json)}
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(invalid_json)}}},
             # Step 4: Process valid data
             {
                 "tool_call": {
@@ -237,17 +199,17 @@ class TestDataProcessingWorkflow:
                     "parameters": {
                         "operation": "write_file",
                         "path": str(temp_dir / "processed_data.json"),
-                        "content": '{"processed": true, "records": 2}'
-                    }
+                        "content": '{"processed": true, "records": 2}',
+                    },
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Validate JSON and CSV data files, process valid data, and report any issues",
             available_tools=["dir_ops", "file_ops", "search_ops"],
-            max_iterations=7
+            max_iterations=7,
         )
 
         assert result["success"] is True
@@ -276,29 +238,16 @@ class TestBackupAndRecoveryWorkflow:
         # Setup mock sampling for backup creation
         mock_sampling_context.sample_step.side_effect = [
             # Step 1: Identify important files
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": str(temp_dir)}}},
             # Step 2: Create backup directory
             {
                 "tool_call": {
                     "name": "dir_ops",
-                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "backup")}
+                    "parameters": {"operation": "create_directory", "path": str(temp_dir / "backup")},
                 }
             },
             # Step 3: Backup config file
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {
-                        "operation": "read_file",
-                        "path": str(config)
-                    }
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(config)}}},
             # Step 4: Write backup
             {
                 "tool_call": {
@@ -306,20 +255,12 @@ class TestBackupAndRecoveryWorkflow:
                     "parameters": {
                         "operation": "write_file",
                         "path": str(temp_dir / "backup" / "config.ini.bak"),
-                        "content": "[settings]\nkey=value"
-                    }
+                        "content": "[settings]\nkey=value",
+                    },
                 }
             },
             # Step 5: Backup database
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {
-                        "operation": "read_file",
-                        "path": str(database)
-                    }
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(database)}}},
             # Step 6: Write database backup
             {
                 "tool_call": {
@@ -327,17 +268,17 @@ class TestBackupAndRecoveryWorkflow:
                     "parameters": {
                         "operation": "write_file",
                         "path": str(temp_dir / "backup" / "database.db.bak"),
-                        "content": "database content"
-                    }
+                        "content": "database content",
+                    },
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Create backups of all important files in the project",
             available_tools=["dir_ops", "file_ops"],
-            max_iterations=10
+            max_iterations=10,
         )
 
         assert result["success"] is True
@@ -372,20 +313,12 @@ class TestErrorHandlingWorkflow:
                         "operation": "edit_file",
                         "path": str(readonly_file),
                         "old_string": "content",
-                        "new_string": "modified"
-                    }
+                        "new_string": "modified",
+                    },
                 }
             },
             # After error, try a different approach
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {
-                        "operation": "read_file",
-                        "path": str(readonly_file)
-                    }
-                }
-            },
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": str(readonly_file)}}},
             # Create a new file instead
             {
                 "tool_call": {
@@ -393,17 +326,17 @@ class TestErrorHandlingWorkflow:
                     "parameters": {
                         "operation": "write_file",
                         "path": str(temp_dir / "modified.txt"),
-                        "content": "modified content"
-                    }
+                        "content": "modified content",
+                    },
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Modify the readonly file and create a new version",
             available_tools=["file_ops"],
-            max_iterations=5
+            max_iterations=5,
         )
 
         assert result["success"] is True  # Workflow should complete despite errors
@@ -427,25 +360,20 @@ class TestWorkflowPerformance:
 
         # Setup efficient workflow
         mock_sampling_context.sample_step.side_effect = [
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": str(temp_dir)}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": str(temp_dir)}}},
             {
                 "tool_call": {
                     "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": str(temp_dir / "file1.txt")}
+                    "parameters": {"operation": "read_file", "path": str(temp_dir / "file1.txt")},
                 }
             },
-            None  # Complete efficiently
+            None,  # Complete efficiently
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Quickly check the contents of text files in the directory",
             available_tools=["dir_ops", "file_ops"],
-            max_iterations=5
+            max_iterations=5,
         )
 
         assert result["success"] is True

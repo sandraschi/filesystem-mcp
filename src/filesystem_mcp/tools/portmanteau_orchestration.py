@@ -81,9 +81,13 @@ async def compose_up(
 
     Idempotency: Re-running up is generally safe; may recreate containers per compose semantics.
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
-        result.output: command stdout; result.stderr: stderr text.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    On failure: {"success": false, "error": str, "recovery_options": [...]}
+
+    ## Examples
+    compose_up(path="D:/dev/myapp")
+    compose_up(path="D:/dev/myapp", services=["web", "db"], build=True)
     """
     cmd_args: list[str] = ["up"]
     if detach:
@@ -107,13 +111,15 @@ async def compose_down(
 ) -> dict[str, Any]:
     """Stop and remove Compose containers (docker compose down).
 
-    Args:
-        volumes_prune: If True, removes anonymous volumes declared in the compose file (data loss risk).
-
     Recovery: If down fails (e.g. bind mounts in use), stop consumers or use docker CLI for force removal.
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    On failure: {"success": false, "error": str, "recovery_options": [...]}
+
+    ## Examples
+    compose_down(path="D:/dev/myapp")
+    compose_down(path="D:/dev/myapp", volumes_prune=True)
     """
     cmd_args = ["down"]
     if remove_orphans:
@@ -132,9 +138,13 @@ async def compose_ps(
 ) -> dict[str, Any]:
     """List compose services as JSON (docker compose ps --format json).
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
-        result.output: JSON string from docker compose.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    result.output: JSON string from docker compose.
+
+    ## Examples
+    compose_ps(path="D:/dev/myapp")
+    compose_ps(path="D:/dev/myapp", all_services=True)
     """
     cmd_args = ["ps"]
     if all_services:
@@ -160,8 +170,13 @@ async def compose_logs(
 
     Recovery: If logs empty, verify service names with compose_ps.
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    On failure: {"success": false, "error": str, "recovery_options": [...]}
+
+    ## Examples
+    compose_logs(path="D:/dev/myapp", tail=100)
+    compose_logs(path="D:/dev/myapp", services=["web"], since="2026-08-01T00:00:00")
     """
     cmd_args = ["logs"]
     if follow:
@@ -187,12 +202,15 @@ async def compose_config(
 ) -> dict[str, Any]:
     """Render and validate compose configuration (docker compose config).
 
-    Args:
-        validate: When True (default), interpolated config is validated.
+    Args: See Parameters block.
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
-        result.output: rendered YAML.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    result.output: rendered YAML.
+
+    ## Examples
+    compose_config(path="D:/dev/myapp")
+    compose_config(path="D:/dev/myapp", validate=False)
     """
     cmd_args = ["config"]
     if not validate:
@@ -208,8 +226,13 @@ async def compose_restart(
 ) -> dict[str, Any]:
     """Restart compose services (docker compose restart).
 
-    Returns:
-        dict: on success, result contains output and stderr strings; on failure, error and recovery_options.
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {"output": str, "stderr": str}}
+    On failure: {"success": false, "error": str, "recovery_options": [...]}
+
+    ## Examples
+    compose_restart(path="D:/dev/myapp")
+    compose_restart(path="D:/dev/myapp", services=["web"])
     """
     cmd_args = ["restart"]
     if services:

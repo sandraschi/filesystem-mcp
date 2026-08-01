@@ -1,0 +1,54 @@
+# Central Documentation Rules
+
+## Rule #1: Read Central Docs First
+
+**BEFORE making any changes or starting work, ALWAYS:**
+
+1. **Read the Central Documentation README:**
+   - Location: `D:\Dev\repos\mcp-central-docs\README.md`
+   - This shows all important documentation "branches" (folder trees)
+   - Navigate from there to find specific information
+
+2. **Follow Documentation Branches:**
+   - Central docs are organized by topic (Anthropic ecosystem, Google ecosystem, patterns, projects, etc.)
+   - Each branch has its own README explaining what's inside
+   - Use the branch structure to find relevant docs
+
+3. **Check for Existing Patterns:**
+   - Look in `docs/patterns/` for design patterns
+   - Check `templates/` for reusable templates
+   - Review `docs/projects/` for similar project examples
+
+4. **Avoid Duplication:**
+   - Search existing docs before creating new ones
+   - Update existing docs rather than creating duplicates
+   - Reference central docs instead of copying content
+
+---
+
+## Documentation Branches (from Central README)
+
+---
+
+## Quick Reference
+
+**Central Docs Location:** `D:\Dev\repos\mcp-central-docs\`
+
+**Start Here:** `D:\Dev\repos\mcp-central-docs\README.md`
+
+**When in doubt:** Read the central README and navigate from there.
+
+---
+
+## Session Context (Filesystem MCP)
+
+You have access to Filesystem MCP: 24 tools for file operations, Docker containers,
+and system monitoring.
+
+**Before starting work:**
+1. Check system status: `monitor_get_system_status(include_processes=False)`
+2. Explore relevant directories: `dir_ops(operation="list_directory", path="D:/Dev/repos")`
+
+**At end of work, clean up:**
+- Close long-running containers you started, verify locks with `get_lock_status()`
+- Prefer atomic writes through `file_ops(operation="write_file")` over raw file APIs

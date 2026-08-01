@@ -16,13 +16,7 @@ export default function Logs() {
   // Simulate log stream
   useEffect(() => {
     const interval = setInterval(() => {
-      const levels: LogEntry["level"][] = [
-        "INFO",
-        "INFO",
-        "DEBUG",
-        "WARN",
-        "INFO",
-      ];
+      const levels: LogEntry["level"][] = ["INFO", "INFO", "DEBUG", "WARN", "INFO"];
       const sources = ["filesystem-mcp", "watcher", "api", "git-ops"];
       const messages = [
         "File change detected: /src/components/Logs.tsx",
@@ -46,6 +40,7 @@ export default function Logs() {
     return () => clearInterval(interval);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scrollRef is a stable ref; scroll after each update
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -72,19 +67,13 @@ export default function Logs() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">System Logs</h1>
-          <p className="text-muted-foreground mt-2">
-            Real-time server log stream.
-          </p>
+          <p className="text-muted-foreground mt-2">Real-time server log stream.</p>
         </div>
         <div className="flex gap-2">
           <button className="p-2 hover:bg-accent rounded-md" title="Filter">
             <Filter className="w-5 h-5" />
           </button>
-          <button
-            className="p-2 hover:bg-accent rounded-md"
-            title="Clear Logs"
-            onClick={() => setLogs([])}
-          >
+          <button className="p-2 hover:bg-accent rounded-md" title="Clear Logs" onClick={() => setLogs([])}>
             <Eraser className="w-5 h-5" />
           </button>
           <button className="p-2 hover:bg-accent rounded-md" title="Download">
@@ -107,9 +96,7 @@ export default function Logs() {
 
         <div className="flex-1 overflow-auto p-4 space-y-1" ref={scrollRef}>
           {logs.length === 0 && (
-            <div className="text-muted-foreground text-center py-8 opacity-50">
-              Waiting for logs...
-            </div>
+            <div className="text-muted-foreground text-center py-8 opacity-50">Waiting for logs...</div>
           )}
           {logs.map((log) => (
             <div

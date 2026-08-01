@@ -28,16 +28,13 @@ export function McpProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: connect is recreated per render; connect exactly once on mount
   useEffect(() => {
     // Auto-connect on mount
     connect();
   }, [client]);
 
-  return (
-    <McpContext.Provider value={{ client, isConnected, tools, connect }}>
-      {children}
-    </McpContext.Provider>
-  );
+  return <McpContext.Provider value={{ client, isConnected, tools, connect }}>{children}</McpContext.Provider>;
 }
 
 export function useMcp() {

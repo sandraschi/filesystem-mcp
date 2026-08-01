@@ -20,6 +20,12 @@ fix:
     uv run ruff format src/ tests/
     npx @biomejs/biome check --write . 2>$null || Write-Host "biome: skipped (not configured)"
 
+# Format Python sources with ruff
+fmt:
+    Set-Location '{{justfile_directory()}}'
+    uv run ruff format src/ tests/
+    uv run ruff check --fix src/ tests/
+
 # ── Testing ───────────────────────────────────────────────────────────────────
 
 # Run all tests
@@ -40,7 +46,7 @@ check:
 # Install all dependencies
 install:
     Set-Location '{{justfile_directory()}}'
-    uv sync --extra dev
+    uv sync --group dev
 
 bootstrap: install
     Set-Location '{{justfile_directory()}}'
@@ -54,6 +60,19 @@ bootstrap: install
 mcp:
     Set-Location '{{justfile_directory()}}'
     uv run python -m filesystem_mcp
+
+# Start the HTTP daemon on the registered backend port (webapp / MCP-over-HTTP)
+serve:
+    Set-Location '{{justfile_directory()}}'
+    uv run uvicorn filesystem_mcp.server:app --host 127.0.0.1 --port 10742
+
+# Run all verification gates (lint + typecheck + tests)
+certify:
+    Set-Location '{{justfile_directory()}}'
+    uv run ruff check src/ tests/
+    uv run ruff format src/ tests/ --check
+    uv run python -c "import filesystem_mcp; print('Import OK')"
+    uv run pytest tests/ -q
 
 # ── Hardening ─────────────────────────────────────────────────────────────────
 
@@ -96,3 +115,5 @@ build-native:
 clean:
     Set-Location '{{justfile_directory()}}'
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .ruff_cache, .pytest_cache, __pycache__, *.egg-info, dist, build
+
+# Bootstrap: install dev deps + pre-commit hook

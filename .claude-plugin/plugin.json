@@ -1,0 +1,6 @@
+{
+  "name": "filesystem-mcp",
+  "version": "2.2.0",
+  "description": "Session-context injection for Filesystem MCP — makes Claude Code aware of the server's tools at session start.",
+  "hooks": "../hooks/hooks.json"
+}

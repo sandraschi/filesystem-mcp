@@ -172,10 +172,14 @@ async def monitor_get_system_status(
 
     Recovery: If psutil raises AccessDenied, retry with fewer options or run with appropriate permissions.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: timestamp, system, release, cpu_count, cpu_usage_percent, memory (dict),
-        optional disk, processes, network — structure matches psutil named tuples as dicts.
+    ## Return Format
+    {"success": bool, "result": {"timestamp": str, "system": str, "release": str,
+     "cpu_count": int, "cpu_usage_percent": float, "memory": {...}, "disk": {...},
+     "processes": [...], "network": {...}}}
+
+    ## Examples
+    monitor_get_system_status()
+    monitor_get_system_status(include_processes=True, max_processes=20)
     """
     try:
         return await _get_system_status(include_processes, include_disk, include_network, max_processes)
@@ -190,9 +194,11 @@ async def monitor_get_resource_usage() -> dict[str, Any]:
 
     Idempotency: Read-only; safe to retry.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: cpu_percent, memory, disk, boot_time (ISO string).
+    ## Return Format
+    {"success": bool, "result": {"cpu_percent": float, "memory": {...}, "disk": {...}, "boot_time": str}}
+
+    ## Examples
+    monitor_get_resource_usage()
     """
     try:
         return await _get_resource_usage()
@@ -210,17 +216,16 @@ async def monitor_get_process_info(
 ) -> dict[str, Any]:
     """List running processes with optional substring filter on the process name.
 
-    Args:
-        filter_pattern: Case-insensitive substring matched against process **name** (not regex).
-            Example: \"python\" matches \"python.exe\". Omit to include all accessible processes.
-        sort_by: One of cpu_percent, memory_percent, name (falls back to 0 if missing).
-        sort_order: \"asc\" or \"desc\".
+    Args: See Parameters block.
 
     Recovery: AccessDenied on some PIDs is normal; total_matching reflects filtered list.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: {\"processes\": [dict], \"total_matching\": int}
+    ## Return Format
+    {"success": bool, "result": {"processes": [{"pid", "name", "cpu_percent", "memory_percent"}], "total_matching": int}}
+
+    ## Examples
+    monitor_get_process_info(max_processes=10, sort_by="memory_percent")
+    monitor_get_process_info(filter_pattern="python", max_processes=20)
     """
     try:
         return await _get_process_info(max_processes, filter_pattern, sort_by, sort_order)
@@ -233,9 +238,11 @@ async def monitor_get_process_info(
 async def monitor_get_performance_metrics() -> dict[str, Any]:
     """Detailed CPU times, memory, swap, disk I/O, and network I/O counters.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: cpu_times, virtual_memory, swap_memory, disk_io, net_io (dicts).
+    ## Return Format
+    {"success": bool, "result": {"cpu_times": {...}, "virtual_memory": {...}, "swap_memory": {...}, "disk_io": {...}, "net_io": {...}}}
+
+    ## Examples
+    monitor_get_performance_metrics()
     """
     try:
         return await _get_performance_metrics()
@@ -248,9 +255,11 @@ async def monitor_get_performance_metrics() -> dict[str, Any]:
 async def monitor_get_memory_info() -> dict[str, Any]:
     """Virtual and swap memory breakdown.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: virtual, swap (dicts from psutil).
+    ## Return Format
+    {"success": bool, "result": {"virtual": {...}, "swap": {...}}}
+
+    ## Examples
+    monitor_get_memory_info()
     """
     try:
         return await _get_memory_info()
@@ -263,9 +272,11 @@ async def monitor_get_memory_info() -> dict[str, Any]:
 async def monitor_get_cpu_info() -> dict[str, Any]:
     """Core counts, optional frequency, and per-CPU usage.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: physical_cores, total_cores, frequency (dict | None), usage_per_cpu (list).
+    ## Return Format
+    {"success": bool, "result": {"physical_cores": int, "total_cores": int, "frequency": {...} | None, "usage_per_cpu": [float]}}
+
+    ## Examples
+    monitor_get_cpu_info()
     """
     try:
         return await _get_cpu_info()
@@ -278,9 +289,11 @@ async def monitor_get_cpu_info() -> dict[str, Any]:
 async def monitor_get_disk_usage() -> dict[str, Any]:
     """Per-partition usage (skips mounts that raise PermissionError).
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: {\"partitions\": [{\"device\", \"mountpoint\", \"usage\"}, ...]}
+    ## Return Format
+    {"success": bool, "result": {"partitions": [{"device", "mountpoint", "usage"}]}}
+
+    ## Examples
+    monitor_get_disk_usage()
     """
     try:
         return await _get_disk_usage()
@@ -293,9 +306,11 @@ async def monitor_get_disk_usage() -> dict[str, Any]:
 async def monitor_get_network_info() -> dict[str, Any]:
     """Aggregate I/O counters and per-interface addresses and stats.
 
-    Returns:
-        dict: success, operation, result (payload), timestamp, next_steps, related_operations.
-        result: io_counters, addresses, stats.
+    ## Return Format
+    {"success": bool, "result": {"io_counters": {...}, "addresses": {...}, "stats": {...}}}
+
+    ## Examples
+    monitor_get_network_info()
     """
     try:
         return await _get_network_info()

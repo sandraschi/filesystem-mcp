@@ -18,7 +18,7 @@ Install these if you don't have them already. Windows commands use
 | **Node.js** | Option B, or web frontend | `winget install OpenJS.NodeJS` | `brew install node` |
 | **Docker Desktop** | Docker/compose tools only | [docker.com/get-started](https://www.docker.com/get-started/) | same |
 
-> **Windows:** After any winget install, **close and reopen PowerShell** so PATH updates apply.  
+> **Windows:** After any winget install, **close and reopen PowerShell** so PATH updates apply.
 > **macOS:** use `brew install uv git node` equivalents.
 
 Docker Desktop is **only needed** for the Docker container management tools (`container_ops`,

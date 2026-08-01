@@ -220,4 +220,3 @@ These tools enhance filesystem-mcp's advanced file operations capabilities while
 - Security-focused operations
 
 Both servers complement each other well and can be used simultaneously for different purposes.
-

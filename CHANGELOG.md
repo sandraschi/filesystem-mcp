@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-08-01
+
+### Added
+- `server_shutdown` tool (DESTRUCTIVE, confirm=True guard) for graceful self-termination
+- REST endpoints: `GET /api/status`, `GET /api/capabilities`, `GET /api/skills`, `GET /api/llm/discover`
+- CORS middleware on the MCP HTTP app (tauri origins + Tailscale + LAN regex) — fixes
+  cross-origin "Failed to fetch" in the Tauri WebView and LAN access
+- `/api/v1/diagnostics` now reports the real registered tool list (was hardcoded 0)
+- Dashboard rewrite: hero section, live backend/LLM KPIs with data-testids, working
+  quick actions (was hardcoded fake stats with dead buttons)
+- Chat upgrade: localStorage history (100-msg cap), 4 personalities, example prompts,
+  export/clear, skill-first system prompt, bridge-proxy LLM calls with tool forwarding,
+  `?context=` workflow presets from the Apps page
+- Settings: auto-detection of Ollama/LM Studio with status badges, `llm-provider-select`
+  / `llm-model-select` testids, GPU opportunity banner, `llm_provider`/`llm_model` keys
+- Session-context injection: `.claude-plugin` hooks, `.cursorrules` section,
+  `.windsurfrules`, `.github/copilot-instructions.md`, `.opencode/skills/`
+- `## Return Format` + `## Examples` docstring sections on all 24 tools (Args: vanished)
+- MCPB prompts: `system.md` 3000+ words, `user.md` 4000+ words (was 25/339 runt)
+- Canonical docs: `docs/CONFIGURATION.md`, `docs/DEVELOPMENT.md`, `docs/TOOLS.md`, `docs/TROUBLESHOOTING.md`
+- Playwright e2e audit (`webapp/e2e/fleet-audit.spec.ts`) + `webapp/playwright.config.ts`
+- `webapp` `typecheck` script so CI's TS gate actually executes
+- `renovate.json` (fleet dep auto-bump); `serve`/`fmt`/`certify` just recipes
+- Coverage config in pytest.ini (`--cov-fail-under=50`)
+
+### Changed
+- `transport.py` uses `uvicorn.Server` on `mcp.http_app()` instead of `run_http_async()`
+  (which dropped CORSMiddleware)
+- LLM chat now proxies through the bridge `POST /api/llm/chat` (tools forwarded)
+- Dev tooling moved to `[dependency-groups] dev` (ruff/pytest/pre-commit/pyright) so
+  fleet CI's `uv run ruff` resolves
+- `.gitignore`: `reports/`, `mcpb/`, `*.mcpb`, `*.bak-*`, `webapp/dist/`, `gen/`
+- `llms.txt` rewritten (llms-full.txt link, no mojibake); README stack section + port fix
+- Removed stale manifests (`manifest.json` fake Node entry, `mcpb.json`,
+  `mcpb_manifest.json` 74-tool ghost list) — pack script regenerates
+- Untracked `mcpb/` legacy duplicate (prompts now canonical in `assets/prompts/`)
+- Biome config migrated to v2; repo-root `biome.json` config reconciled
+
+### Fixed
+- GitHub Actions was disabled on the repo (`actions/permissions.enabled=false`) —
+  enabled; CI now runs on the reusable `sandraschi/fleet-ci` hybrid workflow
+- `console.log` removed from production JS
+- Dead `href="#"` links on Tools page; "(Mock)" apps replaced with real chat presets
+- Low-contrast/`text-xs` UI text bumped where unjustified
+
 ## [Unreleased] — 2026-07-06
 
 ### Fixed
@@ -173,4 +218,3 @@ Verified against the failing 10.4MB `mcp-server-memops1.log` on Goliath
 - Initial project setup
 - Basic file system operations
 - Git repository management foundation
-

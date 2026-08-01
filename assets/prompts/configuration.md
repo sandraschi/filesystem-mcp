@@ -234,7 +234,3 @@ env | grep FILESYSTEM_MCP
 
 # Test basic functionality
 python -c "import sys; print(f'Python: {sys.version}')"
-
-
-
-

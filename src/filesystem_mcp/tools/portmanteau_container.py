@@ -61,24 +61,18 @@ async def container_ops(
     stop_container, restart_container, remove_container, container_exec, container_logs,
     container_stats.
 
-    Args:
-        operation: Operation to perform (required)
-        container_id: Target container ID or name
-        image: Image for create_container
-        name: Container name
-        command: Command for container_exec
-        ports: Port mappings dict
-        volumes: Volume mounts dict
-        environment: Env variables dict
-        working_dir: Work dir in container
-        detach: Run in background. Default: True
-        auto_remove: Remove when stopped. Default: False
-        timeout: Stop/restart timeout secs. Default: 10
-        force: Force removal. Default: False
-        tail: Log lines. Default: 100
-        since/until: Log time range strings
-        timestamps: Include timestamps in logs. Default: False
-        show_stats: Include stats in listing. Default: False
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - list_containers: {"containers": [{"id", "name", "image", "status", ...}]}
+    - container_logs: {"logs": str}
+    - container_stats: {"stats": {...}}
+
+    ## Examples
+    container_ops(operation="list_containers", show_stats=True)
+    container_ops(operation="container_logs", container_id="my-app", tail=50)
+    container_ops(operation="restart_container", container_id="db", timeout=10)
     """
     try:
         if not operation:

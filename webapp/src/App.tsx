@@ -1,3 +1,4 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "@/components/layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import Apps from "@/pages/apps";
@@ -10,7 +11,6 @@ import Help from "@/pages/help";
 import Logs from "@/pages/logs";
 import Settings from "@/pages/settings";
 import Tools from "@/pages/tools";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { McpProvider } from "@/shared/mcp-provider";
 

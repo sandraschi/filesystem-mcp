@@ -234,14 +234,25 @@ async def run_server_async(mcp_app, args: argparse.Namespace | None = None, serv
             path = config["path"]
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP Streamable mode: {endpoint}")
-            await mcp_app.run_http_async(host=host, port=port, path=path)
+            # Use uvicorn.Server on mcp.http_app() — run_http_async() drops
+            # custom middleware (CORS), breaking Tauri/LAN clients.
+            import uvicorn
+
+            asgi_app = mcp_app.http_app()
+            server = uvicorn.Server(uvicorn.Config(asgi_app, host=host, port=port, log_level="info"))
+            await server.serve()
 
         elif transport == "sse":
             host = config["host"]
             port = config["port"]
             logger.warning("SSE mode is deprecated. Migrate to HTTP Streamable (--http).")
             logger.info(f"Running in SSE mode: http://{host}:{port}")
-            await mcp_app.run_http_async(show_banner=False, transport="sse", host=host, port=port)
+            # SSE shares the same ASGI app with CORS middleware attached.
+            import uvicorn
+
+            asgi_app = mcp_app.http_app()
+            server = uvicorn.Server(uvicorn.Config(asgi_app, host=host, port=port, log_level="info"))
+            await server.serve()
 
     except asyncio.CancelledError:
         logger.info(f"{server_name} task cancelled")

@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from .utils import MUTATING, _error_response, _get_app  # noqa: E402
+from .utils import MUTATING, _error_response, _get_app
 
 # ── Structured result type ─────────────────────────────────────────────────────
 
@@ -164,20 +164,21 @@ async def agentic_file_workflow(
     the LLM analyze and reason about it. Compatible with Claude Desktop which
     supports basic sampling but not sampling.tools capability.
 
-    Args:
-        workflow_prompt: Description of the file workflow to execute
-        available_tools: Hint about which tool groups to use (file_ops, dir_ops, search_ops)
-        max_iterations: Backward-compatibility parameter (currently ignored by this no-tools sampling implementation).
+    Args: See Parameters block.
 
-    Returns:
-        dict — On success: success (bool), operation (str), summary (str), result (dict with
-        workflow_prompt, steps_executed, results, notes, execution_summary), quality_metrics,
-        recommendations, next_steps, related_operations.
-        On failure: success=False, error, error_type (e.g. NO_CONTEXT, SAMPLING_ERROR,
-        MISSING_WORKFLOW_PROMPT), recovery_options, diagnostic_info.
+    ## Return Format
+    {"success": bool, "operation": str, "summary": str,
+     "result": {"workflow_prompt", "steps_executed", "results", "notes", "execution_summary"},
+     "quality_metrics": {...}, "recommendations": [...], "next_steps": [...]}
+    On failure: {"success": false, "error": str, "error_type": str,
+     "recovery_options": [...], "diagnostic_info": {...}}
 
     Recovery: If NO_CONTEXT, run from an MCP client that injects Context. If SAMPLING_ERROR,
     shorten the prompt or check server logs; verify the host supports ctx.sample().
+
+    ## Examples
+    agentic_file_workflow(workflow_prompt="Find and summarize all TODO comments in src/", available_tools=["search_ops"])
+    agentic_file_workflow(workflow_prompt="Rename all .bak files in D:/data to .old", available_tools=["file_ops", "dir_ops"])
     """
     if not workflow_prompt:
         return _error_response(

@@ -1,6 +1,6 @@
-import { useMcp } from "@/shared/mcp-provider";
 import { Play, RefreshCw, Square } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useMcp } from "@/shared/mcp-provider";
 
 export default function DockerOps() {
   const { client, isConnected } = useMcp();
@@ -33,6 +33,7 @@ export default function DockerOps() {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchContainers is recreated per render; fetch once on connect
   useEffect(() => {
     if (isConnected) fetchContainers();
   }, [isConnected]);
@@ -41,20 +42,13 @@ export default function DockerOps() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Docker Operations</h1>
-        <button
-          onClick={fetchContainers}
-          className="p-2 hover:bg-accent rounded-md"
-        >
+        <button onClick={fetchContainers} className="p-2 hover:bg-accent rounded-md">
           <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        {error && (
-          <div className="p-4 bg-red-500/10 text-red-500 text-sm border-b border-border">
-            {error}
-          </div>
-        )}
+        {error && <div className="p-4 bg-red-500/10 text-red-500 text-sm border-b border-border">{error}</div>}
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -70,29 +64,19 @@ export default function DockerOps() {
             <tbody className="divide-y divide-border">
               {containers.length === 0 && !loading && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                     No containers found
                   </td>
                 </tr>
               )}
               {containers.map((c) => (
-                <tr
-                  key={c.Id || c.id}
-                  className="hover:bg-accent/50 transition-colors"
-                >
-                  <td className="px-6 py-4 font-mono text-xs">
-                    {c.Id?.substring(0, 12)}
-                  </td>
+                <tr key={c.Id || c.id} className="hover:bg-accent/50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-xs">{c.Id?.substring(0, 12)}</td>
                   <td className="px-6 py-4 text-blue-400">{c.Image}</td>
                   <td className="px-6 py-4">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        c.State === "running"
-                          ? "bg-green-500/10 text-green-500"
-                          : "bg-gray-500/10 text-gray-400"
+                        c.State === "running" ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"
                       }`}
                     >
                       {c.State}

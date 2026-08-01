@@ -68,32 +68,21 @@ async def file_ops(
     Write operations (write_file, edit_file, move_file, copy_file) use per-path
     asyncio.Lock + atomic os.replace() to prevent corruption under concurrent access.
 
-    Args:
-        operation: The file operation to perform (see SUPPORTED OPERATIONS above)
-        path: Target file path for single-file operations
-        content: Text content for write operations
-        encoding: Text encoding for file operations (default: "utf-8")
-        old_string: Text to replace in edit operations
-        new_string: Replacement text for edit operations
-        old_str: Alias for old_string (accepted from Claude built-in str_replace tool)
-        new_str: Alias for new_string (accepted from Claude built-in str_replace tool)
-        file_paths: List of file paths for multi-file operations
-        destination_path: Destination path for move operations
-        overwrite: Whether to overwrite existing files (default: False)
-        offset: Starting line number for read operations (default: 0)
-        limit: Maximum number of lines to return (optional)
-        lines: Number of lines for head/tail operations (default: 10)
-        check_type: Type checking mode for existence operations (default: "file")
-        follow_symlinks: Whether to follow symbolic links (default: True)
-        include_content: Whether to include file content in metadata operations (default: False)
-        max_content_size: Maximum content size for inclusion (default: 1048576 bytes)
-        create_parents: Whether to create missing parent directories (default: True)
-        no_backup: Whether to skip backup creation for write/edit operations (default: False)
-        max_file_size_mb: Maximum file size for multi-file operations (default: 10.0 MB)
-        allow_multiple: Replace all occurrences of old_string (default: False)
-        is_regex: Treat old_string as a regular expression (default: False)
-        ignore_whitespace: Normalize indentation during matching (default: False)
-        replacements: List of dicts with {old_string, new_string} for batch edits
+    Args: See Parameters block.
+
+    ## Return Format
+    {"success": bool, "action": str, "message": str, "result": {...}}
+    - success: whether the operation succeeded
+    - action: the operation performed (e.g. "read_file")
+    - message: natural-language summary for the user
+    - result: operation-specific payload (file content, info dict, moved path, etc.)
+    On failure, returns {"success": false, "error": str, "error_type": str, "suggestions": [...]}.
+
+    ## Examples
+    file_ops(operation="read_file", path="C:/Users/me/notes.md")
+    file_ops(operation="write_file", path="D:/data/out.txt", content="hello")
+    file_ops(operation="edit_file", path="D:/data/app.py", old_string="foo", new_string="bar")
+    file_ops(operation="copy_file", path="a.txt", destination_path="b.txt")
     """
     try:
         # Resolve parameter aliases: Claude's built-in str_replace tool passes old_str/new_str

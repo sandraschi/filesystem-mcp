@@ -4,7 +4,6 @@ Unit tests for FastMCP 2.14.3+ sampling integration and autonomous workflows.
 Tests SEP-1577 sampling with tools functionality for file management automation.
 """
 
-
 import pytest
 
 from filesystem_mcp.tools.agentic_file_workflow import agentic_file_workflow
@@ -19,27 +18,17 @@ class TestSamplingIntegration:
         # Setup mock sampling context
         mock_sampling_context.sample_step.side_effect = [
             # First step: analyze directory
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": "."}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": "."}}},
             # Second step: read a file
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": "README.md"}
-                }
-            },
-            None  # End workflow
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": "README.md"}}},
+            None,  # End workflow
         ]
 
         # Execute workflow
         result = await agentic_file_workflow(
             workflow_prompt="Analyze project structure and read main documentation",
             available_tools=["dir_ops", "file_ops", "search_ops"],
-            max_iterations=3
+            max_iterations=3,
         )
 
         # Verify workflow completed successfully
@@ -56,25 +45,20 @@ class TestSamplingIntegration:
     async def test_sampling_workflow_file_organization(self, mock_sampling_context):
         """Test file organization workflow using sampling."""
         mock_sampling_context.sample_step.side_effect = [
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": "./src"}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": "./src"}}},
             {
                 "tool_call": {
                     "name": "file_ops",
-                    "parameters": {"operation": "move_file", "path": "temp.py", "destination_path": "utils/temp.py"}
+                    "parameters": {"operation": "move_file", "path": "temp.py", "destination_path": "utils/temp.py"},
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Organize Python files in src directory by moving utilities to utils folder",
             available_tools=["dir_ops", "file_ops"],
-            max_iterations=5
+            max_iterations=5,
         )
 
         assert result["success"] is True
@@ -85,25 +69,20 @@ class TestSamplingIntegration:
     async def test_sampling_workflow_backup_creation(self, mock_sampling_context):
         """Test backup workflow using sampling."""
         mock_sampling_context.sample_step.side_effect = [
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": "config.json"}}},
             {
                 "tool_call": {
                     "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": "config.json"}
+                    "parameters": {"operation": "write_file", "path": "config.json.backup", "content": "{}"},
                 }
             },
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "write_file", "path": "config.json.backup", "content": "{}"}
-                }
-            },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Create backup of important configuration files",
             available_tools=["file_ops", "search_ops"],
-            max_iterations=4
+            max_iterations=4,
         )
 
         assert result["success"] is True
@@ -116,9 +95,7 @@ class TestSamplingIntegration:
         mock_sampling_context.sample_step.side_effect = Exception("Sampling failed")
 
         result = await agentic_file_workflow(
-            workflow_prompt="Analyze codebase structure",
-            available_tools=["dir_ops", "file_ops"],
-            max_iterations=2
+            workflow_prompt="Analyze codebase structure", available_tools=["dir_ops", "file_ops"], max_iterations=2
         )
 
         # Should handle error gracefully
@@ -132,16 +109,13 @@ class TestSamplingIntegration:
         """Test that workflows respect max_iterations limit."""
         # Never-ending workflow simulation
         mock_sampling_context.sample_step.return_value = {
-            "tool_call": {
-                "name": "dir_ops",
-                "parameters": {"operation": "list_directory", "path": "."}
-            }
+            "tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": "."}}
         }
 
         result = await agentic_file_workflow(
             workflow_prompt="Continuous directory monitoring",
             available_tools=["dir_ops"],
-            max_iterations=2  # Low limit to test
+            max_iterations=2,  # Low limit to test
         )
 
         assert result["success"] is True
@@ -153,14 +127,13 @@ class TestSamplingIntegration:
         """Test workflow with unavailable sampling context."""
         # Remove sampling context from app state
         from filesystem_mcp import app
+
         original_state = app.state.copy()
         app.state.pop("sampling_context", None)
 
         try:
             result = await agentic_file_workflow(
-                workflow_prompt="Test workflow",
-                available_tools=["file_ops"],
-                max_iterations=1
+                workflow_prompt="Test workflow", available_tools=["file_ops"], max_iterations=1
             )
 
             assert result["success"] is False
@@ -181,13 +154,13 @@ class TestWorkflowQualityMetrics:
             {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file"}}},
             {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory"}}},
             {"tool_call": {"name": "search_ops", "parameters": {"operation": "grep_file"}}},
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Comprehensive file analysis",
             available_tools=["file_ops", "dir_ops", "search_ops"],
-            max_iterations=5
+            max_iterations=5,
         )
 
         assert result["success"] is True
@@ -206,13 +179,11 @@ class TestWorkflowQualityMetrics:
         # Simulate efficient workflow with minimal iterations
         mock_sampling_context.sample_step.side_effect = [
             {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file"}}},
-            None  # Complete in 1 iteration
+            None,  # Complete in 1 iteration
         ]
 
         result = await agentic_file_workflow(
-            workflow_prompt="Quick file read",
-            available_tools=["file_ops"],
-            max_iterations=5
+            workflow_prompt="Quick file read", available_tools=["file_ops"], max_iterations=5
         )
 
         metrics = result["quality_metrics"]
@@ -225,13 +196,11 @@ class TestWorkflowQualityMetrics:
         """Test that workflows provide useful recommendations."""
         mock_sampling_context.sample_step.side_effect = [
             {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file"}}},
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
-            workflow_prompt="Analyze file content",
-            available_tools=["file_ops", "search_ops"],
-            max_iterations=3
+            workflow_prompt="Analyze file content", available_tools=["file_ops", "search_ops"], max_iterations=3
         )
 
         assert "recommendations" in result
@@ -272,11 +241,7 @@ class TestWorkflowValidation:
     @pytest.mark.asyncio
     async def test_empty_workflow_prompt(self):
         """Test validation of empty workflow prompt."""
-        result = await agentic_file_workflow(
-            workflow_prompt="",
-            available_tools=["file_ops"],
-            max_iterations=1
-        )
+        result = await agentic_file_workflow(workflow_prompt="", available_tools=["file_ops"], max_iterations=1)
 
         assert result["success"] is False
         assert result["error_type"] == "MISSING_WORKFLOW_PROMPT"
@@ -285,11 +250,7 @@ class TestWorkflowValidation:
     @pytest.mark.asyncio
     async def test_empty_available_tools(self):
         """Test validation of empty available tools list."""
-        result = await agentic_file_workflow(
-            workflow_prompt="Test workflow",
-            available_tools=[],
-            max_iterations=1
-        )
+        result = await agentic_file_workflow(workflow_prompt="Test workflow", available_tools=[], max_iterations=1)
 
         assert result["success"] is False
         assert result["error_type"] == "EMPTY_TOOLS_LIST"
@@ -298,11 +259,7 @@ class TestWorkflowValidation:
     @pytest.mark.asyncio
     async def test_none_workflow_prompt(self):
         """Test validation of None workflow prompt."""
-        result = await agentic_file_workflow(
-            workflow_prompt=None,
-            available_tools=["file_ops"],
-            max_iterations=1
-        )
+        result = await agentic_file_workflow(workflow_prompt=None, available_tools=["file_ops"], max_iterations=1)
 
         assert result["success"] is False
         assert "MISSING_WORKFLOW_PROMPT" in result["error_type"]
@@ -318,22 +275,17 @@ class TestWorkflowScenarios:
             {
                 "tool_call": {
                     "name": "search_ops",
-                    "parameters": {"operation": "find_symbols", "path": "src", "pattern": "class|def"}
+                    "parameters": {"operation": "find_symbols", "path": "src", "pattern": "class|def"},
                 }
             },
-            {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": "src/main.py"}
-                }
-            },
-            None
+            {"tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": "src/main.py"}}},
+            None,
         ]
 
         result = await agentic_file_workflow(
             workflow_prompt="Analyze codebase structure and find main entry points",
             available_tools=["search_ops", "file_ops"],
-            max_iterations=5
+            max_iterations=5,
         )
 
         assert result["success"] is True
@@ -344,25 +296,18 @@ class TestWorkflowScenarios:
     async def test_data_processing_workflow(self, mock_sampling_context):
         """Test workflow for processing data files."""
         mock_sampling_context.sample_step.side_effect = [
-            {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": "data"}
-                }
-            },
+            {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": "data"}}},
             {
                 "tool_call": {
                     "name": "file_ops",
-                    "parameters": {"operation": "get_file_info", "path": "data/dataset.json"}
+                    "parameters": {"operation": "get_file_info", "path": "data/dataset.json"},
                 }
             },
-            None
+            None,
         ]
 
         result = await agentic_file_workflow(
-            workflow_prompt="Process and validate data files",
-            available_tools=["dir_ops", "file_ops"],
-            max_iterations=4
+            workflow_prompt="Process and validate data files", available_tools=["dir_ops", "file_ops"], max_iterations=4
         )
 
         assert result["success"] is True

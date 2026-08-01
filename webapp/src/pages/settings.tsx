@@ -1,16 +1,6 @@
-import { useTheme } from "@/components/theme-provider";
-import {
-  AlertCircle,
-  Cpu,
-  Key,
-  Monitor,
-  Moon,
-  RefreshCw,
-  Save,
-  Server,
-  Sun,
-} from "lucide-react";
+import { AlertCircle, Cpu, Key, Monitor, Moon, RefreshCw, Save, Server, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTheme } from "@/components/theme-provider";
 
 type LlmProvider = "ollama" | "lm-studio" | "openai" | "anthropic" | "gemini";
 
@@ -35,7 +25,10 @@ export default function Settings() {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelError, setModelError] = useState("");
+  const [detectedProviders, setDetectedProviders] = useState<Array<{ name: string; detected: boolean }>>([]);
+  const [gpuDetected, setGpuDetected] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-once restore; fetchModels is recreated per render
   useEffect(() => {
     const saved = localStorage.getItem("llm_config");
     if (saved) {
@@ -43,20 +36,45 @@ export default function Settings() {
         const parsed = JSON.parse(saved);
         setConfig({ ...DEFAULT_CONFIG, ...parsed });
         // Attempt to fetch models if we have a base url
-        if (
-          parsed.baseUrl &&
-          (parsed.provider === "ollama" || parsed.provider === "lm-studio")
-        ) {
+        if (parsed.baseUrl && (parsed.provider === "ollama" || parsed.provider === "lm-studio")) {
           fetchModels(parsed.provider, parsed.baseUrl);
         }
       } catch (e) {
         console.error("Failed to parse saved config", e);
       }
     }
+    // Auto-detect local providers on mount
+    (async () => {
+      try {
+        const r = await fetch("/api/llm/discover", {
+          signal: AbortSignal.timeout(4000),
+        });
+        if (r.ok) {
+          const data = await r.json();
+          if (Array.isArray(data.providers)) setDetectedProviders(data.providers);
+        }
+      } catch {
+        // backend unreachable — leave detection empty
+      }
+    })();
+    // GPU hint via WebGL renderer (fleet "GPU Opportunity" pattern)
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl");
+      if (gl) {
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+        if (/nvidia|radeon|amd|rtx|gtx|arc/i.test(renderer)) setGpuDetected(true);
+      }
+    } catch {
+      // no webgl — skip
+    }
   }, []);
 
   const handleSave = () => {
     localStorage.setItem("llm_config", JSON.stringify(config));
+    localStorage.setItem("llm_provider", config.provider);
+    localStorage.setItem("llm_model", config.model);
     setStatus("Settings saved successfully!");
     setTimeout(() => setStatus(""), 3000);
   };
@@ -78,8 +96,7 @@ export default function Settings() {
     if (provider === "lm-studio") newBaseUrl = "http://localhost:1234/v1";
     if (provider === "openai") newBaseUrl = "https://api.openai.com/v1";
     if (provider === "anthropic") newBaseUrl = "https://api.anthropic.com/v1";
-    if (provider === "gemini")
-      newBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
+    if (provider === "gemini") newBaseUrl = "https://generativelanguage.googleapis.com/v1beta";
 
     setConfig((prev) => ({
       ...prev,
@@ -133,9 +150,7 @@ export default function Settings() {
     <div className="space-y-8 max-w-4xl mx-auto pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage application preferences and LLM configuration.
-        </p>
+        <p className="text-muted-foreground mt-2">Manage application preferences and LLM configuration.</p>
       </div>
 
       <div className="space-y-6">
@@ -148,9 +163,7 @@ export default function Settings() {
             <button
               onClick={() => setTheme("light")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
-                theme === "light"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:bg-accent"
+                theme === "light" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
               }`}
             >
               <Sun className="w-4 h-4" /> Light
@@ -158,9 +171,7 @@ export default function Settings() {
             <button
               onClick={() => setTheme("dark")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
-                theme === "dark"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:bg-accent"
+                theme === "dark" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
               }`}
             >
               <Moon className="w-4 h-4" /> Dark
@@ -168,9 +179,7 @@ export default function Settings() {
             <button
               onClick={() => setTheme("system")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
-                theme === "system"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border hover:bg-accent"
+                theme === "system" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
               }`}
             >
               <Monitor className="w-4 h-4" /> System
@@ -183,14 +192,43 @@ export default function Settings() {
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Cpu className="w-5 h-5" /> Local LLM Configuration
           </h2>
+          {detectedProviders.length > 0 && (
+            <div className="flex flex-wrap gap-2 text-sm" data-testid="llm-provider-status">
+              {detectedProviders.map((p) => (
+                <span
+                  key={p.name}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${
+                    p.detected ? "bg-green-500/10 text-green-500" : "bg-slate-500/10 text-slate-400"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${p.detected ? "bg-green-500" : "bg-slate-500"}`} />
+                  {p.name === "ollama" ? "Ollama :11434" : "LM Studio :1234"}
+                  {p.detected ? "Detected" : "Not found"}
+                </span>
+              ))}
+            </div>
+          )}
+          {detectedProviders.every((p) => !p.detected) && detectedProviders.length > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+              No local LLM detected. Install{" "}
+              <a href="https://ollama.com" target="_blank" rel="noreferrer" className="underline">
+                Ollama
+              </a>{" "}
+              or LM Studio to enable AI features for free.
+            </div>
+          )}
+          {gpuDetected && detectedProviders.every((p) => !p.detected) && (
+            <div className="rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
+              High-performance GPU detected. Start Ollama or LM Studio to unlock local AI chat with no cloud costs.
+            </div>
+          )}
           <div className="grid gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Provider</label>
               <select
+                data-testid="llm-provider-select"
                 value={config.provider}
-                onChange={(e) =>
-                  handleProviderChange(e.target.value as LlmProvider)
-                }
+                onChange={(e) => handleProviderChange(e.target.value as LlmProvider)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="ollama">Ollama (Local)</option>
@@ -222,11 +260,7 @@ export default function Settings() {
                 value={config.apiKey}
                 onChange={(e) => updateConfig("apiKey", e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder={
-                  config.provider === "ollama"
-                    ? "Not required for Ollama"
-                    : "sk-..."
-                }
+                placeholder={config.provider === "ollama" ? "Not required for Ollama" : "sk-..."}
                 disabled={config.provider === "ollama"}
               />
             </div>
@@ -234,16 +268,13 @@ export default function Settings() {
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center justify-between">
                 <span>Model Name</span>
-                {(config.provider === "ollama" ||
-                  config.provider === "lm-studio") && (
+                {(config.provider === "ollama" || config.provider === "lm-studio") && (
                   <button
                     onClick={() => fetchModels(config.provider, config.baseUrl)}
                     className="text-xs text-primary flex items-center gap-1 hover:underline"
                     disabled={isLoadingModels}
                   >
-                    <RefreshCw
-                      className={`w-3 h-3 ${isLoadingModels ? "animate-spin" : ""}`}
-                    />
+                    <RefreshCw className={`w-3 h-3 ${isLoadingModels ? "animate-spin" : ""}`} />
                     Refresh Models
                   </button>
                 )}
@@ -251,6 +282,7 @@ export default function Settings() {
 
               {availableModels.length > 0 ? (
                 <select
+                  data-testid="llm-model-select"
                   value={config.model}
                   onChange={(e) => updateConfig("model", e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -278,9 +310,7 @@ export default function Settings() {
                   <AlertCircle className="w-3 h-3" /> {modelError}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Verify this model is downloaded in your local provider.
-              </p>
+              <p className="text-xs text-muted-foreground">Verify this model is downloaded in your local provider.</p>
             </div>
           </div>
         </section>

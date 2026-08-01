@@ -1,6 +1,6 @@
-import { cn } from "@/shared/utils";
 import { Activity, Box, Code, FileText, Search, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/shared/utils";
 
 const tools = [
   {
@@ -15,7 +15,7 @@ const tools = [
     title: "Search & Analysis",
     description: "Grep-based search, pattern matching, and content analysis.",
     icon: Search,
-    href: "#",
+    href: "/files",
     color: "text-green-500",
     bg: "bg-green-500/10",
   },
@@ -47,7 +47,7 @@ const tools = [
     title: "Host Context",
     description: "Environment variables, user info, and system details.",
     icon: Shield,
-    href: "#",
+    href: "/settings",
     color: "text-red-500",
     bg: "bg-red-500/10",
   },
@@ -55,11 +55,14 @@ const tools = [
 
 export default function Tools() {
   return (
-    <div className="space-y-8">
+    <div data-testid="tools-page" className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Tools</h1>
         <p className="text-muted-foreground mt-2">
-          Access powerful filesystem and system operations.
+          Access powerful filesystem and system operations.{" "}
+          <span className="text-primary/80">
+            All 24 tools are exposed over MCP — connect via Cursor, Claude Desktop, or any MCP client.
+          </span>
         </p>
       </div>
 
@@ -68,6 +71,7 @@ export default function Tools() {
           <Link
             key={tool.title}
             to={tool.href}
+            data-testid={`tool-card-${tool.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
             className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:shadow-md hover:border-primary/50"
           >
             <div className="flex items-center gap-4">
@@ -75,14 +79,10 @@ export default function Tools() {
                 <tool.icon className={cn("w-6 h-6", tool.color)} />
               </div>
               <div>
-                <h3 className="font-semibold leading-none tracking-tight">
-                  {tool.title}
-                </h3>
+                <h3 className="font-semibold leading-none tracking-tight">{tool.title}</h3>
               </div>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
-              {tool.description}
-            </p>
+            <p className="mt-4 text-sm text-muted-foreground line-clamp-2">{tool.description}</p>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-primary/5 opacity-0 transition-opacity group-hover:opacity-100" />
           </Link>
         ))}

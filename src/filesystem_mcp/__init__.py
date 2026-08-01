@@ -65,8 +65,8 @@ root_logger.addHandler(stderr_handler)
 logger = structlog.get_logger(__name__)
 
 # Import FastMCP 2.14.3+ compliant server
-from fastmcp import FastMCP  # noqa: E402
-from fastmcp.server import create_proxy  # noqa: E402
+from fastmcp import FastMCP
+from fastmcp.server import create_proxy
 
 
 @asynccontextmanager
@@ -109,6 +109,26 @@ Portmanteau tools (file_ops, dir_ops) use an operation enum; Compose and monitor
     version="2.2.0",
 )
 
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+
+@app.custom_route("/api/health", methods=["GET"])
+async def _api_health(_request: Request) -> Response:
+    return JSONResponse(
+        {
+            "status": "healthy",
+            "server_name": "filesystem-mcp",
+            "version": "2.2.0",
+        }
+    )
+
+
+@app.custom_route("/health", methods=["GET"])
+async def _health(request: Request) -> Response:
+    return await _api_health(request)
+
+
 _bridge_proxies = []
 bridge_urls = os.getenv("MCP_BRIDGE_URLS", "")
 if bridge_urls:
@@ -141,6 +161,7 @@ def _import_tools():
             ".tools.portmanteau_monitoring",  # System monitoring
             ".tools.portmanteau_host",  # Host context
             ".tools.agentic_file_workflow",  # Sampling-based autonomous workflow
+            ".tools.portmanteau_system",  # Server lifecycle (shutdown)
         ]
 
         for module_name in tool_modules:
@@ -178,13 +199,19 @@ def http_app():
         import uvicorn
         uvicorn.run(http_app(), host="127.0.0.1", port=10742)
     """
-    import os
     import time
 
+    from starlette.middleware.cors import CORSMiddleware
     from starlette.responses import JSONResponse
     from starlette.routing import Route
 
     _start = time.time()
+
+    async def _tool_names() -> list[str]:
+        try:
+            return sorted(t.name for t in await app.list_tools())
+        except Exception:
+            return []
 
     async def diagnostics(request):
         try:
@@ -200,13 +227,92 @@ def http_app():
                 "success": True,
                 "backend": {"port": 10742, "status": "running", "uptime": time.time() - _start},
                 "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
-                "tools": {"total": 0},
+                "tools": {"total": len(await _tool_names()), "names": await _tool_names()},
                 "cua_status": {"tesseract_available": False, "window_found": False},
             }
         )
 
+    async def status(request):
+        return JSONResponse(
+            {
+                "success": True,
+                "status": "ok",
+                "server": "filesystem-mcp",
+                "version": "2.2.0",
+                "uptime_seconds": time.time() - _start,
+                "tool_count": len(await _tool_names()),
+                "providers": {"mcp": "ok"},
+            }
+        )
+
+    async def capabilities(request):
+        tools = await _tool_names()
+        return JSONResponse(
+            {
+                "success": True,
+                "server": "filesystem-mcp",
+                "version": "2.2.0",
+                "capabilities": {
+                    "tools": tools,
+                    "features": {
+                        "file_operations": True,
+                        "directory_operations": True,
+                        "search": True,
+                        "docker": True,
+                        "monitoring": True,
+                        "host_context": True,
+                        "agentic_workflows": True,
+                        "concurrency_safety": True,
+                        "dual_transport": True,
+                    },
+                },
+            }
+        )
+
+    async def skills(request):
+        return JSONResponse({"success": True, "skills": []})
+
+    async def llm_discover(request):
+        import httpx
+
+        detected = []
+        probes = [
+            ("ollama", "http://127.0.0.1:11434/api/tags"),
+            ("lmstudio", "http://127.0.0.1:1234/v1/models"),
+        ]
+        for name, url in probes:
+            try:
+                r = await httpx.get(url, timeout=2.0)
+                if r.status_code == 200:
+                    detected.append({"name": name, "detected": True})
+                else:
+                    detected.append({"name": name, "detected": False})
+            except Exception:
+                detected.append({"name": name, "detected": False})
+        return JSONResponse({"success": True, "providers": detected})
+
     asgi = app.http_app()
+    asgi.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:10743",
+            "http://127.0.0.1:10743",
+            "http://localhost:10742",
+            "http://127.0.0.1:10742",
+            "http://tauri.localhost",
+            "https://tauri.localhost",
+            "tauri://localhost",
+        ],
+        allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     asgi.routes.append(Route("/api/v1/diagnostics", endpoint=diagnostics))
+    asgi.routes.append(Route("/api/status", endpoint=status))
+    asgi.routes.append(Route("/api/capabilities", endpoint=capabilities))
+    asgi.routes.append(Route("/api/skills", endpoint=skills))
+    asgi.routes.append(Route("/api/llm/discover", endpoint=llm_discover))
     return asgi
 
 

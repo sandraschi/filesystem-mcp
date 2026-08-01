@@ -59,18 +59,10 @@ def mock_sampling_context():
     async def mock_sample_step(prompt, available_tools, context, operation_type):
         # Simulate LLM decision making for file operations
         if "organize" in prompt.lower():
-            return {
-                "tool_call": {
-                    "name": "dir_ops",
-                    "parameters": {"operation": "list_directory", "path": "."}
-                }
-            }
+            return {"tool_call": {"name": "dir_ops", "parameters": {"operation": "list_directory", "path": "."}}}
         elif "backup" in prompt.lower():
             return {
-                "tool_call": {
-                    "name": "file_ops",
-                    "parameters": {"operation": "read_file", "path": "important.txt"}
-                }
+                "tool_call": {"name": "file_ops", "parameters": {"operation": "read_file", "path": "important.txt"}}
             }
         else:
             return None
@@ -92,8 +84,9 @@ def mock_app_state(mock_sampling_context):
 def mock_app_state_fixture(mock_app_state, monkeypatch):
     """Automatically mock the app state for all tests."""
     from filesystem_mcp import app
+
     # FastMCP doesn't have a state attribute, so we need to add it dynamically
-    if not hasattr(app, 'state'):
+    if not hasattr(app, "state"):
         app.state = {}
     original_state = app.state.copy()
     app.state.update(mock_app_state)
@@ -143,7 +136,7 @@ def parse_enhanced_response(response: dict) -> dict:
     return response
 
 
-def assert_enhanced_success_response(response: dict, required_fields: list = None):
+def assert_enhanced_success_response(response: dict, required_fields: list | None = None):
     """Assert that a response follows the enhanced success pattern."""
     assert response["success"] is True
     assert "result" in response

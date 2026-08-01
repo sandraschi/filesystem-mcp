@@ -360,9 +360,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "get_container", "container_id": "test_container_id"}
-        )
+        result = await container_ops.run({"operation": "get_container", "container_id": "test_container_id"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -400,9 +398,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "start_container", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "start_container", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -418,9 +414,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "stop_container", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "stop_container", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -435,9 +429,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "restart_container", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "restart_container", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -453,9 +445,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "remove_container", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "remove_container", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -498,9 +488,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "container_logs", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "container_logs", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -526,9 +514,7 @@ class TestContainerOperations:
         mock_client.containers.get.return_value = mock_container
         mock_get_client.return_value = mock_client
 
-        result = await container_ops.run(
-            {"operation": "container_stats", "container_id": "test_container"}
-        )
+        result = await container_ops.run({"operation": "container_stats", "container_id": "test_container"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -582,9 +568,7 @@ class TestImageOperations:
         mock_client.images.build.return_value = (mock_image, [])
         mock_get_client.return_value = mock_client
 
-        result = await infra_ops.run(
-            {"operation": "build_image", "path": "/tmp/test", "tag": "myapp:latest"}
-        )
+        result = await infra_ops.run({"operation": "build_image", "path": "/tmp/test", "tag": "myapp:latest"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -600,9 +584,7 @@ class TestImageOperations:
         mock_client.images.remove.return_value = None
         mock_get_client.return_value = mock_client
 
-        result = await infra_ops.run(
-            {"operation": "remove_image", "image": "nginx:latest"}
-        )
+        result = await infra_ops.run({"operation": "remove_image", "image": "nginx:latest"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -638,9 +620,7 @@ class TestNetworkOperations:
         mock_client.networks.create.return_value = mock_network
         mock_get_client.return_value = mock_client
 
-        result = await infra_ops.run(
-            {"operation": "create_network", "name": "test_network", "driver": "bridge"}
-        )
+        result = await infra_ops.run({"operation": "create_network", "name": "test_network", "driver": "bridge"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -655,9 +635,7 @@ class TestNetworkOperations:
         mock_client.networks.get.return_value = mock_network
         mock_get_client.return_value = mock_client
 
-        result = await infra_ops.run(
-            {"operation": "remove_network", "network_id": "test_network"}
-        )
+        result = await infra_ops.run({"operation": "remove_network", "network_id": "test_network"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -714,9 +692,7 @@ class TestVolumeOperations:
         mock_client.volumes.get.return_value = mock_volume
         mock_get_client.return_value = mock_client
 
-        result = await infra_ops.run(
-            {"operation": "remove_volume", "volume_name": "test_volume"}
-        )
+        result = await infra_ops.run({"operation": "remove_volume", "volume_name": "test_volume"})
 
         data = parse_tool_result(result)
         assert data["success"] is True
@@ -729,9 +705,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_up_success(self):
         """Test successful compose up."""
-        with patch(
-            "filesystem_mcp.tools.portmanteau_orchestration._run_compose_command"
-        ) as mock_run:
+        with patch("filesystem_mcp.tools.portmanteau_orchestration._run_compose_command") as mock_run:
             mock_run.return_value = {"success": True, "result": {"output": "ok", "stderr": ""}}
 
             result = await compose_up(path="/tmp/compose")
@@ -742,9 +716,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_down_success(self):
         """Test successful compose down."""
-        with patch(
-            "filesystem_mcp.tools.portmanteau_orchestration._run_compose_command"
-        ) as mock_run:
+        with patch("filesystem_mcp.tools.portmanteau_orchestration._run_compose_command") as mock_run:
             mock_run.return_value = {"success": True, "result": {"output": "ok", "stderr": ""}}
 
             result = await compose_down(path="/tmp/compose")
@@ -755,9 +727,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_ps_success(self):
         """Test successful compose ps."""
-        with patch(
-            "filesystem_mcp.tools.portmanteau_orchestration._run_compose_command"
-        ) as mock_run:
+        with patch("filesystem_mcp.tools.portmanteau_orchestration._run_compose_command") as mock_run:
             mock_run.return_value = {"success": True, "result": {"output": "[]", "stderr": ""}}
 
             result = await compose_ps(path="/tmp/compose")
@@ -768,9 +738,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_logs_success(self):
         """Test successful compose logs."""
-        with patch(
-            "filesystem_mcp.tools.portmanteau_orchestration._run_compose_command"
-        ) as mock_run:
+        with patch("filesystem_mcp.tools.portmanteau_orchestration._run_compose_command") as mock_run:
             mock_run.return_value = {
                 "success": True,
                 "result": {
@@ -788,9 +756,7 @@ class TestComposeOperations:
     @pytest.mark.asyncio
     async def test_compose_config_success(self):
         """Test successful compose config validation."""
-        with patch(
-            "filesystem_mcp.tools.portmanteau_orchestration._run_compose_command"
-        ) as mock_run:
+        with patch("filesystem_mcp.tools.portmanteau_orchestration._run_compose_command") as mock_run:
             mock_run.return_value = {
                 "success": True,
                 "result": {"output": "version: '3.8'\nservices:\n  web:\n    image: nginx", "stderr": ""},

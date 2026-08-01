@@ -16,7 +16,8 @@ export type McpCallResult = {
   isError?: boolean;
 };
 
-const isProduction = import.meta.env.PROD || (typeof window !== "undefined" && !window.location.hostname.includes("localhost"));
+const isProduction =
+  import.meta.env.PROD || (typeof window !== "undefined" && !window.location.hostname.includes("localhost"));
 
 function getMCPBaseUrl(): string {
   if (isProduction) {
@@ -38,7 +39,6 @@ export class McpClient {
     return new Promise<void>((resolve, reject) => {
       // FastMCP uses /sse for the stream
       const sseUrl = `${this.baseUrl}/sse`;
-      console.log("Connecting to MCP SSE:", sseUrl);
 
       this.sse = new EventSourcePolyfill(sseUrl);
 
@@ -48,7 +48,6 @@ export class McpClient {
 
           if (event.type === "endpoint") {
             this.endpoint = data;
-            console.log("MCP Endpoint discovered:", this.endpoint);
             // Once we have an endpoint, we can identify and list tools
             this.initializeSession().then(resolve).catch(reject);
           } else if (event.type === "initialization") {
@@ -67,7 +66,6 @@ export class McpClient {
 
       this.sse.addEventListener("endpoint", (e: any) => {
         this.endpoint = e.data;
-        console.log("MCP Endpoint event:", this.endpoint);
         this.initializeSession().then(resolve).catch(reject);
       });
     });
@@ -81,22 +79,19 @@ export class McpClient {
   async callTool(name: string, args: any): Promise<McpCallResult> {
     if (!this.endpoint) throw new Error("Not connected");
 
-    const response = await fetch(
-      `${this.baseUrl}/messages?sessionId=${this.sessionId || ""}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: crypto.randomUUID(),
-          method: "tools/call",
-          params: {
-            name,
-            arguments: args,
-          },
-        }),
-      },
-    );
+    const response = await fetch(`${this.baseUrl}/messages?sessionId=${this.sessionId || ""}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: crypto.randomUUID(),
+        method: "tools/call",
+        params: {
+          name,
+          arguments: args,
+        },
+      }),
+    });
 
     if (!response.ok) {
       throw new Error(`MCP Call Failed: ${response.statusText}`);
@@ -141,7 +136,9 @@ export class McpClient {
   }
 
   private notifyToolsChanged() {
-    this.onToolsChanged.forEach((cb) => cb(this.tools));
+    this.onToolsChanged.forEach((cb) => {
+      cb(this.tools);
+    });
   }
 
   getTools() {

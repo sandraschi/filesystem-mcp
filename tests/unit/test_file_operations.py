@@ -28,11 +28,27 @@ def call_file_ops(**kwargs):
     operation = kwargs.get("operation")
 
     # Route to the appropriate tool based on operation
-    if operation in ["read_file", "write_file", "edit_file", "move_file", "read_file_lines",
-                     "read_multiple_files", "file_exists", "get_file_info", "head_file", "tail_file"]:
+    if operation in [
+        "read_file",
+        "write_file",
+        "edit_file",
+        "move_file",
+        "read_file_lines",
+        "read_multiple_files",
+        "file_exists",
+        "get_file_info",
+        "head_file",
+        "tail_file",
+    ]:
         return asyncio.run(file_ops_tool(operation=operation, **{k: v for k, v in kwargs.items() if k != "operation"}))
-    elif operation in ["list_directory", "create_directory", "remove_directory", "directory_tree",
-                       "calculate_directory_size", "find_empty_directories"]:
+    elif operation in [
+        "list_directory",
+        "create_directory",
+        "remove_directory",
+        "directory_tree",
+        "calculate_directory_size",
+        "find_empty_directories",
+    ]:
         return asyncio.run(dir_ops_tool(operation=operation, **{k: v for k, v in kwargs.items() if k != "operation"}))
     else:
         # For invalid operations, call file_ops which will return error
@@ -47,10 +63,7 @@ class TestFileOpsPortmanteau:
 
     def test_read_file_success_enhanced(self, temp_file):
         """Test successful file reading with enhanced response."""
-        result = call_file_ops(
-            operation="read_file",
-            path=str(temp_file)
-        )
+        result = call_file_ops(operation="read_file", path=str(temp_file))
 
         assert_enhanced_success_response(result, ["path", "content", "encoding"])
         assert result["result"]["content"] == "Test content"
@@ -63,10 +76,7 @@ class TestFileOpsPortmanteau:
     async def test_read_file_not_found_enhanced(self, temp_dir):
         """Test reading non-existent file with enhanced error response."""
         nonexistent = temp_dir / "nonexistent.txt"
-        result = await file_ops(
-            operation="read_file",
-            path=str(nonexistent)
-        )
+        result = await file_ops(operation="read_file", path=str(nonexistent))
 
         assert_enhanced_error_response(result)
         assert result["error_type"] == "file_not_found"
@@ -79,11 +89,7 @@ class TestFileOpsPortmanteau:
         test_path = temp_dir / "new_file.txt"
         content = "Hello, World!"
 
-        result = await file_ops(
-            operation="write_file",
-            path=str(test_path),
-            content=content
-        )
+        result = await file_ops(operation="write_file", path=str(test_path), content=content)
 
         assert_enhanced_success_response(result)
         assert test_path.exists()
@@ -112,10 +118,7 @@ class TestFileOpsPortmanteau:
     @pytest.mark.asyncio
     async def test_file_exists_success_enhanced(self, temp_file):
         """Test file existence check with enhanced response."""
-        result = await file_ops(
-            operation="file_exists",
-            path=str(temp_file)
-        )
+        result = await file_ops(operation="file_exists", path=str(temp_file))
 
         assert_enhanced_success_response(result, ["exists"])
         assert result["result"]["exists"] is True
@@ -124,10 +127,7 @@ class TestFileOpsPortmanteau:
     @pytest.mark.asyncio
     async def test_get_file_info_enhanced(self, temp_file):
         """Test file info retrieval with enhanced response."""
-        result = await file_ops(
-            operation="get_file_info",
-            path=str(temp_file)
-        )
+        result = await file_ops(operation="get_file_info", path=str(temp_file))
 
         assert_enhanced_success_response(result, ["size"])
         assert result["result"]["size"] == 12  # "Test content" length
@@ -141,12 +141,7 @@ class TestFileOpsPortmanteau:
         original_content = "Hello, World!\nThis is a test file."
         temp_file.write_text(original_content)
 
-        result = await file_ops(
-            operation="edit_file",
-            path=str(temp_file),
-            old_string="World",
-            new_string="Universe"
-        )
+        result = await file_ops(operation="edit_file", path=str(temp_file), old_string="World", new_string="Universe")
 
         assert_enhanced_success_response(result)
         assert result["success"] is True
@@ -161,11 +156,7 @@ class TestFileOpsPortmanteau:
         """Test file moving with enhanced response."""
         dest_path = temp_dir / "moved_file.txt"
 
-        result = call_file_ops(
-            operation="move_file",
-            path=str(temp_file),
-            destination_path=str(dest_path)
-        )
+        result = call_file_ops(operation="move_file", path=str(temp_file), destination_path=str(dest_path))
 
         assert_enhanced_success_response(result)
         assert dest_path.exists()
@@ -178,12 +169,7 @@ class TestFileOpsPortmanteau:
         content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
         temp_file.write_text(content)
 
-        result = call_file_ops(
-            operation="read_file_lines",
-            path=str(temp_file),
-            offset=1,
-            limit=3
-        )
+        result = call_file_ops(operation="read_file_lines", path=str(temp_file), offset=1, limit=3)
 
         assert_enhanced_success_response(result)
         assert "content" in result["result"]
@@ -195,11 +181,7 @@ class TestFileOpsPortmanteau:
         content = "\n".join(f"Line {i}" for i in range(1, 21))  # 20 lines
         temp_file.write_text(content)
 
-        result = call_file_ops(
-            operation="head_file",
-            path=str(temp_file),
-            lines=5
-        )
+        result = call_file_ops(operation="head_file", path=str(temp_file), lines=5)
 
         assert_enhanced_success_response(result)
         assert "content" in result["result"]
@@ -212,24 +194,16 @@ class TestFileOpsPortmanteau:
         content = "\n".join(f"Line {i}" for i in range(1, 21))  # 20 lines
         temp_file.write_text(content)
 
-        result = call_file_ops(
-            operation="tail_file",
-            path=str(temp_file),
-            lines=5
-        )
+        result = call_file_ops(operation="tail_file", path=str(temp_file), lines=5)
 
         assert_enhanced_success_response(result)
         assert "content" in result["result"]
         assert "Line 20" in result["result"]["content"]
         assert "quality_metrics" in result
 
-
     def test_invalid_operation_enhanced(self, temp_file):
         """Test invalid operation with clarification response."""
-        result = call_file_ops(
-            operation="invalid_operation",
-            path=str(temp_file)
-        )
+        result = call_file_ops(operation="invalid_operation", path=str(temp_file))
 
         assert_enhanced_error_response(result)
         assert "unsupported_operation" in result["error_type"]
@@ -247,10 +221,7 @@ class TestFileOpsPortmanteau:
 
     def test_quality_metrics_tracking(self, temp_file):
         """Test that quality metrics are properly tracked."""
-        result = call_file_ops(
-            operation="read_file",
-            path=str(temp_file)
-        )
+        result = call_file_ops(operation="read_file", path=str(temp_file))
 
         assert_enhanced_success_response(result)
         metrics = result["quality_metrics"]
@@ -264,10 +235,7 @@ class TestFileOpsPortmanteau:
 
     def test_performance_tracking(self, temp_file):
         """Test that performance metrics are tracked."""
-        result = call_file_ops(
-            operation="read_file",
-            path=str(temp_file)
-        )
+        result = call_file_ops(operation="read_file", path=str(temp_file))
 
         assert_enhanced_success_response(result)
         assert "execution_time_ms" in result

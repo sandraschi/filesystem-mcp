@@ -1,7 +1,3 @@
-import { cn } from "@/shared/utils";
-import { useCallback, useEffect } from "react";
-import { useConnection } from "@/store/connection";
-import { useZoom } from "@/hooks/useZoom";
 import {
   Book,
   FileText,
@@ -11,11 +7,18 @@ import {
   History,
   LayoutDashboard,
   MessageSquare,
+  Moon,
   Server,
   Settings,
+  Sun,
   Terminal,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { useTheme } from "@/components/theme-provider";
+import { useZoom } from "@/hooks/useZoom";
+import { cn } from "@/shared/utils";
+import { useConnection } from "@/store/connection";
 
 const BACKEND_PORT = 10742;
 const BACKOFF = [1, 2, 4, 8, 16, 30];
@@ -28,11 +31,22 @@ export default function Layout() {
     let attempt = 0;
     const poll = async () => {
       try {
-        const r = await fetch(`http://127.0.0.1:${BACKEND_PORT}/api/health`, { signal: AbortSignal.timeout(5000) });
-        if (r.ok) { useConnection.setState({ state: "connected" }); attempt = 0; }
-        else useConnection.setState({ state: "offline", lastError: `HTTP ${r.status}` });
+        const r = await fetch(`http://127.0.0.1:${BACKEND_PORT}/api/health`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (r.ok) {
+          useConnection.setState({ state: "connected" });
+          attempt = 0;
+        } else
+          useConnection.setState({
+            state: "offline",
+            lastError: `HTTP ${r.status}`,
+          });
       } catch (e) {
-        useConnection.setState({ state: "offline", lastError: e instanceof Error ? e.message : "Network error" });
+        useConnection.setState({
+          state: "offline",
+          lastError: e instanceof Error ? e.message : "Network error",
+        });
       }
       attempt = Math.min(++attempt, BACKOFF.length - 1);
       setTimeout(poll, BACKOFF[attempt] * 1000);
@@ -52,13 +66,19 @@ export default function Layout() {
         const { listen } = await import("@tauri-apps/api/event");
         unlisten = await listen<string>("backend-status", (event) => {
           if (event.payload === "ready") useConnection.setState({ state: "connected" });
-          else if (event.payload?.startsWith("error:")) useConnection.setState({ state: "error", lastError: event.payload });
+          else if (event.payload?.startsWith("error:"))
+            useConnection.setState({
+              state: "error",
+              lastError: event.payload,
+            });
         });
       } catch {
         // Not inside Tauri — HTTP polling handles it
       }
     })();
-    return () => { if (unlisten) unlisten(); };
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   const navItems = [
@@ -85,9 +105,7 @@ export default function Layout() {
             </div>
             <span>fs-mcp</span>
           </div>
-          <div className="mt-2 text-xs text-muted-foreground font-mono">
-            v2.2.0 (SOTA)
-          </div>
+          <div className="mt-2 text-xs text-muted-foreground font-mono">v2.2.0 (SOTA)</div>
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -107,9 +125,7 @@ export default function Layout() {
                 <item.icon
                   className={cn(
                     "w-5 h-5",
-                    isActive
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground group-hover:text-accent-foreground",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground",
                   )}
                 />
                 {item.label}
@@ -150,6 +166,21 @@ export default function Layout() {
 
 function TopBar() {
   const { state, lastError } = useConnection();
+  const { setTheme } = useTheme();
+  const isLight = document.documentElement.classList.contains("light");
+  const [restarting, setRestarting] = useState(false);
+
+  const toggle = () => setTheme(isLight ? "dark" : "light");
+
+  const restartBackend = async () => {
+    setRestarting(true);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("start_backend");
+    } catch {
+      setRestarting(false); // not in Tauri — HTTP poll will update
+    }
+  };
 
   const colorMap: Record<string, string> = {
     connected: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -167,7 +198,30 @@ function TopBar() {
 
   return (
     <header className="flex h-12 items-center justify-end border-b border-border bg-background/80 px-6 backdrop-blur-xl">
-      <div data-testid="connection-status" className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs border ${colorMap[state] || colorMap.connecting}`}>
+      {state !== "connected" && (
+        <button
+          type="button"
+          onClick={restartBackend}
+          disabled={restarting}
+          className="mr-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+          title="Restart the embedded backend (Tauri app)"
+        >
+          {restarting ? "Restarting..." : "Restart Backend"}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={toggle}
+        className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors mr-3"
+        title={isLight ? "Switch to dark mode" : "Switch to light mode"}
+        aria-label="Toggle light mode"
+      >
+        {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+      </button>
+      <div
+        data-testid="connection-status"
+        className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs border ${colorMap[state] || colorMap.connecting}`}
+      >
         <span className="relative flex h-2 w-2">
           {state !== "offline" && state !== "error" && (
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />

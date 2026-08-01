@@ -1,8 +1,8 @@
 # 🏗️ Nest Protect MCP Server - Technical Architecture
 
-**Last Updated**: September 20, 2025  
-**Version**: 1.0.0 (Production)  
-**Framework**: FastMCP 2.12.3  
+**Last Updated**: September 20, 2025
+**Version**: 1.0.0 (Production)
+**Framework**: FastMCP 2.12.3
 **Status**: ✅ **PRODUCTION READY**
 
 ---
@@ -89,7 +89,7 @@ The Nest Protect MCP Server follows a **modular, layered architecture** designed
 ```python
 # Tool Categories (24 total)
 Device Status (3)    → Real-time device monitoring
-Device Control (5)   → Direct device manipulation  
+Device Control (5)   → Direct device manipulation
 System Status (3)    → Server health & diagnostics
 Help Tools (3)       → Tool discovery & assistance
 Authentication (3)   → OAuth 2.0 flow management
@@ -304,8 +304,8 @@ except ValidationError as e:
 import structlog
 
 logger = structlog.get_logger()
-logger.info("Device status retrieved", 
-           device_id=device_id, 
+logger.info("Device status retrieved",
+           device_id=device_id,
            response_time=duration,
            battery_level=status.battery)
 ```

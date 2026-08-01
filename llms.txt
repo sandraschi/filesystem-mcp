@@ -1,27 +1,34 @@
 # filesystem-mcp
-> **Complete guide to packaging and distributing MCP servers with MCPB** --- 📄 [MCPB_BUILDING_GUIDE.md](MCPB_BUILDING_GUIDE.md) **Complete 1,900+ line comprehensive guide** **What it covers**: - ✅ MCPB ...
 
-This project includes automated llms.txt generation for AI accessibility.
+FastMCP 3.4+ server for file system operations, directory management, content
+search, Docker containers/images/networks/volumes, Docker Compose, system
+monitoring, and host context — with per-path concurrency-safe atomic writes.
+
+> **Full documentation**: [llms-full.txt](llms-full.txt) — complete tool catalog,
+> response contracts, configuration, architecture, and troubleshooting.
+
+## Key Facts
+
+- 24 MCP tools, portmanteau grouped (file_ops, dir_ops, search_ops, container_ops,
+  infra_ops, host_ops + compose, monitoring, agentic workflow, shutdown)
+- Dual transport: stdio (IDE clients) + HTTP streamable (webapp, LAN, Tailscale)
+- Atomic writes with per-path asyncio locks and automatic `.backup` files
+- Ports: backend 10742, webapp frontend 10743 (dev)
+- REST: /api/health, /api/status, /api/capabilities, /api/skills,
+  /api/llm/discover, /api/llm/chat, /api/v1/diagnostics
 
 ## Docs
-- [Readme](docs\mcpb-packaging\README.md): **Complete guide to packaging and distributing MCP servers with MCPB**
-- [Readme](docs\glama\README.md): This directory contains documentation related to achieving GLAMA AI Gold standard status for the Adv...
-- [Readme](README.md): [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licens...
-- [Readme](docs\github\README.md): > **Purpose**: Comprehensive GitHub configuration guide to avoid hours of trial-and-error setup.
-- [Complete Setup Guide](docs\github\COMPLETE_SETUP_GUIDE.md): > **6 hours of pain distilled into 30 minutes of setup**
-- [Debugging Lessons Learned](docs\DEBUGGING_LESSONS_LEARNED.md): **Real-World Experience Report**
-- [Three Filesystem Mcp Comparison](THREE_FILESYSTEM_MCP_COMPARISON.md): | Server | Framework | Focus | Total Tools | Platform |
-- [Repository Analysis 2025 10 26](docs\repository-analysis-2025-10-26.md): **Date:** 2025-10-26_00-38-06
-- [Mcp Production Checklist](docs\MCP_PRODUCTION_CHECKLIST.md): Use this checklist to audit any MCP server repo before marking it production-ready.
-- [Release Checklist](docs\github\RELEASE_CHECKLIST.md): > **Don't ship broken code!** - Complete pre-release validation from our beta release experience.
+
+- [Readme](README.md): Overview, quick start, Claude Desktop setup
+- [Install Guide](INSTALL.md): Installation and prerequisites
+- [Tools List](FILESYSTEM_MCP_TOOLS_LIST.md): Full tool catalog
+- [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md): Design and transport
+- [Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md): Known issues and fixes
+- [Changelog](CHANGELOG.md): Version history
 
 ## Configuration
-- [Pyproject](pyproject.toml): Python project configuration and dependencies
-- [Package](webapp\package.json): Node.js project configuration and dependencies
-- [Cargo](Cargo.toml): Rust project configuration and dependencies
-- [Config](.git\config): Application configuration files
 
-## Optional
-- [Changelog 20260227 135345](CHANGELOG_20260227_135345.md.bak): Project changelog information
-- [Contributing](CONTRIBUTING.md): Project contributing information
-- [License](LICENSE): Project license information
+- [Pyproject](pyproject.toml): Python project configuration and dependencies
+- [Package](webapp/package.json): Node.js project configuration and dependencies
+- [Cargo](Cargo.toml): Rust (Tauri native wrapper) dependencies
+- [Environment Template](.env.example): Copy to `.env` and customize

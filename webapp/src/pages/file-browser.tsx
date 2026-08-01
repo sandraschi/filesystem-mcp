@@ -1,14 +1,7 @@
+import { ArrowLeft, File, FileCode, FileImage, Folder, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useMcp } from "@/shared/mcp-provider";
 import { cn } from "@/shared/utils";
-import {
-  ArrowLeft,
-  File,
-  FileCode,
-  FileImage,
-  Folder,
-  RefreshCw,
-} from "lucide-react";
-import { useEffect, useState } from "react";
 
 type FileEntry = {
   name: string;
@@ -65,9 +58,7 @@ export default function FileBrowser() {
         name: item.name || item.path?.split(/[\\/]/).pop() || "Unknown",
         type: item.type || (item.is_dir ? "directory" : "file"),
         size: item.size,
-        path:
-          item.path ||
-          (path.endsWith("\\") ? path + item.name : `${path}\\${item.name}`),
+        path: item.path || (path.endsWith("\\") ? path + item.name : `${path}\\${item.name}`),
       }));
 
       parsedEntries.sort((a, b) => {
@@ -92,10 +83,7 @@ export default function FileBrowser() {
         path: entry.path || `${currentPath}\\${entry.name}`,
       });
 
-      const content =
-        (result as any).content ||
-        (result as any).data ||
-        JSON.stringify(result, null, 2);
+      const content = (result as any).content || (result as any).data || JSON.stringify(result, null, 2);
       setSelectedFile({ name: entry.name, content });
     } catch (err: any) {
       setError(`Failed to read file: ${err.message}`);
@@ -104,6 +92,7 @@ export default function FileBrowser() {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchDirectory is recreated per render; fetch once on connect
   useEffect(() => {
     if (isConnected) {
       fetchDirectory(currentPath);
@@ -126,13 +115,8 @@ export default function FileBrowser() {
   };
 
   const getIcon = (entry: FileEntry) => {
-    if (entry.type === "directory")
-      return <Folder className="w-5 h-5 text-blue-400" />;
-    if (
-      entry.name.endsWith(".ts") ||
-      entry.name.endsWith(".tsx") ||
-      entry.name.endsWith(".js")
-    )
+    if (entry.type === "directory") return <Folder className="w-5 h-5 text-blue-400" />;
+    if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx") || entry.name.endsWith(".js"))
       return <FileCode className="w-5 h-5 text-yellow-400" />;
     if (entry.name.endsWith(".png") || entry.name.endsWith(".jpg"))
       return <FileImage className="w-5 h-5 text-purple-400" />;
@@ -144,9 +128,7 @@ export default function FileBrowser() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">File Browser</h1>
-          <p className="text-muted-foreground mt-2">
-            Explore and manage files on the host system.
-          </p>
+          <p className="text-muted-foreground mt-2">Explore and manage files on the host system.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -187,38 +169,25 @@ export default function FileBrowser() {
               </div>
             )}
 
-            {!isConnected && (
-              <div className="text-center p-8 text-muted-foreground">
-                Connecting to server...
-              </div>
-            )}
+            {!isConnected && <div className="text-center p-8 text-muted-foreground">Connecting to server...</div>}
 
             {entries.map((entry, i) => (
-              <div
-                key={i}
-                onClick={() =>
-                  entry.type === "directory"
-                    ? handleNavigate(entry.path)
-                    : readFile(entry)
-                }
-                className="flex items-center gap-3 p-2 hover:bg-accent/50 rounded cursor-pointer transition-colors group"
+              <button
+                key={`${entry.name}-${i}`}
+                type="button"
+                onClick={() => (entry.type === "directory" ? handleNavigate(entry.path) : readFile(entry))}
+                className="flex items-center gap-3 p-2 hover:bg-accent/50 rounded cursor-pointer transition-colors group text-left w-full bg-transparent border-0"
               >
                 {getIcon(entry)}
-                <span className="text-sm font-medium truncate flex-1">
-                  {entry.name}
-                </span>
+                <span className="text-sm font-medium truncate flex-1">{entry.name}</span>
                 {entry.size !== undefined && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {(entry.size / 1024).toFixed(1)} KB
-                  </span>
+                  <span className="text-xs text-muted-foreground font-mono">{(entry.size / 1024).toFixed(1)} KB</span>
                 )}
-              </div>
+              </button>
             ))}
 
             {entries.length === 0 && !isLoading && !error && (
-              <div className="text-center p-8 text-muted-foreground text-sm">
-                Empty directory
-              </div>
+              <div className="text-center p-8 text-muted-foreground text-sm">Empty directory</div>
             )}
           </div>
         </div>
@@ -230,10 +199,7 @@ export default function FileBrowser() {
                 <FileCode className="w-4 h-4" />
                 {selectedFile.name}
               </div>
-              <button
-                onClick={() => setSelectedFile(null)}
-                className="text-xs hover:underline"
-              >
+              <button onClick={() => setSelectedFile(null)} className="text-xs hover:underline">
                 Close
               </button>
             </div>
