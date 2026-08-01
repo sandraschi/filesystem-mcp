@@ -117,3 +117,4 @@ node_modules/
 _dashboard/
 webapp/dist/
 webapp/playwright-report/
+webapp/test-results/
