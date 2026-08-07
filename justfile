@@ -5,7 +5,7 @@ import 'scripts/just/fleet.just'
 default:
     @just --list
 
-# ── Quality ───────────────────────────────────────────────────────────────────
+# --- Quality ---
 
 # Execute Ruff SOTA v13.1 linting
 lint:
@@ -26,7 +26,7 @@ fmt:
     uv run ruff format src/ tests/
     uv run ruff check --fix src/ tests/
 
-# ── Testing ───────────────────────────────────────────────────────────────────
+# --- Testing ---
 
 # Run all tests
 test:
@@ -41,7 +41,7 @@ check:
     Set-Location '{{justfile_directory()}}'
     uv run python -c "import filesystem_mcp; print('Import OK')"
 
-# ── Installation ──────────────────────────────────────────────────────────────
+# --- Installation ---
 
 # Install all dependencies
 install:
@@ -54,7 +54,7 @@ bootstrap: install
     Set-Location webapp; npm ci; if ($LASTEXITCODE -ne 0) { npm install }
     Write-Host "Pre-commit hooks installed." -ForegroundColor Green
 
-# ── Dev ───────────────────────────────────────────────────────────────────────
+# --- Dev ---
 
 # Start the MCP stdio server (for Claude Desktop testing)
 mcp:
@@ -74,7 +74,7 @@ certify:
     uv run python -c "import filesystem_mcp; print('Import OK')"
     uv run pytest tests/ -q
 
-# ── Hardening ─────────────────────────────────────────────────────────────────
+# --- Hardening ---
 
 # Execute Bandit security audit
 check-sec:
@@ -101,7 +101,7 @@ build:
     Set-Location '{{justfile_directory()}}'
     uv build
 
-# ── Native (Tauri) ──────────────────────────────────────────────────────────
+# --- Native  Tauri ---
 
 # Build the Tauri NSIS desktop installer (full pipeline: frontend -> Rust -> NSIS)
 build-native:
@@ -109,7 +109,7 @@ build-native:
 	Set-Location '{{justfile_directory()}}\native'
 	npx @tauri-apps/cli build --bundles nsis
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
+# --- Cleanup ---
 
 # Clean build artifacts and caches
 clean:
