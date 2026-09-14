@@ -18,6 +18,13 @@ instead of importlib, since it generally isn't itself an importable module.
 Exits 0 and prints "OK ..." on pass; exits 1 and prints "FAIL ..." on failure.
 """
 
+# This is a CLI script whose entire job is to print its own pass/fail result
+# to stdout for pack.ps1 to show the user -- that's the intended output
+# mechanism, not debug output flake8-print's T201 exists to catch. Some
+# fleet repos' ruff config opts into T20 without an mcpb/-specific
+# per-file-ignore, which blocked this exact commit fleet-wide until this
+# line was added (2026-09-14).
+
 from __future__ import annotations
 
 import ast
