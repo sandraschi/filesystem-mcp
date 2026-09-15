@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -259,7 +260,7 @@ async def _remove_directory(directory_path: str, recursive: bool) -> dict[str, A
             )
 
         if recursive:
-            shutil.rmtree(path_obj)
+            await asyncio.to_thread(shutil.rmtree, path_obj)
         else:
             path_obj.rmdir()
         return _success_response({"path": str(path_obj), "recursive": recursive})

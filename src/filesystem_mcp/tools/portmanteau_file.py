@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -335,7 +336,7 @@ async def _write_file(
 
             ts = _time.strftime("%Y%m%d_%H%M%S")
             backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
-            shutil.copy2(path_obj, backup_path)
+            await asyncio.to_thread(shutil.copy2, path_obj, backup_path)
 
         # Atomic write with per-path lock
         await file_manager.write_file_atomic(str(path_obj), content, create_parents=create_parents)
@@ -369,7 +370,7 @@ async def _edit_file(
     ignore_whitespace: bool = False,
     replacements: list[dict] | None = None,
 ) -> dict[str, Any]:
-    """Edit file by replacing text — concurrency-safe with per-path lock, backup, and verification."""
+    """Edit file by replacing text - concurrency-safe with per-path lock, backup, and verification."""
     import re
     import shutil
     import time as _time
@@ -442,7 +443,7 @@ async def _edit_file(
                 backup_path = path_obj.with_name(path_obj.stem + f"_{ts}" + path_obj.suffix + ".bak")
                 shutil.copy2(path_obj, backup_path)
 
-            # Atomic write — lock already held, use internal helper directly
+            # Atomic write - lock already held, use internal helper directly
             await file_manager._write_atomic_unlocked(str(path_obj), current_content, create_parents=False)
 
             # Post-write verification
@@ -454,7 +455,7 @@ async def _edit_file(
 
             if not verification_ok:
                 if backup_path and backup_path.exists():
-                    shutil.copy2(backup_path, path_obj)
+                    await asyncio.to_thread(shutil.copy2, backup_path, path_obj)
                     return _error_response("Verification failed - original file restored", "verification_failed")
                 return _error_response("Verification failed and no backup available", "verification_failed")
 
@@ -495,7 +496,7 @@ async def _undo_edit(file_path: str) -> dict[str, Any]:
             return _error_response(f"No backups found for {file_path}", "no_backups")
 
         latest_backup = backups[0]
-        shutil.copy2(latest_backup, path_obj)
+        await asyncio.to_thread(shutil.copy2, latest_backup, path_obj)
 
         return _success_response(
             {
@@ -791,7 +792,7 @@ async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
 
         # Read backwards from EOF in blocks: O(tail size), not O(file size).
         # A 10MB log with one bad byte at position 500k must not kill a
-        # 10-line tail — decode the tail bytes only, with errors="replace".
+        # 10-line tail - decode the tail bytes only, with errors="replace".
         if lines <= 0:
             selected_text, returned = "", 0
         else:

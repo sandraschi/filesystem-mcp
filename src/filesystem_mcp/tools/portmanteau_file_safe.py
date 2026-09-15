@@ -1,7 +1,7 @@
 """Concurrency safety diagnostic and test utilities.
 
-get_lock_status — inspect per-path lock state for debugging concurrent access.
-test_concurrency_safety — simulate concurrent writes to verify lock integrity.
+get_lock_status - inspect per-path lock state for debugging concurrent access.
+test_concurrency_safety - simulate concurrent writes to verify lock integrity.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from .utils import MUTATING, READ_ONLY, _get_app
 async def get_lock_status() -> dict:
     """Get current per-path file lock status (diagnostic tool).
 
-    Returns which file paths currently have active locks — useful for debugging
+    Returns which file paths currently have active locks - useful for debugging
     concurrent write contention between Claude Desktop, Cursor, and Windsurf sessions.
 
     ## Return Format
@@ -81,4 +81,4 @@ async def test_concurrency_safety(operation: str = "write", num_clients: int = 5
     finally:
         import shutil
 
-        shutil.rmtree(test_dir, ignore_errors=True)
+        await asyncio.to_thread(shutil.rmtree, test_dir, ignore_errors=True)
