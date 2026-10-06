@@ -66,6 +66,11 @@ async def file_ops(
     read_file_lines, read_multiple_files, file_exists, get_file_info,
     head_file, tail_file, undo_edit.
 
+    Line indexing: read_file_lines `offset` is a 0-based line index
+    (0 = first line of the file). The response echoes offset/limit plus
+    first_line_number (1-based number of the first returned line, null when
+    empty) so callers can chain pages via next_steps without guessing.
+
     Write operations (write_file, edit_file, move_file, copy_file) use per-path
     asyncio.Lock + atomic os.replace() to prevent corruption under concurrent access.
 
@@ -607,6 +612,7 @@ async def _read_file_lines(file_path: str, offset: int, limit: int | None, encod
                 "content": "".join(selected_lines),
                 "offset": offset,
                 "limit": limit,
+                "first_line_number": (offset + 1) if selected_lines else None,
                 "lines_returned": len(selected_lines),
                 "total_lines": len(lines),
             },

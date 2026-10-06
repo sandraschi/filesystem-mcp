@@ -58,6 +58,12 @@ async def search_ops(
     Operations: grep_file, count_pattern, search_files, extract_log_lines,
     compare_files, find_duplicate_files, find_large_files.
 
+    Pattern semantics (read this before picking an operation):
+    - grep_file / count_pattern take a CONTENT regex searched inside file text.
+    - search_files takes a FILENAME glob (fnmatch, e.g. "*.py", "test_*") matched
+      against file names only — it never looks at file content. For content
+      search across a tree, use grep_file with recursive=True.
+
     Args: See Parameters block.
 
     ## Return Format
