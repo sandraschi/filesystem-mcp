@@ -1,4 +1,4 @@
-"""Docker Compose tools — one tool per compose subcommand."""
+"""Docker Compose tools - one tool per compose subcommand."""
 
 from __future__ import annotations
 

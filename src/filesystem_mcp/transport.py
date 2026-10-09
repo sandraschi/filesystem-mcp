@@ -234,7 +234,7 @@ async def run_server_async(mcp_app, args: argparse.Namespace | None = None, serv
             path = config["path"]
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP Streamable mode: {endpoint}")
-            # Use uvicorn.Server on mcp.http_app() — run_http_async() drops
+            # Use uvicorn.Server on mcp.http_app() - run_http_async() drops
             # custom middleware (CORS), breaking Tauri/LAN clients.
             import uvicorn
 

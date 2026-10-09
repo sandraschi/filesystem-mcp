@@ -1,4 +1,4 @@
-"""Git repository operations — DEPRECATED 2026-04-06.
+"""Git repository operations - DEPRECATED 2026-04-06.
 
 Consolidated into gitops (git-github-mcp).
 Use gitops:git_ops for all local git operations.
@@ -8,7 +8,7 @@ This file is kept as a stub to avoid import errors.
 
 from __future__ import annotations
 
-# Intentionally empty — repo_ops removed from fileops.
+# Intentionally empty - repo_ops removed from fileops.
 # Use gitops:git_ops instead:
 #   status:         git_ops(operation='status', repo_path='...')
 #   commit:         git_ops(operation='commit', message='...', all_files=True, repo_path='...')

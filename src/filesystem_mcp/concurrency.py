@@ -35,7 +35,7 @@ class ConcurrencySafeFileManager:
     Manages file/directory operations with per-path asyncio.Lock() concurrency safety.
 
     Each canonical path gets exactly one Lock, created on first access and kept for
-    the lifetime of the process.  Lock acquisition never busy-loops — asyncio handles
+    the lifetime of the process.  Lock acquisition never busy-loops - asyncio handles
     the wait queue internally.
     """
 
@@ -60,7 +60,7 @@ class ConcurrencySafeFileManager:
                 self._dir_locks[key] = asyncio.Lock()
             return self._dir_locks[key]
 
-    # ── Internal atomic write (no lock — callers hold the lock already) ───────
+    # ── Internal atomic write (no lock - callers hold the lock already) ───────
 
     async def _write_atomic_unlocked(self, file_path: str, content: str, create_parents: bool) -> None:
         """
@@ -133,7 +133,7 @@ class ConcurrencySafeFileManager:
                     logger.warning("modify_file_safe: text not found", path=file_path, search=search[:60])
 
             if changes > 0:
-                # Write directly — lock already held, don't call write_file_atomic
+                # Write directly - lock already held, don't call write_file_atomic
                 await self._write_atomic_unlocked(file_path, modified, create_parents=False)
 
         return {
@@ -232,5 +232,5 @@ class ConcurrencySafeFileManager:
         }
 
 
-# Global singleton — shared across all tool handlers in this process
+# Global singleton - shared across all tool handlers in this process
 file_manager = ConcurrencySafeFileManager()

@@ -15,6 +15,13 @@ if str(base / "src") not in sys.path:
 
 os.environ.setdefault("MCP_TRANSPORT", "http")
 
+# Frozen-exe safety: stdlib C extensions + mcp bootstrap must be imported eagerly
+# (hiddenimports alone is not enough). See TAURI_PRODUCTION_PITFALLS sec E.
+import _datetime  # noqa: F401
+import _strptime  # noqa: F401
+
+import mcp.types  # noqa: F401
+
 if __name__ == "__main__":
     import uvicorn
 

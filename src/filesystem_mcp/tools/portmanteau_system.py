@@ -34,7 +34,7 @@ async def server_shutdown(confirm: bool = False) -> dict:
             options={"confirm": "Pass confirm=True to proceed."},
             suggested_questions=["Are you sure you want to shut down the server?"],
         )
-    logger.warning("server_shutdown called with confirm=True — scheduling exit")
+    logger.warning("server_shutdown called with confirm=True - scheduling exit")
 
     def _exit() -> None:
         try:
