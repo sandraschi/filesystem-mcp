@@ -1,4 +1,4 @@
-"""System monitoring tools — one tool per view (CPU, memory, processes, etc.)."""
+"""System monitoring tools - one tool per view (CPU, memory, processes, etc.)."""
 
 from __future__ import annotations
 
@@ -92,13 +92,15 @@ async def _get_process_info(
 
 async def _get_performance_metrics() -> dict[str, Any]:
     try:
+        disk_io = psutil.disk_io_counters()
+        net_io = psutil.net_io_counters()
         return _success_response(
             {
                 "cpu_times": psutil.cpu_times_percent(interval=0.1)._asdict(),
                 "virtual_memory": psutil.virtual_memory()._asdict(),
                 "swap_memory": psutil.swap_memory()._asdict(),
-                "disk_io": psutil.disk_io_counters()._asdict(),
-                "net_io": psutil.net_io_counters()._asdict(),
+                "disk_io": disk_io._asdict() if disk_io is not None else {},
+                "net_io": net_io._asdict() if net_io is not None else {},
             }
         )
     except Exception as e:

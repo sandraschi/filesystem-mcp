@@ -133,6 +133,7 @@ async def file_ops(
                 "get_file_info",
                 "head_file",
                 "tail_file",
+                "undo_edit",
             ]
             and not path
         ):
@@ -142,6 +143,7 @@ async def file_ops(
             )
 
         if operation == "read_file":
+            assert path is not None  # narrowed by the not-path guard above
             return await _read_file(path, encoding)
         elif operation == "write_file":
             if path is None or content is None:
@@ -159,6 +161,7 @@ async def file_ops(
                         "What should it be replaced with?",
                     ],
                 )
+            assert path is not None  # narrowed by the not-path guard above
             return await _edit_file(
                 path,
                 old_string,
@@ -171,8 +174,10 @@ async def file_ops(
                 replacements,
             )
         elif operation == "undo_edit":
+            assert path is not None  # narrowed by the not-path guard above
             return await _undo_edit(path)
         elif operation == "delete_file":
+            assert path is not None  # narrowed by the not-path guard above
             return await _delete_file(path)
         elif operation == "move_file":
             if not destination_path:
@@ -180,6 +185,7 @@ async def file_ops(
                     ambiguities=["destination_path required for move_file"],
                     suggested_questions=["Where should the file be moved to?"],
                 )
+            assert path is not None  # narrowed by the not-path guard above
             return await _move_file(path, destination_path, overwrite)
         elif operation == "copy_file":
             if not destination_path:
@@ -187,8 +193,10 @@ async def file_ops(
                     ambiguities=["destination_path required for copy_file"],
                     suggested_questions=["Where should the file be copied to?"],
                 )
+            assert path is not None  # narrowed by the not-path guard above
             return await _copy_file(path, destination_path, overwrite, create_parents)
         elif operation == "read_file_lines":
+            assert path is not None  # narrowed by the not-path guard above
             return await _read_file_lines(path, offset, limit, encoding)
         elif operation == "read_multiple_files":
             if not file_paths:
@@ -198,12 +206,16 @@ async def file_ops(
                 )
             return await _read_multiple_files(file_paths, encoding, max_file_size_mb)
         elif operation == "file_exists":
+            assert path is not None  # narrowed by the not-path guard above
             return await _file_exists(path, check_type, follow_symlinks)
         elif operation == "get_file_info":
+            assert path is not None  # narrowed by the not-path guard above
             return await _get_file_info(path, follow_symlinks, include_content, max_content_size)
         elif operation == "head_file":
+            assert path is not None  # narrowed by the not-path guard above
             return await _head_file(path, lines, encoding)
         elif operation == "tail_file":
+            assert path is not None  # narrowed by the not-path guard above
             return await _tail_file(path, lines, encoding)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")

@@ -106,16 +106,18 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008", "S106", "S110", "S112", "S101", "B008", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402", "E501"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
+ignore = ["S101", "B008", "S106", "RUF012", "S603", "S607", "S324", "E402", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 # Test fixtures use 0.0.0.0 bindings and /tmp paths as mock data
-"tests/**" = ["S104", "S108"]
+"tests/**" = ["S104", "S108", "T20"]
 # Webapp bridge intentionally binds 0.0.0.0 for LAN/Tailscale access
 "webapp/**" = ["S104"]
 # CUA smoke test probes localhost via urllib (fleet template pattern)
-"scripts/cua-smoke.py" = ["S310"]
+"scripts/cua-smoke.py" = ["S310", "T20"]
+# CLI/build/test runners emit console output by design
+"scripts/**" = ["T20"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -131,4 +133,7 @@ dev = [
     "pre-commit>=3.5.0",
     "pyright>=1.1.390",
     "pyinstaller>=6.21.0",
+    "pywinauto>=0.6.9",
+    "pillow>=12.3.0",
+    "pytesseract>=0.3.13",
 ]

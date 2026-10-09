@@ -384,7 +384,7 @@ _TOOL_HELP = {
     "agentic_file_workflow": {
         "category": "sampling",
         "description": "LLM-orchestrated file workflows using ctx.sample() "
-        "(no sampling.tools — Claude Desktop compatible).",
+        "(no sampling.tools - Claude Desktop compatible).",
         "operations": {
             "agentic_file_workflow": (
                 "Execute a high-level file workflow. "
@@ -395,7 +395,7 @@ _TOOL_HELP = {
         },
         "notes": [
             "Requires a client that supports basic sampling (Claude Desktop, VS Code, Cline).",
-            "Does NOT require sampling.tools capability — uses no-tools sampling pattern.",
+            "Does NOT require sampling.tools capability - uses no-tools sampling pattern.",
             "Auto-detects Windows paths (e.g. D:\\Dev\\repos\\...) in workflow_prompt and pre-lists them.",
         ],
         "examples": {
@@ -672,8 +672,8 @@ async def _get_security_info():
         return _success_response(
             {
                 "user": os.getlogin() if hasattr(os, "getlogin") else None,
-                "uid": os.getuid() if hasattr(os, "getuid") else None,
-                "gid": os.getgid() if hasattr(os, "getgid") else None,
+                "uid": getattr(os, "getuid", lambda: None)(),
+                "gid": getattr(os, "getgid", lambda: None)(),
             }
         )
     except Exception as e:

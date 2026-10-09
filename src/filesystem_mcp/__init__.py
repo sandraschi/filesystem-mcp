@@ -97,12 +97,12 @@ CONCURRENCY SAFETY:
 - Thread-safe operations for 5+ simultaneous clients
 
 AVAILABLE TOOLS:
-\u2022 file_ops, dir_ops, search_ops — file and directory I/O
-\u2022 container_ops, infra_ops — Docker containers, images, networks, volumes
-\u2022 compose_up, compose_down, compose_ps, compose_logs, compose_config, compose_restart — Docker Compose
-\u2022 monitor_get_* — system metrics and processes (e.g. monitor_get_resource_usage)
-\u2022 host_ops — host info, environment, help
-\u2022 agentic_file_workflow — LLM sampling workflow (requires client ctx.sample)
+\u2022 file_ops, dir_ops, search_ops - file and directory I/O
+\u2022 container_ops, infra_ops - Docker containers, images, networks, volumes
+\u2022 compose_up, compose_down, compose_ps, compose_logs, compose_config, compose_restart - Docker Compose
+\u2022 monitor_get_* - system metrics and processes (e.g. monitor_get_resource_usage)
+\u2022 host_ops - host info, environment, help
+\u2022 agentic_file_workflow - LLM sampling workflow (requires client ctx.sample)
 
 Portmanteau tools (file_ops, dir_ops) use an operation enum; Compose and monitoring are atomic per operation.""",
     lifespan=server_lifespan,
@@ -186,8 +186,14 @@ def _import_tools():
         raise
 
 
-# Import tools immediately — raises on failure, server must not start without tools
+# Import tools immediately - raises on failure, server must not start without tools
 _import_tools()
+
+# Prompt templates (registered on import; failure must not take the server down)
+try:
+    from . import prompts as _prompts  # noqa: F401
+except Exception as e:
+    logger.warning("Failed to register prompt templates", error=str(e))
 
 
 # Export ASGI app for HTTP/HTTPS mode (for web apps)
@@ -272,24 +278,231 @@ def http_app():
     async def skills(request):
         return JSONResponse({"success": True, "skills": []})
 
-    async def llm_discover(request):
+    # LLM provider registry: local auto-detect + cloud keyed.
+    # Keys are NEVER accepted via GET and NEVER echoed in any response.
+    _LLM_LOCAL = {
+        "ollama": "http://127.0.0.1:11434",
+        "lmstudio": "http://127.0.0.1:1234",
+    }
+    _LLM_CLOUD = {
+        "openai": "https://api.openai.com/v1",
+        "anthropic": "https://api.anthropic.com/v1",
+    }
+
+    async def _probe(url: str) -> bool:
         import httpx
 
-        detected = []
-        probes = [
-            ("ollama", "http://127.0.0.1:11434/api/tags"),
-            ("lmstudio", "http://127.0.0.1:1234/v1/models"),
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                r = await client.get(url)
+                return r.status_code == 200
+        except Exception:
+            return False
+
+    async def _detect_locals() -> list:
+        import asyncio
+
+        names = list(_LLM_LOCAL)
+        probes = {
+            "ollama": f"{_LLM_LOCAL['ollama']}/api/tags",
+            "lmstudio": f"{_LLM_LOCAL['lmstudio']}/v1/models",
+        }
+        results = await asyncio.gather(*(_probe(probes[n]) for n in names))
+        return [
+            {"name": n, "detected": bool(ok), "baseUrl": _LLM_LOCAL[n]} for n, ok in zip(names, results, strict=True)
         ]
-        for name, url in probes:
-            try:
-                r = await httpx.get(url, timeout=2.0)
-                if r.status_code == 200:
-                    detected.append({"name": name, "detected": True})
-                else:
-                    detected.append({"name": name, "detected": False})
-            except Exception:
-                detected.append({"name": name, "detected": False})
+
+    async def llm_discover(request):
+        detected = await _detect_locals()
         return JSONResponse({"success": True, "providers": detected})
+
+    async def llm_providers(request):
+        """Provider registry: local detected flags + cloud configured flags (no key bytes)."""
+        detected = {p["name"]: p["detected"] for p in await _detect_locals()}
+        providers = [
+            {
+                "id": "ollama",
+                "name": "Ollama",
+                "local": True,
+                "detected": detected.get("ollama", False),
+                "baseUrl": _LLM_LOCAL["ollama"],
+            },
+            {
+                "id": "lm-studio",
+                "name": "LM Studio",
+                "local": True,
+                "detected": detected.get("lmstudio", False),
+                "baseUrl": _LLM_LOCAL["lmstudio"],
+            },
+            {
+                "id": "openai",
+                "name": "OpenAI",
+                "local": False,
+                "configured": bool(os.environ.get("OPENAI_API_KEY")),
+                "baseUrl": _LLM_CLOUD["openai"],
+            },
+            {
+                "id": "anthropic",
+                "name": "Anthropic",
+                "local": False,
+                "configured": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                "baseUrl": _LLM_CLOUD["anthropic"],
+            },
+        ]
+        return JSONResponse({"success": True, "providers": providers})
+
+    async def llm_models(request):
+        """Model list per provider: live when reachable/keyed, curated fallback otherwise."""
+        import httpx
+
+        provider = request.query_params.get("provider", "ollama")
+        base = _LLM_LOCAL.get(provider, _LLM_LOCAL["ollama"])
+        models: list = []
+        live = False
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                if provider == "ollama":
+                    r = await client.get(f"{base}/api/tags")
+                    if r.status_code == 200:
+                        models = [m.get("name", "") for m in r.json().get("models", []) if m.get("name")]
+                        live = True
+                else:
+                    r = await client.get(f"{base}/v1/models")
+                    if r.status_code == 200:
+                        models = [m.get("id", "") for m in r.json().get("data", []) if m.get("id")]
+                        live = True
+        except Exception as e:
+            logger.warning("llm_models live lookup failed", provider=provider, error=str(e))
+        if not models:
+            models = ["llama3.2:1b", "llama3.2:3b", "qwen2.5:7b"] if provider == "ollama" else ["default"]
+        return JSONResponse({"success": True, "provider": provider, "live": live, "models": models})
+
+    async def llm_onboarding(request):
+        detected = {p["name"]: p["detected"] for p in await _detect_locals()}
+        if detected.get("ollama"):
+            path = "Ollama is running: pick it in Chat -> provider, choose a pulled model, start talking."
+            recommended = "ollama"
+        elif detected.get("lmstudio"):
+            path = "LM Studio is running: pick it in Chat -> provider and load a model first."
+            recommended = "lm-studio"
+        else:
+            path = "No local LLM detected. Install Ollama (https://ollama.com) or add a cloud key in Settings."
+            recommended = "none"
+        return JSONResponse(
+            {
+                "success": True,
+                "detected": detected,
+                "recommended": recommended,
+                "starter": path,
+                "facts": [
+                    "Chat talks to the backend proxy only; keys never leave this server.",
+                    "Local providers are free; cloud providers need a key in Settings.",
+                ],
+            }
+        )
+
+    def _chat_base_allowed(base_url: str) -> bool:
+        """SSRF guard: proxy only to loopback/LAN/Tailscale and the two cloud APIs."""
+        import ipaddress
+        from urllib.parse import urlparse
+
+        try:
+            host = urlparse(base_url).hostname or ""
+        except Exception:
+            return False
+        if host in ("localhost", "api.openai.com", "api.anthropic.com"):
+            return True
+        try:
+            ip = ipaddress.ip_address(host)
+            return ip.is_loopback or ip.is_private
+        except ValueError:
+            return host.endswith(".ts.net") or host == "tauri.localhost"
+
+    async def llm_chat(request):
+        """Backend chat proxy (the ONLY path the Chat page uses). Keys never leave the server."""
+        import httpx
+
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"success": False, "error": "invalid JSON body"}, status_code=400)
+        provider = body.get("provider", {}) if isinstance(body, dict) else {}
+        pid = str(provider.get("id") or provider.get("type") or "ollama")
+        base_url = str(provider.get("baseUrl") or _LLM_LOCAL.get(pid, _LLM_LOCAL["ollama"])).rstrip("/")
+        api_key = str(provider.get("apiKey") or "")
+        model = str(body.get("model") or "llama3.2:1b")
+        messages = body.get("messages") or []
+        tools = body.get("tools")
+        if not _chat_base_allowed(base_url):
+            return JSONResponse({"success": False, "error": f"proxy target not allowed: {base_url}"}, status_code=400)
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                if pid == "anthropic":
+                    system = "\n".join(m.get("content", "") for m in messages if m.get("role") == "system")
+                    convo = [m for m in messages if m.get("role") != "system"]
+                    payload: dict = {"model": model, "max_tokens": 1024, "messages": convo}
+                    if system:
+                        payload["system"] = system
+                    headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
+                    r = await client.post(f"{base_url}/messages", json=payload, headers=headers)
+                    if r.status_code != 200:
+                        return JSONResponse(
+                            {"success": False, "error": f"provider {r.status_code}: {r.text[:300]}"},
+                            status_code=502,
+                        )
+                    data = r.json()
+                    blocks = data.get("content") or []
+                    content = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+                    return JSONResponse({"success": True, "content": content, "toolCalls": []})
+                payload = {"model": model, "messages": messages}
+                if tools:
+                    payload["tools"] = tools
+                headers = {"Content-Type": "application/json"}
+                if api_key:
+                    headers["Authorization"] = f"Bearer {api_key}"
+                # Local OpenAI-compatible servers (Ollama :11434, LM Studio :1234)
+                # serve the chat API under /v1; cloud OpenAI bases already end in /v1.
+                chat_path = (
+                    "/v1/chat/completions"
+                    if (pid in ("ollama", "lm-studio") and not base_url.endswith("/v1"))
+                    else "/chat/completions"
+                )
+                r = await client.post(f"{base_url}{chat_path}", json=payload, headers=headers)
+                if r.status_code != 200:
+                    return JSONResponse(
+                        {"success": False, "error": f"provider {r.status_code}: {r.text[:300]}"}, status_code=502
+                    )
+                data = r.json()
+                choice = (data.get("choices") or [{}])[0]
+                msg = choice.get("message") or {}
+                return JSONResponse(
+                    {"success": True, "content": msg.get("content") or "", "toolCalls": msg.get("tool_calls") or []}
+                )
+        except Exception as e:
+            logger.warning("llm_chat proxy failed", error=str(e))
+            return JSONResponse({"success": False, "error": f"proxy failed: {e}"}, status_code=502)
+
+    async def shutdown(request):
+        """Orderly exit: respond 200 immediately, exit ~500 ms later so writes flush."""
+        import asyncio
+
+        async def _late_exit():
+            await asyncio.sleep(0.5)
+            os._exit(0)
+
+        asyncio.get_running_loop().create_task(_late_exit())
+        return JSONResponse({"success": True, "message": "shutting down in ~500 ms"})
+
+    async def activity(request):
+        """Recent tool-action receipts (in-memory ring, newest first)."""
+        from .tools.utils import _activity
+
+        try:
+            limit = int(request.query_params.get("limit", "100"))
+        except ValueError:
+            limit = 100
+        items = list(_activity)[: max(1, min(limit, 100))]
+        return JSONResponse({"success": True, "total": len(items), "items": items})
 
     asgi = app.http_app()
     asgi.add_middleware(
@@ -314,14 +527,18 @@ def http_app():
     asgi.routes.append(Route("/api/capabilities", endpoint=capabilities))
     asgi.routes.append(Route("/api/skills", endpoint=skills))
     asgi.routes.append(Route("/api/llm/discover", endpoint=llm_discover))
+    asgi.routes.append(Route("/api/llm/providers", endpoint=llm_providers))
+    asgi.routes.append(Route("/api/llm/models", endpoint=llm_models))
+    asgi.routes.append(Route("/api/llm/onboarding", endpoint=llm_onboarding))
+    asgi.routes.append(Route("/api/llm/chat", endpoint=llm_chat, methods=["POST"]))
+    asgi.routes.append(Route("/api/shutdown", endpoint=shutdown, methods=["POST"]))
+    asgi.routes.append(Route("/api/activity", endpoint=activity))
     return asgi
 
 
 def main():
     """Main entry point for the MCP server with unified transport handling."""
     from .transport import run_server
-
-    _kill_orphaned_stdio()
 
     logger.info("Starting Filesystem MCP server v2.2.0 (FastMCP 3.2+)")
     logger.info("Python path", python_path=sys.executable)
@@ -333,67 +550,6 @@ def main():
 
     # Use unified transport runner
     run_server(app, server_name="filesystem-mcp")
-
-
-def _kill_orphaned_stdio():
-    """Kill stale filesystem_mcp stdio processes left by previous CD sessions.
-
-    Skips the HTTP daemon (identified by holding port 10742) so the infrastructure
-    service is never touched. Only cleans up orphaned IDE-spawned stdio instances.
-    """
-    import subprocess
-
-    try:
-        # Find PID holding port 10742 (the HTTP daemon — never kill this)
-        result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True, timeout=10)
-        daemon_pid = None
-        for line in result.stdout.splitlines():
-            if ":10742" in line and "LISTENING" in line:
-                parts = line.split()
-                if parts:
-                    daemon_pid = int(parts[-1])
-                    break
-
-        # Find all filesystem_mcp Python processes
-        procs = subprocess.run(
-            [
-                "wmic",
-                "process",
-                "where",
-                "name='python.exe' or name='python3.exe'",
-                "get",
-                "ProcessId,CommandLine",
-                "/format:csv",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        my_pid = os.getpid()
-        killed = 0
-        for line in procs.stdout.splitlines():
-            if "filesystem_mcp" not in line:
-                continue
-            parts = line.rsplit(",", 1)
-            if len(parts) < 2:
-                continue
-            try:
-                pid = int(parts[-1].strip())
-            except ValueError:
-                continue
-            if pid == my_pid or pid == daemon_pid:
-                continue
-            # Kill the orphan
-            try:
-                subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=5)
-                killed += 1
-            except Exception:
-                logger.warning("Failed to kill orphan PID %d", pid, exc_info=True)
-
-        if killed:
-            logger.info("Cleaned up %d orphaned stdio process(es)", killed)
-    except Exception:
-        logger.warning("Orphan cleanup failed (non-fatal)", exc_info=True)
 
 
 def run():

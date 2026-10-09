@@ -1,8 +1,8 @@
 """
-Agentic File Workflow Tool — FastMCP 2.14.5+ Compatible Implementation
+Agentic File Workflow Tool - FastMCP 2.14.5+ Compatible Implementation
 
 Claude Desktop supports basic sampling but NOT sampling.tools capability.
-So we use ctx.sample() WITHOUT tools — instead we gather file context
+So we use ctx.sample() WITHOUT tools - instead we gather file context
 server-side, send it to the LLM, parse the structured response, and
 execute any follow-up operations ourselves.
 
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-from .utils import MUTATING, _error_response, _get_app
+from .utils import MUTATING, _error_response, _get_app, _record_activity
 
 # ── Structured result type ─────────────────────────────────────────────────────
 
@@ -142,7 +142,7 @@ def _gather_context(workflow_prompt: str, available_tools: list[str]) -> str:
 
     # If no paths found, note that
     if not context_parts:
-        context_parts.append("No specific paths detected in prompt — proceeding with prompt only.")
+        context_parts.append("No specific paths detected in prompt - proceeding with prompt only.")
 
     return "\n\n".join(context_parts)
 
@@ -199,8 +199,9 @@ async def agentic_file_workflow(
     # a sampling_context in app.state and expected sample_step orchestration.
     from .. import app as _fs_app
 
-    if ctx is None and hasattr(_fs_app, "state") and _fs_app.state.get("sampling_context") is not None:
-        sampling_context = _fs_app.state["sampling_context"]
+    _app_state = getattr(_fs_app, "state", None)
+    if ctx is None and _app_state is not None and _app_state.get("sampling_context") is not None:
+        sampling_context = _app_state["sampling_context"]
         max_loops = max_iterations if isinstance(max_iterations, int) and max_iterations > 0 else 5
         tools_executed: list[dict] = []
         iterations_completed = 0
@@ -222,6 +223,7 @@ async def agentic_file_workflow(
                 )
 
             unique_tools = {t.get("name") for t in tools_executed if t.get("name")}
+            _record_activity("agentic_file_workflow", True)
             return {
                 "success": True,
                 "operation": "agentic_file_workflow",
@@ -272,7 +274,7 @@ async def agentic_file_workflow(
         "You will be given file system context (directory listings, file contents) "
         "gathered from a Windows PC, plus a task to complete. "
         "Analyze the provided context and answer the task. "
-        "Be precise and factual — only report what the context shows. "
+        "Be precise and factual - only report what the context shows. "
         "Return your response as a JSON object matching this schema:\n"
         "{\n"
         '  "summary": "brief one-line summary",\n'
@@ -290,7 +292,7 @@ async def agentic_file_workflow(
         "Respond with a JSON object only, no markdown fences."
     )
 
-    logger.info("Calling ctx.sample() (no tools — Claude Desktop compatible)")
+    logger.info("Calling ctx.sample() (no tools - Claude Desktop compatible)")
 
     try:
         sampling_result = await ctx.sample(
@@ -302,6 +304,7 @@ async def agentic_file_workflow(
 
         workflow: WorkflowResult = sampling_result.result
 
+        _record_activity("agentic_file_workflow", bool(workflow.success))
         return {
             "success": workflow.success,
             "operation": "agentic_file_workflow",

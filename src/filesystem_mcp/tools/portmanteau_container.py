@@ -88,6 +88,7 @@ async def container_ops(
                 "stop_container",
                 "restart_container",
                 "remove_container",
+                "container_exec",
                 "container_logs",
                 "container_stats",
             ]
@@ -98,6 +99,7 @@ async def container_ops(
         if operation == "list_containers":
             return await _list_containers(all_containers=True, show_stats=show_stats)
         elif operation == "get_container":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _get_container(container_id, show_stats)
         elif operation == "create_container":
             if not image:
@@ -116,16 +118,21 @@ async def container_ops(
                 restart_policy,
             )
         elif operation == "start_container":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _start_container(container_id)
         elif operation == "stop_container":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _stop_container(container_id, timeout)
         elif operation == "restart_container":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _restart_container(container_id, timeout)
         elif operation == "remove_container":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _remove_container(container_id, force)
         elif operation == "container_exec":
             if not command:
                 return _clarification_response("command", "command is required for container_exec")
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _container_exec(
                 container_id,
                 command,
@@ -141,8 +148,10 @@ async def container_ops(
                 user,
             )
         elif operation == "container_logs":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _container_logs(container_id, tail, since, until, timestamps, follow)
         elif operation == "container_stats":
+            assert container_id is not None  # narrowed by the not-container_id guard above
             return await _container_stats(container_id)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")

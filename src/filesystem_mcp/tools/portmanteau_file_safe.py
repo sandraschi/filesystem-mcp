@@ -7,7 +7,7 @@ test_concurrency_safety - simulate concurrent writes to verify lock integrity.
 from __future__ import annotations
 
 from ..concurrency import file_manager
-from .utils import MUTATING, READ_ONLY, _get_app
+from .utils import MUTATING, READ_ONLY, _get_app, _record_activity
 
 
 @_get_app().tool(annotations=READ_ONLY, version="2.2.0")
@@ -23,6 +23,7 @@ async def get_lock_status() -> dict:
     ## Examples
     get_lock_status()
     """
+    _record_activity("get_lock_status", True)
     return file_manager.get_lock_status()
 
 
@@ -67,10 +68,12 @@ async def test_concurrency_safety(operation: str = "write", num_clients: int = 5
 
             results = await asyncio.gather(*[edit_client(i) for i in range(num_clients)], return_exceptions=True)
         else:
+            _record_activity("test_concurrency_safety", False)
             return {"error": f"Test not implemented for operation: {operation}", "concurrency_safe": False}
 
         successful = sum(1 for r in results if isinstance(r, dict) and r.get("success"))
         errors = [str(r) for r in results if isinstance(r, Exception)]
+        _record_activity("test_concurrency_safety", len(errors) == 0)
         return {
             "test_operation": operation,
             "num_clients": num_clients,

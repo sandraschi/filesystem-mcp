@@ -1,9 +1,31 @@
 import logging
 import sys
+from collections import deque
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# In-memory activity ring buffer: every tool result (success or error) lands
+# here as a signed-style receipt {ts, operation, success}. Served read-only via
+# GET /api/activity and rendered by the webapp Inbox page. Bounded at 100, so
+# memory use is constant; process-local by design (no cross-instance claims).
+_activity: deque = deque(maxlen=100)
+
+
+def _record_activity(operation: str | None, success: bool) -> None:
+    try:
+        _activity.appendleft(
+            {
+                "ts": datetime.now().isoformat(),
+                "operation": operation or "completed",
+                "success": success,
+            }
+        )
+    except Exception as e:
+        logger.debug("activity record dropped: %s", e)
+
 
 # Tool annotation constants for FastMCP 3.2+
 # Matches the MCP ToolAnnotations structure
@@ -79,8 +101,14 @@ def _format_file_size(size_bytes: int) -> str:
 _docker_client = None
 
 
-def _get_docker_client():
-    """Get Docker client with lazy initialization."""
+def _get_docker_client() -> Any:
+    """Get Docker client with lazy initialization.
+
+    Typed as ``Any``: the docker SDK ships no pyright-usable stubs for
+    container/image attribute optionality, so precise annotations here only
+    produce false-positive Optional-member errors at every call site.
+    Runtime safety comes from the try/except in each caller, not the stubs.
+    """
     global _docker_client
     if _docker_client is None:
         try:
@@ -129,6 +157,7 @@ def _success_response(
         "related_operations": related_operations or [],
     }
 
+    _record_activity(operation, True)
     return response
 
 
@@ -177,12 +206,13 @@ def _error_response(
     if estimated_resolution_time:
         response["estimated_resolution_time"] = estimated_resolution_time
 
+    _record_activity(error_type, False)
     return response
 
 
 def _clarification_response(
-    ambiguities,
-    options: dict | None = None,
+    ambiguities: list | str,
+    options: dict | str | None = None,
     suggested_questions: list | None = None,
     preserved_context: dict | None = None,
     estimated_completion: str | None = None,
@@ -190,7 +220,8 @@ def _clarification_response(
     """Generate a clarification response for ambiguous requests.
 
     Accepts ambiguities as either a list (new style) or positional string args
-    for backward compatibility with old call sites.
+    for backward compatibility with old call sites. ``options`` accepts a dict
+    or a plain string message (wrapped as ``{"message": ...}``).
     """
     # Handle old-style positional call: _clarification_response("field", "message", [...options])
     # In that case ambiguities is a string, options might be a string (message), suggested_questions might be a list
@@ -204,12 +235,18 @@ def _clarification_response(
         suggested_questions = None
     else:
         ambiguities_list = ambiguities
+    if isinstance(options, str):
+        options = {"message": options}
 
     response = {
         "status": "clarification_needed",
         "ambiguities": ambiguities_list,
         "timestamp": datetime.now().isoformat(),
     }
+    _record_activity(
+        ambiguities_list[0] if ambiguities_list else "clarification_needed",
+        True,  # handled successfully; awaiting caller input, not a failure
+    )
 
     if options:
         response["options"] = options
