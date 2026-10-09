@@ -6,7 +6,7 @@
   "type": "mcp_server",
   "status": "production",
   "framework": "FastMCP 3.2+",
-  "tools": 23,
+  "tools": 24,
   "transport": ["stdio", "http"],
   "keywords": [
     "filesystem",

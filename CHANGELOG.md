@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-09 assfix
+
+### Added
+- Backend `POST /api/llm/chat` proxy (Ollama/LM Studio/OpenAI/Anthropic, SSRF-guarded):
+  the Chat page had posted to this route since 2.2.1 but it never existed (404 on
+  every send). Also `GET /api/llm/providers`, `GET /api/llm/models`,
+  `GET /api/llm/onboarding`, `POST /api/shutdown`, `GET /api/activity`.
+- Activity receipts: every tool result is recorded in an in-memory ring (100) and
+  served via `GET /api/activity`; webapp Inbox page renders it with search/filter.
+- MCP prompt templates: `file-workflow-guide`, `container-triage`,
+  `system-health-check` (verified via `prompts/list`).
+- Webapp Skills page (live prompts + tool catalog) and Inbox page; sidebar + routes.
+- `docs/ONBOARDING.md` (prereqs, sanity check, pitfalls).
+- justfile: `mcpb-pack` (fleet shim), `cua-nsis-test`, `cua-webapp-test` recipes.
+- `scripts/mcpb-pack.ps1` restored as the fleet-shim delegate (vendored
+  `mcpb/pack.ps1` removed).
+
+### Fixed
+- `GET /api/llm/discover` always reported `detected:false` (`await` on the sync
+  `httpx.get` raised inside the handler's own try/except). Now uses
+  `httpx.AsyncClient`; live-proven `detected:true` for Ollama + LM Studio.
+- Chat proxy routes local OpenAI-compatible servers to `/v1/chat/completions`.
+- Webapp absolute backend URLs (`127.0.0.1:10742` in api-base/mcp-client/layout/
+  dashboard) replaced with same-origin + Tauri gate (LAN/Tailscale tabs work).
+- `start.ps1` rewritten as the fleet unified launcher (engine + standalone
+  fallback); the old script launched stdio only and ignored `fleet-start.config.ps1`.
+- pyright: 67 errors -> 0 (clarification-options type, dispatcher narrowing
+  asserts, `Any`-typed docker client, `getattr` platform guards, None-guards).
+- ruff: removed `S110`/`S112` from `ignore` (silent-swallow footgun), added `T20`.
+- `mcpb/manifest.json`: `${PWD}` -> `${__dirname}`, `python -m filesystem_mcp`
+  stdio entry, version aligned to 2.2.0, full 24-tool list.
+- README/llms-full: correct `sandraschi` owner URLs, 24-tool count, Claude
+  one-liner (`releases/latest/download/install.ps1`).
+- `glama.json` tool count 23 -> 24 (live-verified). Deleted ~40 `*.bak` dross files.
+
+### Deferred (documented, not fixed)
+- Prefab `app=True` cards and `output_schema=`: need real UI/schema design; no stubs.
+- `localStorage` API-key store: keystore migration pending; keys never leave the
+  browser except to the backend proxy.
+- `mcp-central-docs/starts/filesystem-mcp-start.bat`: cross-repo write, out of scope.
+- Full Ollama generation through the proxy: provider-boundary proven; local
+  Ollama runner binary is missing on this host (environment issue).
+
 ## [2.2.1] - 2026-08-01
 
 ### Added

@@ -11,7 +11,7 @@
 
 > 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
 
-> **Status**: Production-ready · 23 tools · Dual transport (stdio + HTTP) · Port 10742
+> **Status**: Production-ready · 24 tools · Dual transport (stdio + HTTP) · Port 10742
 > **Reliability**: Self-cleaning startup — kills orphaned stdio processes from stale IDE sessions
 
 A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
@@ -157,11 +157,18 @@ pip install filesystem-mcp
 
 ###  Claude Desktop MCPB Package
 
-1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+One-line install (Claude Desktop):
+
+```powershell
+iwr https://github.com/sandraschi/filesystem-mcp/releases/latest/download/install.ps1 -UseBasicParsing | iex
+```
+
+Or manually:
+
+1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandraschi/filesystem-mcp/releases)
 2.  **Drag & Drop** the file to Claude Desktop
 3.  **Configure** settings when prompted (working directory, timeouts, etc.)
-4.  **Install dependencies** separately (see below)
-5.  **Start using** 57+ professional tools immediately
+4.  **Start using** 24 professional tools immediately
 
 ##  Installation
 

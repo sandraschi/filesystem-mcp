@@ -44,7 +44,7 @@ Filesystem MCP 2.0.0 is a major update featuring FastMCP 2.14.1+ compliance and 
 ## 📦 Installation
 
 ### Primary Method: MCPB Package (Recommended)
-1. Download `filesystem-mcp.mcpb` from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+1. Download `filesystem-mcp.mcpb` from [Releases](https://github.com/sandraschi/filesystem-mcp/releases)
 2. Drag the file into Claude Desktop
 3. Configure settings when prompted (working directory, timeouts, etc.)
 4. Install dependencies separately:
@@ -55,7 +55,7 @@ Filesystem MCP 2.0.0 is a major update featuring FastMCP 2.14.1+ compliance and 
 ### Alternative Methods
 ```bash
 # Manual installation (for other MCP clients)
-pip install git+https://github.com/sandr/filesystem-mcp.git
+pip install git+https://github.com/sandraschi/filesystem-mcp.git
 
 # Docker container (advanced users)
 docker run -it --rm filesystem-mcp

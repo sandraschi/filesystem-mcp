@@ -10,7 +10,7 @@ If you discover a security vulnerability, please report it to us as follows:
 
 ### 📧 Contact Information
 - **Email**: security@filesystem-mcp.com (placeholder - update with actual contact)
-- **GitHub Security Advisories**: [Create a private security advisory](https://github.com/sandr/filesystem-mcp/security/advisories/new)
+- **GitHub Security Advisories**: [Create a private security advisory](https://github.com/sandraschi/filesystem-mcp/security/advisories/new)
 
 ### 📝 What to Include
 Please include the following information in your report:
@@ -78,11 +78,11 @@ We appreciate security researchers who help keep our users safe. With your permi
 ## 📜 Security Updates
 
 Subscribe to our releases to stay informed about security updates:
-- [GitHub Releases](https://github.com/sandr/filesystem-mcp/releases)
-- [Security Advisories](https://github.com/sandr/filesystem-mcp/security/advisories)
+- [GitHub Releases](https://github.com/sandraschi/filesystem-mcp/releases)
+- [Security Advisories](https://github.com/sandraschi/filesystem-mcp/security/advisories)
 
 ## 📞 Support
 
 For general support or questions about security best practices:
-- [GitHub Discussions](https://github.com/sandr/filesystem-mcp/discussions)
-- [Documentation](https://github.com/sandr/filesystem-mcp/blob/main/README.md)
+- [GitHub Discussions](https://github.com/sandraschi/filesystem-mcp/discussions)
+- [Documentation](https://github.com/sandraschi/filesystem-mcp/blob/main/README.md)

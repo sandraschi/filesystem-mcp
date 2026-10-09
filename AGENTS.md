@@ -4,7 +4,7 @@
 FastMCP 3.2+ server for file system, Docker, system monitoring, and host context operations.
 
 ## Tools
-23 tools across 10 modules. Portmanteau tools use an `operation` enum parameter.
+24 tools across 11 modules. Portmanteau tools use an `operation` enum parameter.
 
 | Tool | Category | Mutates |
 |------|----------|---------|

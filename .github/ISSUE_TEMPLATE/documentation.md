@@ -57,4 +57,4 @@ assignees: []
 
 **Want to help fix this?** We'd love a documentation PR! 🙌
 
-*See our [Contributing Guide](https://github.com/sandr/filesystem-mcp/blob/main/CONTRIBUTING.md) for documentation guidelines.*
+*See our [Contributing Guide](https://github.com/sandraschi/filesystem-mcp/blob/main/CONTRIBUTING.md) for documentation guidelines.*

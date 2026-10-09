@@ -513,7 +513,7 @@ Source: README.md
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.14.4+-purple.svg)](https://github.com/modelcontextprotocol/python-sdk)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![CI/CD](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/sandr/filesystem-mcp/actions/workflows/ci-cd.yml)
+[![CI](https://github.com/sandraschi/filesystem-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sandraschi/filesystem-mcp/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/sandr/filesystem-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/sandr/filesystem-mcp)
 [![PyPI](https://img.shields.io/pypi/v/filesystem-mcp)](https://pypi.org/project/filesystem-mcp/)
 
@@ -635,11 +635,18 @@ pip install filesystem-mcp
 
 ### 🎯 Claude Desktop MCPB Package
 
-1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandr/filesystem-mcp/releases)
+One-line install (Claude Desktop):
+
+```powershell
+iwr https://github.com/sandraschi/filesystem-mcp/releases/latest/download/install.ps1 -UseBasicParsing | iex
+```
+
+Or manually:
+
+1.  **Download** the `filesystem-mcp.mcpb` package from [Releases](https://github.com/sandraschi/filesystem-mcp/releases)
 2.  **Drag & Drop** the file to Claude Desktop
 3.  **Configure** settings when prompted (working directory, timeouts, etc.)
-4.  **Install dependencies** separately (see below)
-5.  **Start using** 57+ professional tools immediately
+4.  **Start using** 24 professional tools immediately
 
 ## 🚀 Installation
 
@@ -941,6 +948,21 @@ result = docker_operations("start_container", container_id="web")
 # Get container logs
 result = docker_operations("container_logs", container_id="web", tail=100)
 ```
+
+#### 🌐 HTTP REST endpoints (webapp backend :10742)
+
+- `GET /api/health` — liveness probe (fleet launcher `HealthPath`)
+- `GET /api/status` — uptime, tool count, provider health
+- `GET /api/v1/diagnostics` — tool list, system info, errors (CUA smoke)
+- `GET /api/capabilities` — server capabilities shape
+- `GET /api/skills` — session skill list
+- `GET /api/activity?limit=100` — recent tool-action receipts (Inbox page)
+- `GET /api/llm/discover` — local provider detection (Ollama, LM Studio)
+- `GET /api/llm/providers` — provider registry (local detected, cloud configured)
+- `GET /api/llm/models?provider=ollama` — live model list with curated fallback
+- `GET /api/llm/onboarding` — starter facts + recommended path
+- `POST /api/llm/chat` — backend chat proxy (the ONLY path the Chat page uses)
+- `POST /api/shutdown` — orderly exit (~500 ms)
 
 #### 🔄 Repository Operations (portmanteau)
 

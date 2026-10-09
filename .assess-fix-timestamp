@@ -1,1 +1,6 @@
-{"timestamp": "2026-08-01T23:16:15+02:00", "commit": "d3901835901d51937175b17fe1cc89f15a6af8a1", "host": "Goliath"}
+{
+    "host":  "GOLIATH",
+    "timestamp":  "2026-10-09T16:01:37.6791835+02:00",
+    "commit":  "7462e1d6d7c0c076a2faba6d69a7e31dac110574",
+    "note":  "assfix 2026-10-09: backend+webapp+packaging verified live"
+}
