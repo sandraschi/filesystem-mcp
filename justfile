@@ -34,7 +34,8 @@ test:
     uv run pytest
 
 e2e:
-    powershell.exe -NoProfile -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+# NOTE: cua-webapp-test, cua-nsis-test, mcpb-pack come from the fleet.just import above.
 
 # Quick import check and type checking
 check:
@@ -105,7 +106,10 @@ build:
 
 # Build the Tauri NSIS desktop installer (full pipeline: frontend -> Rust -> NSIS)
 build-native:
-	$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; Set-Location '{{justfile_directory()}}\native'; pwsh -NoProfile -File '{{justfile_directory()}}\native\build.ps1'
+	$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; Set-Location '{{justfile_directory()}}\native'; powershell.exe -NoProfile -File '{{justfile_directory()}}\native\build.ps1'
+
+# CUA NSIS smoke test, .mcpb pack: provided by the fleet.just import above.
+# (cua-nsis-test -> scripts/just/cua-nsis-test.ps1, mcpb-pack -> scripts/mcpb-pack.ps1 shim.)
 
 # --- Cleanup ---
 

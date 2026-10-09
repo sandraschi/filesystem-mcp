@@ -1,3 +1,5 @@
+import { API_BASE, isTauri } from "./api-base";
+
 export type McpTool = {
   name: string;
   description?: string;
@@ -14,14 +16,12 @@ export type McpCallResult = {
   isError?: boolean;
 };
 
-const isProduction =
-  import.meta.env.PROD || (typeof window !== "undefined" && !window.location.hostname.includes("localhost"));
-
 function getMCPBaseUrl(): string {
-  // Always talk to the backend directly (cross-origin is covered by fleet CORS).
-  // The Vite proxy path drops response headers (e.g. mcp-session-id) in some
-  // dev setups, which breaks streamable-HTTP session handshakes.
-  return "http://127.0.0.1:10742/mcp";
+  // Browser tabs: same-origin "/mcp" (Vite proxies it to the backend, so LAN
+  // and Tailscale hostnames work and no CORS preflight is needed).
+  // Tauri WebView only: absolute URL, because the built dist has no proxy.
+  // (Vite preserves response headers incl. mcp-session-id through the proxy.)
+  return isTauri() ? `${API_BASE}/mcp` : "/mcp";
 }
 
 type JsonRpcResponse = {
@@ -39,7 +39,7 @@ export class McpClient {
 
   constructor(private baseUrl = getMCPBaseUrl()) {}
 
-  private async post(payload: Record<string, unknown>, expectResult = true): Promise<JsonRpcResponse> {
+  private async post(payload: Record<string, unknown>, _expectResult = true): Promise<JsonRpcResponse> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json, text/event-stream",
@@ -141,6 +141,20 @@ export class McpClient {
       this.tools = response.result.tools;
       this.notifyToolsChanged();
     }
+  }
+
+  async listPrompts(): Promise<Array<{ name: string; description?: string }>> {
+    const response = await this.post({
+      jsonrpc: "2.0",
+      id: crypto.randomUUID(),
+      method: "prompts/list",
+      params: {},
+    });
+
+    if (response.error) {
+      throw new Error(`MCP prompts/list failed: ${response.error.message}`);
+    }
+    return response.result?.prompts ?? [];
   }
 
   subscribeTools(callback: (tools: McpTool[]) => void) {

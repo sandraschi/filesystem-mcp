@@ -1,6 +1,7 @@
 import { AlertCircle, Cpu, Key, Monitor, Moon, RefreshCw, Save, Server, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { API_BASE } from "@/shared/api-base";
 
 type LlmProvider = "ollama" | "lm-studio" | "openai" | "anthropic" | "gemini";
 
@@ -46,7 +47,7 @@ export default function Settings() {
     // Auto-detect local providers on mount
     (async () => {
       try {
-        const r = await fetch("/api/llm/discover", {
+        const r = await fetch(`${API_BASE}/api/llm/discover`, {
           signal: AbortSignal.timeout(4000),
         });
         if (r.ok) {

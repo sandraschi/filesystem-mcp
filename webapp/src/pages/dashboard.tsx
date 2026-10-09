@@ -1,8 +1,7 @@
 import { Activity, Bot, Cpu, FolderOpen, GitBranch, HardDrive, Server, Terminal, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const BACKEND_PORT = 10742;
+import { API_BASE } from "@/shared/api-base";
 
 interface StatusData {
   status: string;
@@ -26,13 +25,13 @@ export default function Dashboard() {
   const refresh = useCallback(async () => {
     try {
       const [statusRes, healthRes, llmRes] = await Promise.all([
-        fetch(`http://127.0.0.1:${BACKEND_PORT}/api/status`, {
+        fetch(`${API_BASE}/api/status`, {
           signal: AbortSignal.timeout(5000),
         }),
-        fetch(`http://127.0.0.1:${BACKEND_PORT}/api/health`, {
+        fetch(`${API_BASE}/api/health`, {
           signal: AbortSignal.timeout(5000),
         }),
-        fetch(`http://127.0.0.1:${BACKEND_PORT}/api/llm/discover`, {
+        fetch(`${API_BASE}/api/llm/discover`, {
           signal: AbortSignal.timeout(5000),
         }),
       ]);

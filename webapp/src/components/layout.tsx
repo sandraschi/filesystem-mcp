@@ -5,11 +5,13 @@ import {
   Grid,
   HardDrive,
   History,
+  Inbox,
   LayoutDashboard,
   MessageSquare,
   Moon,
   Server,
   Settings,
+  Sparkles,
   Sun,
   Terminal,
 } from "lucide-react";
@@ -17,10 +19,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTheme } from "@/components/theme-provider";
 import { useZoom } from "@/hooks/useZoom";
+import { API_BASE } from "@/shared/api-base";
 import { cn } from "@/shared/utils";
 import { useConnection } from "@/store/connection";
 
-const BACKEND_PORT = 10742;
 const BACKOFF = [1, 2, 4, 8, 16, 30];
 
 export default function Layout() {
@@ -31,7 +33,7 @@ export default function Layout() {
     let attempt = 0;
     const poll = async () => {
       try {
-        const r = await fetch(`http://127.0.0.1:${BACKEND_PORT}/api/health`, {
+        const r = await fetch(`${API_BASE}/api/health`, {
           signal: AbortSignal.timeout(5000),
         });
         if (r.ok) {
@@ -83,10 +85,12 @@ export default function Layout() {
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/inbox", label: "Inbox", icon: Inbox },
     { href: "/chat", label: "Chat", icon: MessageSquare },
     { href: "/apps", label: "Apps", icon: Grid },
     { href: "/files", label: "File Browser", icon: FileText },
     { href: "/tools", label: "Tools", icon: Terminal },
+    { href: "/skills", label: "Skills", icon: Sparkles },
     { href: "/git", label: "Git Ops", icon: Github },
     { href: "/docker", label: "Docker", icon: Server },
     { href: "/logs", label: "Logs", icon: History },

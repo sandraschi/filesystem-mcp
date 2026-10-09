@@ -1,6 +1,7 @@
 import { AlertCircle, Bot, Download, Eraser, Send, Sparkles, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE } from "@/shared/api-base";
 import { useMcp } from "@/shared/mcp-provider";
 import { cn } from "@/shared/utils";
 
@@ -154,7 +155,7 @@ export default function Chat() {
     }
     (async () => {
       try {
-        const r = await fetch(`/api/skills`, {
+        const r = await fetch(`${API_BASE}/api/skills`, {
           signal: AbortSignal.timeout(4000),
         });
         if (r.ok) {
@@ -231,7 +232,7 @@ export default function Chat() {
         tools: toolsBody.length > 0 ? toolsBody : null,
       };
 
-      const r = await fetch("/api/llm/chat", {
+      const r = await fetch(`${API_BASE}/api/llm/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
