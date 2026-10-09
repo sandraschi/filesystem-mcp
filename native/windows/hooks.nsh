@@ -1,4 +1,8 @@
 ; Kill UI + backend before install/uninstall (backend locks resources/*.exe).
+; Fleet registration: defines + canonical mcp-clients.nsh (AI-tool installer page).
+!define MCP_REG_NAME "filesystem-mcp"             ; key written into AI client configs
+!define MCP_REG_EXE  "filesystem-mcp-backend.exe" ; stdio-capable exe under $INSTDIR\resources\
+!include "mcp-clients.nsh"
 !macro KillFilesystemMcpFleetProcesses
   DetailPrint "Stopping filesystem-mcp processes..."
   ExecWait 'taskkill /F /IM filesystem-mcp-backend.exe /T' $0
@@ -23,11 +27,9 @@
 
 !macro NSIS_HOOK_PREUNINSTALL
   !insertmacro KillFilesystemMcpFleetProcesses
+  !insertmacro McpClientsUnregister
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
-  IfFileExists "$INSTDIR\resources\install-mcp-clients.ps1" 0 mcp_hook_done
-    DetailPrint "Optional: register filesystem-mcp in Cursor / Claude Desktop"
-    ExecWait 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\install-mcp-clients.ps1" -Interactive'
-  mcp_hook_done:
+  !insertmacro McpClientsRegister
 !macroend

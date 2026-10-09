@@ -1,0 +1,73 @@
+# MCPB Ignore Patterns
+# Exclude development and build artifacts from MCPB packages
+
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation (development only)
+docs/
+*.md
+!assets/prompts/*.md
+
+# Development tools
+.github/
+.cursor/
+.vscode/
+.windsurf/
+.pre-commit-config.yaml
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Dependencies and virtual environments
+.venv/
+venv/
+node_modules/
+requirements*.txt
+pyproject.toml
+setup.py
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.backup
+
+# Configuration files (development only)
+pytest.ini
+glama.json
+.snapshots/
+
+# Legacy directories
+dxt/
+mcpb/
+
+# Scripts (development only)
+scripts/
+
+# Git
+.git/
+.gitignore

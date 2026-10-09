@@ -1,0 +1,127 @@
+{
+  "author": {
+    "name": "sandraschi"
+  },
+  "description": "FastMCP 3.4+ server for file system, Git, Docker, and system monitoring operations with concurrency safety",
+  "manifest_version": "0.2",
+  "name": "filesystem-mcp",
+  "server": {
+    "entry_point": "src/filesystem_mcp/__main__.py",
+    "mcp_config": {
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "python",
+        "-m",
+        "filesystem_mcp"
+      ],
+      "command": "uv",
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "PYTHONPATH": "${__dirname}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "type": "python"
+  },
+  "tools": [
+    {
+      "description": "File operations (read, write, edit, move, copy, delete)",
+      "name": "file_ops"
+    },
+    {
+      "description": "Directory operations (list, create, remove, tree)",
+      "name": "dir_ops"
+    },
+    {
+      "description": "Content search, grep, compare files",
+      "name": "search_ops"
+    },
+    {
+      "description": "Docker container lifecycle",
+      "name": "container_ops"
+    },
+    {
+      "description": "Docker images, networks, volumes",
+      "name": "infra_ops"
+    },
+    {
+      "description": "Docker Compose up",
+      "name": "compose_up"
+    },
+    {
+      "description": "Docker Compose down",
+      "name": "compose_down"
+    },
+    {
+      "description": "List Compose services",
+      "name": "compose_ps"
+    },
+    {
+      "description": "Fetch Compose service logs",
+      "name": "compose_logs"
+    },
+    {
+      "description": "Render Compose config",
+      "name": "compose_config"
+    },
+    {
+      "description": "Restart Compose services",
+      "name": "compose_restart"
+    },
+    {
+      "description": "System status snapshot",
+      "name": "monitor_get_system_status"
+    },
+    {
+      "description": "CPU/memory/disk resource usage",
+      "name": "monitor_get_resource_usage"
+    },
+    {
+      "description": "Process info",
+      "name": "monitor_get_process_info"
+    },
+    {
+      "description": "Performance metrics",
+      "name": "monitor_get_performance_metrics"
+    },
+    {
+      "description": "Memory info",
+      "name": "monitor_get_memory_info"
+    },
+    {
+      "description": "CPU info",
+      "name": "monitor_get_cpu_info"
+    },
+    {
+      "description": "Disk usage",
+      "name": "monitor_get_disk_usage"
+    },
+    {
+      "description": "Network info",
+      "name": "monitor_get_network_info"
+    },
+    {
+      "description": "Host system context",
+      "name": "host_ops"
+    },
+    {
+      "description": "LLM sampling file workflow",
+      "name": "agentic_file_workflow"
+    },
+    {
+      "description": "Concurrency lock diagnostics",
+      "name": "get_lock_status"
+    },
+    {
+      "description": "Concurrency safety self-test",
+      "name": "test_concurrency_safety"
+    },
+    {
+      "description": "Graceful server shutdown",
+      "name": "server_shutdown"
+    }
+  ],
+  "version": "2.2.0"
+}

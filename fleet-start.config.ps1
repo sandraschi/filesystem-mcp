@@ -1,15 +1,16 @@
-﻿# Per-repo fleet start config for filesystem-mcp
+# Per-repo fleet start config for filesystem-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'filesystem-mcp'
     BackendPort  = 10742
     FrontendPort = 10743
     HealthPath   = '/api/health'
-    WebRoot      = 'D:\Dev\repos\filesystem-mcp\webapp'
+    WebRoot      = 'webapp'
     Backend = @{
         Kind          = 'uvicorn'
         UvicornTarget = 'filesystem_mcp.server:app'
-        SyncExtras    = @()
+        SyncExtras    = @('dev')
+        SyncOnStart  = $true
         Env           = @{ WEB_PORT = '10742' }
     }
     Frontend = @{
