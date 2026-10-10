@@ -25,7 +25,7 @@ _TOOL_HELP = {
             "read_file": "Read complete file contents. Params: path, encoding(opt)",
             "write_file": "Write content to file with auto-backup. "
             "Params: path, content, encoding(opt), no_backup(opt)",
-            "edit_file": "Replace unique string in file. Params: path, old_string, new_string",
+            "edit_file": "Replace unique string in file. Params: path, old_string, new_string, replace_all (or allow_multiple) for all occurrences",
             "move_file": "Move/rename file. Params: path, destination_path, overwrite(opt)",
             "read_file_lines": "Read specific line range. Params: path, offset(opt), limit(opt)",
             "read_multiple_files": "Batch read multiple files. Params: file_paths, max_file_size_mb(opt)",
