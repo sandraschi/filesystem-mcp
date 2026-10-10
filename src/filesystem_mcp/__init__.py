@@ -109,6 +109,13 @@ Portmanteau tools (file_ops, dir_ops) use an operation enum; Compose and monitor
     version="2.2.0",
 )
 
+# Alias-normalization middleware: rewrite camelCase tool arguments to the
+# tool's real snake_case params before validation (LLMs constantly send
+# newString/oldString/containerId). Schema-grounded, pass-through safe.
+from filesystem_mcp.alias_middleware import AliasNormalizationMiddleware
+
+app.add_middleware(AliasNormalizationMiddleware())
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
