@@ -476,7 +476,8 @@ async def host_ops(
         "get_session_info",
         "get_service_status",
         "get_log_info",
-    ],
+    ]
+    | None = None,
     category: str | None = None,
     tool_name: str | None = None,
     level: str = "basic",
