@@ -27,7 +27,8 @@ async def dir_ops(
         "directory_tree",
         "calculate_directory_size",
         "find_empty_directories",
-    ],
+    ]
+    | None = None,
     path: str | None = None,
     recursive: bool = False,
     include_hidden: bool = False,

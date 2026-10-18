@@ -32,7 +32,8 @@ async def infra_ops(
         "create_volume",
         "remove_volume",
         "prune_volumes",
-    ],
+    ]
+    | None = None,
     image: str | None = None,
     tag: str = "latest",
     network_id: str | None = None,

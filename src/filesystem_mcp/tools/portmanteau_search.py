@@ -31,7 +31,8 @@ async def search_ops(
         "compare_files",
         "find_duplicate_files",
         "find_large_files",
-    ],
+    ]
+    | None = None,
     path: str | None = None,
     encoding: str = "utf-8",
     recursive: bool = False,

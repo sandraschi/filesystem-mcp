@@ -26,7 +26,8 @@ async def container_ops(
         "container_exec",
         "container_logs",
         "container_stats",
-    ],
+    ]
+    | None = None,
     container_id: str | None = None,
     image: str | None = None,
     name: str | None = None,

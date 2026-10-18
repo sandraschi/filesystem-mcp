@@ -34,7 +34,8 @@ async def file_ops(
         "head_file",
         "tail_file",
         "undo_edit",
-    ],
+    ]
+    | None = None,
     path: str | None = None,
     content: str | None = None,
     encoding: str = "utf-8",
