@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-10-24
+
+### Added
+- `file_ops`: `get_file_hash` (streamed md5/sha1/sha256), `append_file`
+  (per-path lock, `ensure_newline`), `touch_file`, `compress` / `decompress`
+  (stdlib zip/tar/gztar, no shell).
+- `dir_ops`: `copy_tree` (shutil default; `engine='robocopy'` opt-in on
+  Windows with fixed flag allowlist, `/MIR` gated behind `mirror=True`,
+  `/L` dry-run, exit 0-7 success) and `move_directory` (merge-or-rename,
+  dst-inside-src guard).
+- `search_ops`: `find_todos`, `find_symbols` (def/class/async def/function/
+  const/interface/enum, `.bak`-filtered), `validate_json`, `analyze_project`
+  (markers + extension census + frameworks), `run_linter` (ruff-only,
+  read-only unless `fix=True`), `validate_config` (json/yaml/toml/ini).
+- `tests/unit/test_p1_ops.py`: 6 tests covering the new ops.
+- Webapp Tools page renders the live tool surface from `GET /api/capabilities`
+  instead of a hardcoded count.
+
+### Changed
+- Git removed: deleted `portmanteau_git_mgmt.py` / `portmanteau_repository.py`
+  stubs; README, `llms-full.txt`, `docs/TOOLS.md`, `FILESYSTEM_MCP_TOOLS_LIST.md`,
+  prompt assets, and webapp Git/Help pages now point at `git-github-mcp`.
+  `get_help` for `repo_ops` / `git_*` / `category='repository'` returns a
+  `moved` error with the redirect.
+- Docker deprecated in-place: help/prompt/webapp descriptions mark
+  `container_ops`, `infra_ops`, `compose_*` as owned by `docker-mcp`.
+- Docs refreshed: `docs/TOOLS.md` catalog, `llms.txt`, `FILESYSTEM_MCP_TOOLS_LIST.md`
+  rewritten, prompt assets (`quick-start.md`, `examples.json`, `git_workflows.md`).
+- Version strings aligned to 3.1.0 (pyproject fallback, `__init__` lifespan +
+  `/api/health|status|capabilities`, help overview, `mcpb/manifest.json`).
+  Note: `uv-dynamic-versioning` (VCS) governs built wheels; the static
+  `pyproject.toml` version is the untagged-checkout fallback.
+
 ## [Unreleased] - 2026-10-09 assfix
 
 ### Added

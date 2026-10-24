@@ -14,7 +14,7 @@
 > **Status**: Production-ready · 24 tools · Dual transport (stdio + HTTP) · Port 10742
 > **Reliability**: Self-cleaning startup — kills orphaned stdio processes from stale IDE sessions
 
-A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, Git repository management, and Docker container management with concurrency safety.
+A **FastMCP 3.2.0+ compliant** MCP server using the **portmanteau pattern** for comprehensive file system operations, content search, and code intelligence with concurrency safety. Git lives in `git-github-mcp`; Docker is deprecated here in favor of `docker-mcp`.
 
 > [!IMPORTANT]
 > **Dual Architecture**: Filesystem MCP operates as both a high-concurrency **stdio/HTTP MCP Server** and a dedicated **React Webapp** (Port 10743) for real-time visualization and management.
@@ -32,6 +32,38 @@ This opens an interactive dashboard showing all available commands. Run `just bo
 ### Manual Setup
 
 If you don't have `just` installed:
+
+## What can you do with it?
+
+Beyond read/write/list — the nonobvious actions agents reach for:
+
+**Verify instead of trusting**
+```python
+file_ops(operation="get_file_hash", path="dist/app.zip")          # streamed sha256, never loads whole file
+search_ops(operation="validate_config", path="config.yaml")        # json/yaml/toml/ini, precise error + line
+search_ops(operation="run_linter", path="src/", fix=True)          # ruff check --fix, read-only unless fix=True
+```
+
+**Understand a codebase in two calls**
+```python
+search_ops(operation="analyze_project", path=".")                  # type, markers, frameworks, top extensions
+search_ops(operation="find_symbols", path="src", search_pattern="auth", recursive=True)  # defs, not grep noise
+search_ops(operation="find_todos", path="src", recursive=True)     # TODO/FIXME/HACK/XXX/BUG with file:line
+```
+
+**Move bulk safely**
+```python
+dir_ops(operation="copy_tree", path="D:/data", destination_path="E:/backup", dry_run=True)  # preview first
+dir_ops(operation="copy_tree", path="D:/data", destination_path="E:/backup", engine="robocopy")  # fast lane, Windows
+file_ops(operation="compress", path="D:/data")                     # zip without shelling out
+file_ops(operation="append_file", path="app.log", content="line")  # locked append, no read-modify-write race
+```
+
+**Undo and self-help**
+```python
+file_ops(operation="undo_edit", path="config.json")                # restore pre-edit .bak in one call
+host_ops(operation="get_help", tool_name="search_ops")             # every tool documents itself; try it first
+```
 
 ##  Deployment & Security
 Built with modern Python patterns, enterprise-grade security, and extensive testing for professional deployment.

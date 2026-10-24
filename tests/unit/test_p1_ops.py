@@ -55,9 +55,7 @@ async def test_find_todos_and_symbols(tmp_path):
     f.write_text("# TODO: fix this\ndef my_handler():\n    pass\nclass MyService:\n    pass\n")
     todos = await search_ops(operation="find_todos", path=str(tmp_path), recursive=True)
     assert todos["success"] is True and todos["result"]["total_matches"] >= 1
-    syms = await search_ops(
-        operation="find_symbols", path=str(f), search_pattern="my_handler"
-    )
+    syms = await search_ops(operation="find_symbols", path=str(f), search_pattern="my_handler")
     assert syms["success"] is True
     names = [s["name"] for s in syms["result"]["symbols"]]
     assert "my_handler" in names
@@ -89,13 +87,9 @@ async def test_move_directory_and_compress(tmp_path):
     z = await file_ops(operation="compress", path=str(dst))
     assert z["success"] is True
     out = tmp_path / "restored"
-    u = await file_ops(
-        operation="decompress", path=z["result"]["archive"], destination_path=str(out)
-    )
+    u = await file_ops(operation="decompress", path=z["result"]["archive"], destination_path=str(out))
     assert u["success"] is True and u["result"]["file_count"] >= 1
-    full = await file_ops(
-        operation="decompress", path=z["result"]["archive"], destination_path=str(out)
-    )
+    full = await file_ops(operation="decompress", path=z["result"]["archive"], destination_path=str(out))
     assert full["success"] is False and full["error_type"] == "already_exists"
 
 
