@@ -85,6 +85,9 @@ _TOOL_HELP = {
             "find_todos": "TODO/FIXME comments. Params: path, recursive(opt), search_pattern(opt regex override)",
             "find_symbols": "def/class/function/const definitions. Params: path, recursive(opt), search_pattern(opt filter)",
             "validate_json": "Parse JSON, report structure or first syntax error. Params: path",
+            "analyze_project": "Detect project type/markers/frameworks. Params: path, max_results(opt)",
+            "run_linter": "ruff check only. Params: path, fix(opt), read-only unless fix=True",
+            "validate_config": "Validate json/yaml/toml/ini by extension. Params: path",
         },
         "examples": {
             "basic": "search_ops(operation='grep_file', path='D:/myfile.py', search_pattern='TODO')",

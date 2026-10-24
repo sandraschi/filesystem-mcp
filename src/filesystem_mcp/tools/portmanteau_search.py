@@ -34,6 +34,9 @@ async def search_ops(
         "find_todos",
         "find_symbols",
         "validate_json",
+        "analyze_project",
+        "run_linter",
+        "validate_config",
     ]
     | None = None,
     path: str | None = None,
@@ -56,11 +59,14 @@ async def search_ops(
     hash_algorithm: Literal["md5", "sha256"] = "md5",
     max_duplicates: int | None = None,
     early_exit: bool = True,
+    fix: bool = False,
 ) -> dict[str, Any]:
     """Content Analysis, Grep, and Comparison operations.
 
     Operations: grep_file, count_pattern, search_files, extract_log_lines,
     compare_files, find_duplicate_files, find_large_files,
+    find_todos, find_symbols, validate_json,
+    analyze_project, run_linter, validate_config.
     find_todos, find_symbols, validate_json.
 
     Pattern semantics (read this before picking an operation):
@@ -138,6 +144,12 @@ async def search_ops(
             return await _find_symbols(path, recursive, include_hidden, max_matches, encoding, search_pattern)
         elif operation == "validate_json":
             return await _validate_json(path, encoding)
+        elif operation == "analyze_project":
+            return await _analyze_project(path, max_results)
+        elif operation == "run_linter":
+            return await _run_linter(path, fix, timeout_s=120)
+        elif operation == "validate_config":
+            return await _validate_config(path, encoding)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
@@ -901,3 +913,203 @@ async def _validate_json(file_path: str, encoding: str) -> dict[str, Any]:
         return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
     except Exception as e:
         return _error_response(f"Failed to validate JSON: {e!s}", "io_error")
+
+
+_PROJECT_MARKERS: dict[str, str] = {
+    "pyproject.toml": "python",
+    "requirements.txt": "python",
+    "setup.py": "python",
+    "package.json": "node",
+    "pnpm-lock.yaml": "node",
+    "Cargo.toml": "rust",
+    "go.mod": "go",
+    "pom.xml": "java",
+    "build.gradle": "java",
+    "CMakeLists.txt": "cpp",
+    "Dockerfile": "docker",
+    "docker-compose.yml": "docker",
+}
+
+
+async def _analyze_project(target: str, max_results: int) -> dict[str, Any]:
+    """Detect project type via marker files + extension census (read-only, capped)."""
+    from collections import Counter
+
+    try:
+        root = _safe_resolve_path(target)
+        if not root.exists():
+            return _error_response(f"Path does not exist: {target}", "not_found")
+        if root.is_file():
+            root = root.parent
+        markers = {}
+        for name, kind in _PROJECT_MARKERS.items():
+            if (root / name).exists():
+                markers[name] = kind
+        kinds = sorted(set(markers.values()))
+        project_type = kinds[0] if len(kinds) == 1 else ("polyglot" if kinds else "unknown")
+
+        def _walk() -> Counter:
+            counter: Counter = Counter()
+            for _dirpath, dirnames, filenames in os.walk(root):
+                dirnames[:] = [d for d in dirnames if d not in _GREP_EXCLUDED_DIRS and not d.startswith(".")]
+                for name in filenames:
+                    if name.startswith(".") or name.endswith(".bak"):
+                        continue
+                    suffix = Path(name).suffix.lower() or "(no-ext)"
+                    counter[suffix] += 1
+            return counter
+
+        counter = await asyncio.to_thread(_walk)
+        top_ext = [{"extension": ext, "count": n} for ext, n in counter.most_common(max_results)]
+        frameworks: list[str] = []
+        try:
+            pkg = root / "package.json"
+            if pkg.exists():
+                import json as _json
+
+                data = _json.loads(pkg.read_text(encoding="utf-8", errors="replace"))
+                deps = {**(data.get("dependencies", {})), **(data.get("devDependencies", {}))}
+                for known in ("react", "vite", "next", "express", "fastify", "vue", "svelte"):
+                    if known in deps:
+                        frameworks.append(known)
+        except Exception as e:
+            logger.warning("analyze_project package.json read failed: %s", e)
+        try:
+            req = root / "requirements.txt"
+            if req.exists():
+                text = req.read_text(encoding="utf-8", errors="replace").lower()
+                for known in ("fastapi", "starlette", "django", "flask", "pydantic", "pytest"):
+                    if known in text:
+                        frameworks.append(known)
+            pyproject = root / "pyproject.toml"
+            if pyproject.exists():
+                text = pyproject.read_text(encoding="utf-8", errors="replace").lower()
+                for known in ("fastmcp", "fastapi", "pydantic", "pytest", "ruff"):
+                    if known in text and known not in frameworks:
+                        frameworks.append(known)
+        except Exception as e:
+            logger.warning("analyze_project python deps read failed: %s", e)
+        return _success_response(
+            {
+                "directory": str(root),
+                "project_type": project_type,
+                "markers": markers,
+                "frameworks": sorted(set(frameworks)),
+                "top_extensions": top_ext,
+                "total_files": sum(counter.values()),
+            },
+            related_operations=["find_symbols", "find_todos"],
+        )
+    except Exception as e:
+        return _error_response(f"Failed to analyze project: {e!s}", "io_error")
+
+
+async def _run_linter(target: str, fix: bool, timeout_s: int = 120) -> dict[str, Any]:
+    """Run ruff check (and optional --fix) on a file or directory. No other linters."""
+    import shutil
+
+    try:
+        resolved = _safe_resolve_path(target)
+        if not resolved.exists():
+            return _error_response(f"Path does not exist: {target}", "not_found")
+        ruff = shutil.which("ruff")
+        if ruff is None:
+            return _error_response(
+                "ruff not found on PATH",
+                "missing_dependency",
+                ["Install ruff (uv tool install ruff) or run just lint in the repo"],
+            )
+        cmd = [ruff, "check", str(resolved)]
+        if fix:
+            cmd.append("--fix")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
+            except TimeoutError:
+                try:
+                    proc.kill()
+                except Exception as kill_err:
+                    logger.warning("ruff kill after timeout failed: %s", kill_err)
+                return _error_response(
+                    f"ruff timed out after {timeout_s}s",
+                    "timeout",
+                    ["Retry on a smaller path"],
+                )
+        except Exception as e:
+            return _error_response(f"Failed to launch ruff: {e!s}", "internal_error")
+        out = (stdout or b"").decode(errors="replace")
+        err = (stderr or b"").decode(errors="replace")
+        return _success_response(
+            {
+                "path": str(resolved),
+                "fix": fix,
+                "exit_code": proc.returncode or 0,
+                "clean": (proc.returncode or 0) == 0,
+                "output": (out + err)[-4000:],
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to run linter: {e!s}", "io_error")
+
+
+async def _validate_config(file_path: str, encoding: str) -> dict[str, Any]:
+    """Validate JSON/YAML/TOML/INI by extension. JSON reuses _validate_json."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists() or not path_obj.is_file():
+            return _error_response(f"Invalid file path: {file_path}", "not_found")
+        suffix = path_obj.suffix.lower()
+        if suffix == ".json":
+            return await _validate_json(file_path, encoding)
+        if suffix in (".yaml", ".yml"):
+            try:
+                import yaml  # type: ignore
+            except ImportError:
+                return _error_response(
+                    "pyyaml not installed",
+                    "missing_dependency",
+                    ["uv add pyyaml or validate as text"],
+                )
+            try:
+                data = yaml.safe_load(path_obj.read_text(encoding=encoding))
+            except Exception as e:
+                return _success_response({"path": str(path_obj), "valid": False, "error": str(e)})
+            summary: dict[str, Any] = {"type": type(data).__name__}
+            if isinstance(data, dict):
+                summary["keys"] = sorted(map(str, data.keys()))[:50]
+                summary["key_count"] = len(data)
+            return _success_response({"path": str(path_obj), "valid": True, "summary": summary})
+        if suffix == ".toml":
+            try:
+                import tomllib
+            except ImportError:
+                return _error_response("tomllib unavailable (needs Python 3.11+)", "missing_dependency")
+            try:
+                with path_obj.open("rb") as fh:
+                    data = tomllib.load(fh)
+            except Exception as e:
+                return _success_response({"path": str(path_obj), "valid": False, "error": str(e)})
+            summary = {"type": "dict", "keys": sorted(map(str, data.keys()))[:50], "key_count": len(data)}
+            return _success_response({"path": str(path_obj), "valid": True, "summary": summary})
+        if suffix == ".ini":
+            import configparser
+
+            parser = configparser.ConfigParser()
+            try:
+                parser.read(path_obj, encoding=encoding)
+                sections = parser.sections()
+            except Exception as e:
+                return _success_response({"path": str(path_obj), "valid": False, "error": str(e)})
+            return _success_response({"path": str(path_obj), "valid": True, "summary": {"sections": sections[:50]}})
+        return _error_response(
+            f"Unsupported config type: {suffix or '(no extension)'}",
+            "invalid_arguments",
+            ["Use .json, .yaml/.yml, .toml, or .ini"],
+        )
+    except UnicodeDecodeError as e:
+        return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
+    except Exception as e:
+        return _error_response(f"Failed to validate config: {e!s}", "io_error")
