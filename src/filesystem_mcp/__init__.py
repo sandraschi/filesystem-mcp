@@ -1,9 +1,11 @@
 """
 Filesystem MCP - A FastMCP 3.2+ compliant server for file system operations with concurrency safety.
 
-This module provides a comprehensive MCP server with file system, Git repository,
-and Docker container management capabilities using the portmanteau pattern for
+This module provides a comprehensive MCP server with file system,
+Docker container, and system monitoring capabilities using the portmanteau pattern for
 consolidated tool interfaces with enhanced conversational responses and sampling.
+
+Git operations live in git-github-mcp (gitops), not here.
 
 CRITICAL: All file operations now use atomic patterns and proper locking to prevent
 corruption when multiple clients access the same files simultaneously via FastMCP 3.2+ universal connect pattern.
@@ -85,10 +87,10 @@ app = FastMCP(
 
 CORE CAPABILITIES:
 - File system operations: read, write, edit, move, search, analyze files and directories
-- Git repository management: clone, commit, branch, merge, diff, history tracking
-- Docker container orchestration: lifecycle, images, networks, volumes, compose
+- Docker container orchestration: lifecycle, images, networks, volumes, compose (see docker-mcp as owner)
 - System monitoring: resources, processes, performance metrics
 - Agentic workflows: SEP-1577 compliant autonomous file operations with and without sampling
+- Git: NOT here — use git-github-mcp (gitops:git_core / github_ops)
 
 CONCURRENCY SAFETY:
 - All file write operations use atomic patterns to prevent corruption

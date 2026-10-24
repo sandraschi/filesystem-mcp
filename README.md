@@ -471,30 +471,13 @@ result = docker_operations("start_container", container_id="web")
 result = docker_operations("container_logs", container_id="web", tail=100)
 ```
 
-####  Repository Operations (portmanteau)
+#### Repository Operations — moved
 
-**Unified Git tool** with 30+ operations:
-- **Basic**: `clone_repo`, `get_repo_status`, `commit_changes`, `read_repo`
-- **Branching**: `create_branch`, `switch_branch`, `merge_branch`, `delete_branch`, `list_branches`
-- **Remotes**: `push_changes`, `pull_changes`, `fetch_updates`, `list_remotes`, `add_remote`, `remove_remote`
-- **History**: `get_commit_history`, `show_commit`, `diff_changes`, `blame_file`, `get_file_history`
-- **Advanced**: `stash_changes`, `apply_stash`, `list_stashes`, `create_tag`, `list_tags`, `delete_tag`
-- **Operations**: `revert_commit`, `reset_to_commit`, `cherry_pick`, `rebase_branch`, `resolve_conflicts`
+Git lives in `git-github-mcp` (`gitops:git_core` / `gitops:github_ops`). No git tools are registered here anymore.
 
-```python
-# Clone a repository
-result = repository_operations("clone_repo", repo_url="https://github.com/user/repo.git", target_dir="./project")
+#### Developer Tools — roadmap (not yet implemented)
 
-# Get repository status
-result = repository_operations("get_repo_status", repo_path="./project")
-
-# Commit changes
-result = repository_operations("commit_changes", repo_path="./project", message="Add new feature", add_all=True)
-```
-
-####  Developer Tools
-
-**Unified Developer Toolkit** - One tool with 10 specialized commands:
+Planned as `search_ops` additions (`find_todos`, `find_symbols`, `validate_json/config`) plus file helpers. Not registered yet — do not advertise as available.
 
 | Command | Description | Key Parameters |
 |---------|-------------|----------------|
@@ -565,18 +548,8 @@ try:
 except Exception as e:
     print(f"Docker error: {e}")
 
-# Example: Repository operations
-try:
-    # Get repository status
-    result = tools["repository_operations"]("get_repo_status", repo_path=".")
-    print(f"Repository status: {result['is_dirty']} (ahead: {result['ahead']}, behind: {result['behind']})")
-
-    # List branches
-    result = tools["repository_operations"]("list_branches", repo_path=".")
-    print(f"Branches: {result['local_branches']}")
-
-except Exception as e:
-    print(f"Repository error: {e}")
+# Example: Repository operations live in git-github-mcp (gitops), not here.
+# See gitops:git_core (status, log, diff, commit, push, pull, clone, ...).
 
 # Example: System operations
 try:
