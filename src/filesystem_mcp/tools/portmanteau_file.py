@@ -34,6 +34,9 @@ async def file_ops(
         "head_file",
         "tail_file",
         "undo_edit",
+        "get_file_hash",
+        "append_file",
+        "touch_file",
     ]
     | None = None,
     path: str | None = None,
@@ -61,12 +64,14 @@ async def file_ops(
     is_regex: bool = False,
     ignore_whitespace: bool = False,
     replacements: list[dict] | None = None,
+    hash_algorithm: Literal["md5", "sha256", "sha1"] = "sha256",
+    ensure_newline: bool = True,
 ) -> dict[str, Any]:
     """Comprehensive file system operations with concurrency-safe writes.
 
     Operations: read_file, write_file, edit_file, delete_file, move_file, copy_file,
     read_file_lines, read_multiple_files, file_exists, get_file_info,
-    head_file, tail_file, undo_edit.
+    head_file, tail_file, undo_edit, get_file_hash, append_file, touch_file.
 
     Line indexing: read_file_lines `offset` is a 0-based line index
     (0 = first line of the file). The response echoes offset/limit plus
@@ -136,6 +141,9 @@ async def file_ops(
                 "head_file",
                 "tail_file",
                 "undo_edit",
+                "get_file_hash",
+                "append_file",
+                "touch_file",
             ]
             and not path
         ):
@@ -219,6 +227,20 @@ async def file_ops(
         elif operation == "tail_file":
             assert path is not None  # narrowed by the not-path guard above
             return await _tail_file(path, lines, encoding)
+        elif operation == "get_file_hash":
+            assert path is not None  # narrowed by the not-path guard above
+            return await _get_file_hash(path, hash_algorithm)
+        elif operation == "append_file":
+            if path is None or content is None:
+                return _clarification_response(
+                    ambiguities=["path and content both required for append_file"],
+                    suggested_questions=["What content should be appended to the file?"],
+                )
+            assert path is not None
+            return await _append_file(path, content, encoding, create_parents, ensure_newline)
+        elif operation == "touch_file":
+            assert path is not None  # narrowed by the not-path guard above
+            return await _touch_file(path, create_parents)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
@@ -846,3 +868,92 @@ async def _tail_file(file_path: str, lines: int, encoding: str) -> dict[str, Any
         )
     except Exception as e:
         return _error_response(f"Failed to read tail: {e!s}", "io_error")
+
+
+async def _get_file_hash(file_path: str, algorithm: str) -> dict[str, Any]:
+    """Hash a file in streaming chunks (never loads whole file)."""
+    import hashlib
+
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists() or not path_obj.is_file():
+            return _error_response(f"Invalid file path: {file_path}", "not_found")
+        algo = algorithm.lower()
+        if algo not in ("md5", "sha1", "sha256"):
+            return _error_response(
+                f"Unsupported hash algorithm: {algorithm}",
+                "invalid_arguments",
+                ["Use md5, sha1, or sha256"],
+            )
+        hasher = hashlib.new(algo)
+        size = 0
+        with path_obj.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(65536), b""):
+                hasher.update(chunk)
+                size += len(chunk)
+        return _success_response(
+            {
+                "path": str(path_obj),
+                "algorithm": algo,
+                "hash": hasher.hexdigest(),
+                "size_bytes": size,
+                "size_human": _format_file_size(size),
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to hash file: {e!s}", "io_error")
+
+
+async def _append_file(
+    file_path: str, content: str, encoding: str, create_parents: bool, ensure_newline: bool
+) -> dict[str, Any]:
+    """Append content with per-path lock (log-safe, no read-modify-write)."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        lock = await file_manager._get_file_lock(str(path_obj))
+        async with lock:
+            if create_parents:
+                path_obj.parent.mkdir(parents=True, exist_ok=True)
+            prefix = ""
+            if ensure_newline and path_obj.exists() and path_obj.stat().st_size > 0:
+                with path_obj.open("rb") as fh:
+                    fh.seek(-1, os.SEEK_END)
+                    last = fh.read(1)
+                if last not in (b"\n", b"\r"):
+                    prefix = "\n"
+            with path_obj.open("a", encoding=encoding, errors="replace") as fh:
+                fh.write(prefix + content)
+        stat = path_obj.stat()
+        return _success_response(
+            {
+                "path": str(path_obj),
+                "appended_bytes": len((prefix + content).encode(encoding, errors="replace")),
+                "size_bytes": stat.st_size,
+                "size_human": _format_file_size(stat.st_size),
+                "atomic": False,
+                "locked": True,
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to append: {e!s}", "io_error")
+
+
+async def _touch_file(file_path: str, create_parents: bool) -> dict[str, Any]:
+    """Create empty file if missing, else update mtime (like touch)."""
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if create_parents:
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+        existed = path_obj.exists()
+        path_obj.touch(exist_ok=True)
+        stat = path_obj.stat()
+        return _success_response(
+            {
+                "path": str(path_obj),
+                "created": not existed,
+                "size_bytes": stat.st_size,
+                "modified": stat.st_mtime,
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to touch file: {e!s}", "io_error")

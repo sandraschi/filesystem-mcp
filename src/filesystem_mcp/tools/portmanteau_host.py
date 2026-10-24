@@ -33,6 +33,9 @@ _TOOL_HELP = {
             "get_file_info": "Detailed metadata. Params: path, include_content(opt), max_content_size(opt)",
             "head_file": "Read first N lines. Params: path, lines(opt, default 10)",
             "tail_file": "Read last N lines. Params: path, lines(opt, default 10)",
+            "get_file_hash": "Streamed hash. Params: path, hash_algorithm(opt: md5|sha1|sha256)",
+            "append_file": "Locked append. Params: path, content, encoding(opt), ensure_newline(opt)",
+            "touch_file": "Create empty or bump mtime. Params: path, create_parents(opt)",
         },
         "examples": {
             "basic": "file_ops(operation='read_file', path='D:/myfile.txt')",
