@@ -1,45 +1,42 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noExplicitAny": "off"
-      },
-      "a11y": {
-        "noLabelWithoutControl": "off"
-      },
-      "style": {
-        "noNonNullAssertion": "off"
-      }
-    }
-  },
-  "css": {
-    "linter": {
-      "enabled": true,
-      "rules": {
-        "recommended": false
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 120
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double",
-      "semicolons": "always"
-    }
-  },
-  "include": [
-    "webapp/src/**/*.ts",
-    "webapp/src/**/*.tsx"
-  ]
+	"$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noExplicitAny": "off"
+			},
+			"a11y": {
+				"noLabelWithoutControl": "off"
+			},
+			"style": {
+				"noNonNullAssertion": "off"
+			}
+		}
+	},
+	"css": {
+		"linter": {
+			"enabled": true,
+			"rules": {
+				"recommended": false
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space",
+		"indentWidth": 2,
+		"lineWidth": 120
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always"
+		}
+	},
+	"include": ["webapp/src/**/*.ts", "webapp/src/**/*.tsx"]
 }
