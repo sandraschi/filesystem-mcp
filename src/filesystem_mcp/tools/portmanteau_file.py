@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any, Literal
 
 from ..concurrency import file_manager
@@ -18,7 +19,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool(annotations=MUTATING, version="2.2.0")
+@_get_app().tool(annotations=MUTATING, version="2.3.0")
 async def file_ops(
     operation: Literal[
         "read_file",
@@ -37,6 +38,8 @@ async def file_ops(
         "get_file_hash",
         "append_file",
         "touch_file",
+        "compress",
+        "decompress",
     ]
     | None = None,
     path: str | None = None,
@@ -66,12 +69,14 @@ async def file_ops(
     replacements: list[dict] | None = None,
     hash_algorithm: Literal["md5", "sha256", "sha1"] = "sha256",
     ensure_newline: bool = True,
+    archive_format: Literal["zip", "tar", "gztar"] = "zip",
 ) -> dict[str, Any]:
     """Comprehensive file system operations with concurrency-safe writes.
 
     Operations: read_file, write_file, edit_file, delete_file, move_file, copy_file,
     read_file_lines, read_multiple_files, file_exists, get_file_info,
-    head_file, tail_file, undo_edit, get_file_hash, append_file, touch_file.
+    head_file, tail_file, undo_edit, get_file_hash, append_file, touch_file,
+    compress, decompress.
 
     Line indexing: read_file_lines `offset` is a 0-based line index
     (0 = first line of the file). The response echoes offset/limit plus
@@ -144,6 +149,8 @@ async def file_ops(
                 "get_file_hash",
                 "append_file",
                 "touch_file",
+                "compress",
+                "decompress",
             ]
             and not path
         ):
@@ -241,6 +248,12 @@ async def file_ops(
         elif operation == "touch_file":
             assert path is not None  # narrowed by the not-path guard above
             return await _touch_file(path, create_parents)
+        elif operation == "compress":
+            assert path is not None  # narrowed by the not-path guard above
+            return await _compress_path(path, destination_path, archive_format, overwrite)
+        elif operation == "decompress":
+            assert path is not None  # narrowed by the not-path guard above
+            return await _decompress_archive(path, destination_path, overwrite)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
@@ -939,7 +952,7 @@ async def _append_file(
 
 
 async def _touch_file(file_path: str, create_parents: bool) -> dict[str, Any]:
-    """Create empty file if missing, else update mtime (like touch)."""
+    """Create empty file if missing, otherwise update mtime (like touch)."""
     try:
         path_obj = _safe_resolve_path(file_path)
         if create_parents:
@@ -957,3 +970,123 @@ async def _touch_file(file_path: str, create_parents: bool) -> dict[str, Any]:
         )
     except Exception as e:
         return _error_response(f"Failed to touch file: {e!s}", "io_error")
+
+
+_ARCHIVE_EXT = {"zip": ".zip", "tar": ".tar", "gztar": ".tar.gz"}
+
+
+async def _compress_path(target: str, destination: str | None, archive_format: str, overwrite: bool) -> dict[str, Any]:
+    """Compress a file or directory with the stdlib (zip/tar/gztar). No shell."""
+    import shutil
+    import zipfile
+
+    try:
+        src = _safe_resolve_path(target)
+        if not src.exists():
+            return _error_response(f"Path does not exist: {target}", "not_found")
+        fmt = (archive_format or "zip").lower()
+        if fmt not in _ARCHIVE_EXT:
+            return _error_response(
+                f"Unsupported archive format: {archive_format}",
+                "invalid_arguments",
+                ["Use zip, tar, or gztar"],
+            )
+        if destination:
+            dst = _safe_resolve_path(destination)
+            if dst.exists() and not overwrite:
+                return _error_response(
+                    f"Destination exists: {dst}",
+                    "already_exists",
+                    ["Re-run with overwrite=True"],
+                )
+            if dst.suffix.lower() in (".zip", ".tar", ".gz"):
+                base = str(dst.with_suffix("").with_suffix("") if fmt == "gztar" else dst.with_suffix(""))
+                out_dir = dst.parent
+            else:
+                base = str(dst)
+                out_dir = dst.parent
+            out_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            base = str(src.parent / (src.name + "_archive"))
+            if src.is_file():
+                base = str(src.parent / src.stem)
+        if src.is_file() and fmt == "zip":
+
+            def _zip_single() -> str:
+                archive = base + ".zip"
+                if Path(archive).exists():
+                    if not overwrite:
+                        raise FileExistsError(archive)
+                    Path(archive).unlink()
+                with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(src, arcname=src.name)
+                return archive
+
+            try:
+                archive = await asyncio.to_thread(_zip_single)
+            except FileExistsError as e:
+                return _error_response(
+                    f"Destination exists: {e}",
+                    "already_exists",
+                    ["Re-run with overwrite=True"],
+                )
+        else:
+
+            def _make() -> str:
+                return shutil.make_archive(base, fmt, root_dir=str(src.parent), base_dir=src.name)
+
+            if Path(base + _ARCHIVE_EXT[fmt]).exists() and not overwrite:
+                return _error_response(
+                    f"Destination exists: {base + _ARCHIVE_EXT[fmt]}",
+                    "already_exists",
+                    ["Re-run with overwrite=True"],
+                )
+            archive = await asyncio.to_thread(_make)
+        stat = Path(archive).stat()
+        return _success_response(
+            {
+                "source": str(src),
+                "archive": str(archive),
+                "format": fmt,
+                "size_bytes": stat.st_size,
+                "size_human": _format_file_size(stat.st_size),
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to compress: {e!s}", "io_error")
+
+
+async def _decompress_archive(target: str, destination: str | None, overwrite: bool) -> dict[str, Any]:
+    """Extract a zip/tar archive with the stdlib. Never overwrites without the flag."""
+    import shutil
+
+    try:
+        src = _safe_resolve_path(target)
+        if not src.exists() or not src.is_file():
+            return _error_response(f"Invalid archive path: {target}", "not_found")
+        if destination:
+            out_dir = _safe_resolve_path(destination)
+        else:
+            out_dir = src.parent / src.stem
+        if out_dir.exists() and any(out_dir.iterdir()) and not overwrite:
+            return _error_response(
+                f"Destination is not empty: {out_dir}",
+                "already_exists",
+                ["Re-run with overwrite=True or pick an empty directory"],
+            )
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        def _unpack() -> None:
+            shutil.unpack_archive(str(src), str(out_dir))
+
+        await asyncio.to_thread(_unpack)
+        count = sum(1 for _ in out_dir.rglob("*") if _.is_file())
+        return _success_response({"archive": str(src), "destination": str(out_dir), "file_count": count})
+    except shutil.ReadError as e:
+        return _error_response(
+            f"Unsupported or corrupt archive: {e!s}",
+            "invalid_archive",
+            ["Use a zip, tar, or tar.gz file"],
+        )
+    except Exception as e:
+        return _error_response(f"Failed to decompress: {e!s}", "io_error")

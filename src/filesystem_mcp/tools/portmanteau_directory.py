@@ -18,7 +18,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool(annotations=MUTATING, version="2.3.0")
+@_get_app().tool(annotations=MUTATING, version="2.4.0")
 async def dir_ops(
     operation: Literal[
         "list_directory",
@@ -28,6 +28,7 @@ async def dir_ops(
         "calculate_directory_size",
         "find_empty_directories",
         "copy_tree",
+        "move_directory",
     ]
     | None = None,
     path: str | None = None,
@@ -51,7 +52,7 @@ async def dir_ops(
     """Directory structure and management operations.
 
     Operations: list_directory, create_directory, remove_directory, directory_tree,
-    calculate_directory_size, find_empty_directories, copy_tree.
+    calculate_directory_size, find_empty_directories, copy_tree, move_directory.
 
     Args: See Parameters block.
 
@@ -85,6 +86,11 @@ async def dir_ops(
                 return _clarification_response("destination_path", "destination_path is required for copy_tree")
             assert path is not None
             return await _copy_tree(path, destination_path, engine, mirror, dry_run, overwrite, timeout)
+        elif operation == "move_directory":
+            if not destination_path:
+                return _clarification_response("destination_path", "destination_path is required for move_directory")
+            assert path is not None
+            return await _move_directory(path, destination_path, overwrite)
         elif operation == "directory_tree":
             return await _directory_tree(path, max_depth, True, pattern, exclude_patterns, "text")
         elif operation == "calculate_directory_size":
@@ -424,6 +430,63 @@ async def _find_empty_directories(directory_path: str, recursive: bool, include_
         )
     except Exception as e:
         return _error_response(f"Failed to find empty directories: {e!s}", "io_error")
+
+
+async def _move_directory(source: str, destination: str, overwrite: bool) -> dict[str, Any]:
+    """Move/rename a directory. Refuses dst-inside-src and non-empty dst without overwrite."""
+    try:
+        src = _safe_resolve_path(source)
+        dst = _safe_resolve_path(destination)
+    except Exception as e:
+        return _error_response(f"Invalid path: {e!s}", "invalid_arguments")
+    if not src.exists() or not src.is_dir():
+        return _error_response(f"Invalid source directory: {source}", "not_found")
+    if src == dst:
+        return _error_response("Source and destination are the same", "invalid_arguments")
+    try:
+        dst.relative_to(src)
+        return _error_response(
+            "Destination inside source would recurse forever",
+            "invalid_arguments",
+            ["Choose a destination outside the source tree"],
+        )
+    except ValueError:
+        pass
+    try:
+        if dst.exists():
+            if not overwrite:
+                return _error_response(
+                    f"Destination exists: {dst}",
+                    "already_exists",
+                    ["Re-run with overwrite=True to merge into it"],
+                )
+            if not dst.is_dir():
+                return _error_response(f"Destination is not a directory: {dst}", "not_a_directory")
+            # Merge: move each child entry into dst.
+            moved = 0
+            for child in list(src.iterdir()):
+                target = dst / child.name
+                if target.exists():
+                    if overwrite:
+                        if target.is_dir() and not target.is_symlink():
+                            await asyncio.to_thread(shutil.rmtree, target)
+                        else:
+                            await asyncio.to_thread(os.remove, target)
+                    else:
+                        continue
+                await asyncio.to_thread(shutil.move, str(child), str(target))
+                moved += 1
+            try:
+                src.rmdir()
+            except OSError:
+                pass
+            return _success_response({"source": str(src), "destination": str(dst), "merged": True, "moved": moved})
+        if dst.parent and not dst.parent.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(shutil.move, str(src), str(dst))
+        return _success_response({"source": str(src), "destination": str(dst), "merged": False})
+    except Exception as e:
+        return _error_response(f"Failed to move directory: {e!s}", "io_error")
 
 
 async def _copy_tree(

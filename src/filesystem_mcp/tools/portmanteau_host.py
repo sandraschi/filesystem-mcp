@@ -36,6 +36,8 @@ _TOOL_HELP = {
             "get_file_hash": "Streamed hash. Params: path, hash_algorithm(opt: md5|sha1|sha256)",
             "append_file": "Locked append. Params: path, content, encoding(opt), ensure_newline(opt)",
             "touch_file": "Create empty or bump mtime. Params: path, create_parents(opt)",
+            "compress": "Zip/tar a file or dir. Params: path, destination_path(opt), archive_format(opt), overwrite(opt)",
+            "decompress": "Extract archive. Params: path, destination_path(opt), overwrite(opt)",
         },
         "examples": {
             "basic": "file_ops(operation='read_file', path='D:/myfile.txt')",
@@ -58,6 +60,7 @@ _TOOL_HELP = {
             "calculate_directory_size": "Get total size. Params: path",
             "find_empty_directories": "Locate empty dirs. Params: path",
             "copy_tree": "Copy dir tree. Params: path, destination_path, engine(opt: auto|shutil|robocopy), mirror(opt, robocopy-only), dry_run(opt), overwrite(opt), timeout(opt)",
+            "move_directory": "Move/rename dir. Params: path, destination_path, overwrite(opt)",
         },
         "examples": {
             "basic": "dir_ops(operation='list_directory', path='D:/Dev/repos')",
