@@ -11,12 +11,12 @@ parameters is maintained in:
 
 | Tool | Domain | Operations / Notes |
 |------|--------|--------------------|
-| `file_ops` | Files | read_file, write_file, edit_file, delete_file, move_file, copy_file, read_file_lines, read_multiple_files, file_exists, get_file_info, head_file, tail_file, undo_edit |
-| `dir_ops` | Directories | list_directory, create_directory, remove_directory, directory_tree, calculate_directory_size, find_empty_directories |
-| `search_ops` | Search | grep_file, count_pattern, search_files, extract_log_lines, compare_files, find_duplicate_files, find_large_files |
-| `container_ops` | Docker | list/get/create/start/stop/restart/remove container, container_exec, container_logs, container_stats |
-| `infra_ops` | Docker | images, networks, volumes CRUD + prune |
-| `compose_up/down/ps/logs/config/restart` | Docker Compose | one tool per subcommand |
+| `file_ops` | Files | read_file, write_file, edit_file, delete_file, move_file, copy_file, read_file_lines, read_multiple_files, file_exists, get_file_info, head_file, tail_file, undo_edit, get_file_hash, append_file, touch_file, compress, decompress |
+| `dir_ops` | Directories | list_directory, create_directory, remove_directory, directory_tree, calculate_directory_size, find_empty_directories, copy_tree, move_directory |
+| `search_ops` | Search + code intel | grep_file, count_pattern, search_files, extract_log_lines, compare_files, find_duplicate_files, find_large_files, find_todos, find_symbols, validate_json, analyze_project, run_linter (ruff-only), validate_config |
+| `container_ops` | Docker (deprecated) | list/get/create/start/stop/restart/remove container, container_exec, container_logs, container_stats — docker-mcp owns this surface |
+| `infra_ops` | Docker (deprecated) | images, networks, volumes CRUD + prune — docker-mcp owns this surface |
+| `compose_up/down/ps/logs/config/restart` | Docker Compose (deprecated) | one tool per subcommand — docker-mcp owns this surface |
 | `monitor_get_system_status` | Monitoring | full snapshot |
 | `monitor_get_resource_usage` | Monitoring | CPU/mem/disk quick probe |
 | `monitor_get_process_info` | Monitoring | process list |
@@ -30,6 +30,15 @@ parameters is maintained in:
 | `get_lock_status` | Concurrency | active per-path locks |
 | `test_concurrency_safety` | Concurrency | concurrent-write stress test |
 | `server_shutdown` | Lifecycle | graceful shutdown (confirm=True) |
+
+## Ownership notes
+
+- **Git: not here.** All git/GitHub operations live in `git-github-mcp`
+  (`gitops:git_core` / `github_ops`). `get_help` with `tool_name='repo_ops'`,
+  `tool_name='git_*'`, or `category='repository'` returns a `moved` error
+  pointing there.
+- **Docker: deprecated here.** `container_ops`, `infra_ops`, and all `compose_*`
+  tools still work but `docker-mcp` is the owner; prefer it for new work.
 
 ## Response Contract
 

@@ -1,8 +1,10 @@
 # filesystem-mcp
 
 FastMCP 3.4+ server for file system operations, directory management, content
-search, Docker containers/images/networks/volumes, Docker Compose, system
-monitoring, and host context — with per-path concurrency-safe atomic writes.
+search, and code intelligence (todos, symbols, project analysis, ruff lint,
+config validation) — with per-path concurrency-safe atomic writes.
+System monitoring and host context included. Docker tools are present but
+deprecated (docker-mcp owns that surface); git lives in git-github-mcp.
 
 > **Full documentation**: [llms-full.txt](llms-full.txt) — complete tool catalog,
 > response contracts, configuration, architecture, and troubleshooting.
@@ -11,6 +13,10 @@ monitoring, and host context — with per-path concurrency-safe atomic writes.
 
 - 24 MCP tools, portmanteau grouped (file_ops, dir_ops, search_ops, container_ops,
   infra_ops, host_ops + compose, monitoring, agentic workflow, shutdown)
+- file_ops: + get_file_hash, append_file, touch_file, compress, decompress
+- dir_ops: + copy_tree (shutil default, robocopy opt-in on Windows), move_directory
+- search_ops: + find_todos, find_symbols, validate_json, analyze_project,
+  run_linter (ruff-only), validate_config
 - Dual transport: stdio (IDE clients) + HTTP streamable (webapp, LAN, Tailscale)
 - Atomic writes with per-path asyncio locks and automatic `.backup` files
 - Ports: backend 10742, webapp frontend 10743 (dev)
