@@ -1,4 +1,4 @@
-"""P1 coverage: file_ops hash/append/touch, dir_ops copy_tree, search_ops dev ops."""
+"""P1 coverage: file_ops hash/append/touch/compress, dir_ops copy/move, search_ops dev ops."""
 
 import json
 
@@ -73,3 +73,45 @@ async def test_validate_json(tmp_path):
     assert r["success"] is True and r["result"]["valid"] is True
     r = await search_ops(operation="validate_json", path=str(bad))
     assert r["success"] is True and r["result"]["valid"] is False
+
+
+@pytest.mark.asyncio
+async def test_move_directory_and_compress(tmp_path):
+    src = tmp_path / "srcdir"
+    (src / "sub").mkdir(parents=True)
+    (src / "a.txt").write_text("hi")
+    dst = tmp_path / "destdir"
+    r = await dir_ops(operation="move_directory", path=str(src), destination_path=str(dst))
+    assert r["success"] is True and (dst / "a.txt").read_text() == "hi"
+    assert not src.exists()
+    same = await dir_ops(operation="move_directory", path=str(dst), destination_path=str(dst))
+    assert same["success"] is False
+    z = await file_ops(operation="compress", path=str(dst))
+    assert z["success"] is True
+    out = tmp_path / "restored"
+    u = await file_ops(
+        operation="decompress", path=z["result"]["archive"], destination_path=str(out)
+    )
+    assert u["success"] is True and u["result"]["file_count"] >= 1
+    full = await file_ops(
+        operation="decompress", path=z["result"]["archive"], destination_path=str(out)
+    )
+    assert full["success"] is False and full["error_type"] == "already_exists"
+
+
+@pytest.mark.asyncio
+async def test_analyze_lint_config(tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    (proj / "main.py").write_text("def hello():\n    pass\n")
+    a = await search_ops(operation="analyze_project", path=str(proj))
+    assert a["success"] is True and a["result"]["project_type"] in ("python", "polyglot")
+    bad = tmp_path / "bad_lint.py"
+    bad.write_text("import os\nimport sys\nx=1\n")
+    lint = await search_ops(operation="run_linter", path=str(bad))
+    assert lint["success"] is True and "exit_code" in lint["result"]
+    cfg = await search_ops(operation="validate_config", path=str(proj / "pyproject.toml"))
+    assert cfg["success"] is True and cfg["result"]["valid"] is True
+    unsup = await search_ops(operation="validate_config", path=str(proj / "main.py"))
+    assert unsup["success"] is False
