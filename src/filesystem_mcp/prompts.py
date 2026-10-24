@@ -34,9 +34,10 @@ def _register_prompts() -> None:
         description="Copy-shape workflow for Docker container triage (list, inspect, logs).",
     )
     async def container_triage() -> str:
-        """Guide an agent through container triage."""
+        """Guide an agent through a container triage."""
         return (
-            "You are triaging Docker containers with filesystem-mcp.\n\n"
+            "You are triaging Docker containers. Prefer docker-mcp when available; "
+            "filesystem-mcp container_ops/infra_ops/compose_* are deprecated duplicates kept for local convenience.\n\n"
             "Steps:\n"
             "1. container_ops(operation='list_containers', show_stats=True) for the fleet view.\n"
             "2. container_ops(operation='get_container', container_id='<id>') for a suspect.\n"

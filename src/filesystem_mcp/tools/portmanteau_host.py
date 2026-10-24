@@ -99,7 +99,7 @@ _TOOL_HELP = {
     },
     "container_ops": {
         "category": "docker",
-        "description": "Docker container lifecycle management.",
+        "description": "Docker containers (DEPRECATED — docker-mcp owns this; kept for local convenience).",
         "operations": {
             "list_containers": "List containers with optional stats. Params: show_stats(opt)",
             "get_container": "Detailed container info. Params: container_id",
@@ -121,7 +121,7 @@ _TOOL_HELP = {
     },
     "infra_ops": {
         "category": "docker",
-        "description": "Docker images, networks, and volumes management.",
+        "description": "Docker images/networks/volumes (DEPRECATED — docker-mcp owns this).",
         "operations": {
             "list_images": "List local images. Params: all_images(opt)",
             "get_image": "Image metadata. Params: image",
@@ -145,37 +145,37 @@ _TOOL_HELP = {
     },
     "compose_up": {
         "category": "docker",
-        "description": "Docker Compose: start services (docker compose up).",
+        "description": "Compose up (DEPRECATED — docker-mcp owns this; kept for local convenience).",
         "operations": {"compose_up": "path, services(opt), detach, build, scale(opt), timeout(opt)"},
         "examples": {"basic": "compose_up(path='D:/myproject')"},
     },
     "compose_down": {
         "category": "docker",
-        "description": "Docker Compose: stop stack and remove containers (down).",
+        "description": "Compose down (DEPRECATED — docker-mcp owns this).",
         "operations": {"compose_down": "path, remove_orphans, volumes_prune (destructive to volumes)"},
         "examples": {"basic": "compose_down(path='D:/myproject')"},
     },
     "compose_ps": {
         "category": "docker",
-        "description": "Docker Compose: list services as JSON.",
+        "description": "Compose ps (DEPRECATED — docker-mcp owns this).",
         "operations": {"compose_ps": "path, services(opt), all_services"},
         "examples": {"basic": "compose_ps(path='D:/myproject')"},
     },
     "compose_logs": {
         "category": "docker",
-        "description": "Docker Compose: service logs.",
+        "description": "Compose logs (DEPRECATED — docker-mcp owns this).",
         "operations": {"compose_logs": "path, services(opt), tail, since, until, timestamps, follow"},
         "examples": {"basic": "compose_logs(path='D:/myproject', tail=50)"},
     },
     "compose_config": {
         "category": "docker",
-        "description": "Docker Compose: render/validate configuration.",
+        "description": "Compose config (DEPRECATED — docker-mcp owns this).",
         "operations": {"compose_config": "path, validate"},
         "examples": {"basic": "compose_config(path='D:/myproject')"},
     },
     "compose_restart": {
         "category": "docker",
-        "description": "Docker Compose: restart services.",
+        "description": "Compose restart (DEPRECATED — docker-mcp owns this).",
         "operations": {"compose_restart": "path, services(opt)"},
         "examples": {"basic": "compose_restart(path='D:/myproject')"},
     },

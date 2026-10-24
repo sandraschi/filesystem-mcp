@@ -1,11 +1,13 @@
-import { Activity, Box, Code, FileText, Search, Shield } from "lucide-react";
+import { Activity, Box, FileText, Search, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE } from "@/shared/api-base";
 import { cn } from "@/shared/utils";
 
 const tools = [
   {
     title: "File Operations",
-    description: "Read, write, move, and edit files with safety checks.",
+    description: "Read, write, hash, append, compress, and edit files with safety checks.",
     icon: FileText,
     href: "/files",
     color: "text-blue-500",
@@ -13,23 +15,15 @@ const tools = [
   },
   {
     title: "Search & Analysis",
-    description: "Grep-based search, pattern matching, and content analysis.",
+    description: "Grep, todos, symbols, project analysis, lint, and config validation.",
     icon: Search,
     href: "/files",
     color: "text-green-500",
     bg: "bg-green-500/10",
   },
   {
-    title: "Git Operations",
-    description: "Branch management, commits, history, and diffs.",
-    icon: Code,
-    href: "/git",
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-  },
-  {
-    title: "Docker Ops",
-    description: "Container lifecycle, image management, and networks.",
+    title: "Docker Ops (deprecated)",
+    description: "Kept for local convenience — docker-mcp owns this surface.",
     icon: Box,
     href: "/docker",
     color: "text-sky-500",
@@ -54,6 +48,30 @@ const tools = [
 ];
 
 export default function Tools() {
+  const [toolNames, setToolNames] = useState<string[]>([]);
+  const [toolCount, setToolCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/capabilities`, { signal: AbortSignal.timeout(5000) });
+        if (!res.ok) return;
+        const data = await res.json();
+        const names: string[] = data?.capabilities?.tools ?? [];
+        if (!cancelled && Array.isArray(names)) {
+          setToolNames(names);
+          setToolCount(names.length);
+        }
+      } catch {
+        /* backend offline — static cards still render */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div data-testid="tools-page" className="space-y-8">
       <div>
@@ -61,7 +79,10 @@ export default function Tools() {
         <p className="text-muted-foreground mt-2">
           Access powerful filesystem and system operations.{" "}
           <span className="text-primary/80">
-            All 24 tools are exposed over MCP — connect via Cursor, Claude Desktop, or any MCP client.
+            {toolCount === null
+              ? "MCP tools are exposed over MCP — connect via Cursor, Claude Desktop, or any MCP client."
+              : `${toolCount} tools live on this backend — connect via Cursor, Claude Desktop, or any MCP client.`}{" "}
+            Git lives in git-github-mcp; Docker ownership is docker-mcp.
           </span>
         </p>
       </div>
@@ -87,6 +108,19 @@ export default function Tools() {
           </Link>
         ))}
       </div>
+
+      {toolNames.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h3 className="font-semibold mb-3">Live tool surface ({toolNames.length})</h3>
+          <div className="flex flex-wrap gap-2">
+            {toolNames.map((name) => (
+              <code key={name} className="rounded bg-accent px-2 py-1 font-mono text-xs">
+                {name}
+              </code>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
