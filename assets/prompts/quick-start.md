@@ -30,17 +30,13 @@ list_directory /home/user
 search_files . "*.py"
 ```
 
-### Git Management
+### Git Management — moved to git-github-mcp
 ```bash
-# Clone repositories
-clone_repo https://github.com/user/repo.git ./local
-
-# Check status
-get_repo_status ./project
-
-# Commit changes
-commit_changes ./project "Added feature"
+# Git lives in git-github-mcp (gitops:git_core / github_ops), not here.
+# e.g. git_ops(operation='status', repo_path='./project')
 ```
+
+### Docker Operations (deprecated here — docker-mcp owns this surface)
 
 ### Docker Operations
 ```bash
@@ -60,14 +56,17 @@ find_duplicate_files /home/user/documents
 
 # See directory sizes
 calculate_directory_size /home/user/projects
+
+# Code intel
+find_todos ./src
+analyze_project .
 ```
 
 ## 🎯 Common Workflows
 
 ### Project Setup
-1. Clone repository: `clone_repo <url> ./project`
-2. Check status: `get_repo_status ./project`
-3. Start services: `compose_up ./project`
+1. Analyze project: `search_ops(operation='analyze_project', path='./project')`
+2. Start services: `compose_up ./project` (deprecated here — prefer docker-mcp)
 
 ### File Management
 1. Find large files: `find_large_files . 50`

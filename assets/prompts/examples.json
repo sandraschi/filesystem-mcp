@@ -39,48 +39,50 @@
     ]
   },
   {
-    "name": "git_workflow",
-    "description": "Complete Git repository workflow",
-    "category": "git_operations",
+    "name": "code_intel_workflow",
+    "description": "Code intelligence via search_ops (todos, symbols, project analysis)",
+    "category": "search_operations",
     "examples": [
       {
         "input": {
-          "tool": "clone_repo",
+          "tool": "search_ops",
           "parameters": {
-            "repo_url": "https://github.com/user/project.git",
-            "target_path": "./project"
+            "operation": "find_todos",
+            "path": "./src",
+            "recursive": true
           }
         },
-        "output": "Successfully cloned repository to ./project",
-        "description": "Clone a Git repository"
+        "output": "Found 8 TODO/FIXME comments across 4 files",
+        "description": "Find all TODO comments in src"
       },
       {
         "input": {
-          "tool": "get_repo_status",
+          "tool": "search_ops",
           "parameters": {
-            "repo_path": "./project"
+            "operation": "analyze_project",
+            "path": "./project"
           }
         },
-        "output": "Repository status: 2 modified files, 1 untracked file",
-        "description": "Check Git repository status"
+        "output": "Project type: python; frameworks: fastapi, pytest; 283 files",
+        "description": "Detect project type, frameworks, and structure"
       },
       {
         "input": {
-          "tool": "commit_changes",
+          "tool": "search_ops",
           "parameters": {
-            "repo_path": "./project",
-            "message": "Add new feature implementation",
-            "files": ["src/feature.py", "tests/test_feature.py"]
+            "operation": "run_linter",
+            "path": "./src",
+            "fix": false
           }
         },
-        "output": "Successfully committed 2 files",
-        "description": "Commit specific files to Git"
+        "output": "ruff check clean (or N findings with file:line)",
+        "description": "Lint with ruff (read-only unless fix=true)"
       }
     ]
   },
   {
     "name": "docker_management",
-    "description": "Docker container and image management",
+    "description": "Docker container and image management (deprecated here — docker-mcp owns this surface)",
     "category": "docker_operations",
     "examples": [
       {
@@ -204,7 +206,7 @@
   },
   {
     "name": "docker_compose_workflow",
-    "description": "Docker Compose project management",
+    "description": "Docker Compose project management (deprecated here — docker-mcp owns this surface)",
     "category": "docker_operations",
     "examples": [
       {

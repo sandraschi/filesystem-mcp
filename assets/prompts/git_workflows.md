@@ -1,2 +1,4 @@
-# Git Workflows - Filesystem MCP
-Clone repos, commit changes, manage branches, push/pull. Git automation for CI/CD. Best practices: Meaningful commits, branch strategies. Austrian version control!
+# Git Workflows — moved to git-github-mcp
+Git operations (`clone`, `status`, `commit`, `branch`, `push`/`pull`) live in
+git-github-mcp (`gitops:git_core` / `github_ops`). No git tools are registered
+in filesystem-mcp; `get_help` for `repo_ops` / `git_*` returns a `moved` redirect.

@@ -1,38 +1,45 @@
 # Filesystem MCP Tools List
 
-**Date:** 2025-10-30
-**Status:** Actual tools available in this repo
+**Date:** 2026-10-24
+**Status:** Actual tools available in this repo (portmanteau pattern: one tool,
+many operations via the `operation` enum)
 
-## Available Tools
+Canonical references: `docs/TOOLS.md`, `assets/prompts/system.md` (§2),
+live `GET /api/capabilities`.
 
-Based on code analysis of `src/filesystem_mcp/tools/file_operations/__init__.py`:
+## file_ops (files, MUTATING)
 
-### File Operations
+read_file, write_file, edit_file, delete_file, move_file, copy_file,
+read_file_lines, read_multiple_files, file_exists, get_file_info, head_file,
+tail_file, undo_edit, get_file_hash, append_file, touch_file, compress, decompress
 
-1. `read_file` - Read complete file contents
-2. `write_file` - Write file contents
-3. `list_directory` - List directory contents
-4. `file_exists` - Check if file exists
-5. `get_file_info` - Get detailed file metadata
-6. `head_file` - Read first N lines of file
-7. `tail_file` - Read last N lines of file
-8. `grep_file` - Search for patterns in files
-9. `count_pattern` - Count pattern occurrences in files
-10. `extract_log_lines` - Extract log lines matching criteria
-11. `edit_file` - Edit file by replacing old_string with new_string
-12. `create_directory` - Create directories
-13. `remove_directory` - Remove directories
+## dir_ops (directories, MUTATING)
 
-## Missing Tools (Not in this repo)
+list_directory, create_directory, remove_directory, directory_tree,
+calculate_directory_size, find_empty_directories, copy_tree, move_directory
 
-- `edit_file_at_line` - **NOT IMPLEMENTED** in this repo
-- This appears to be from a different MCP server or built-in Cursor tool
+## search_ops (search + code intel, READ_ONLY)
 
-## Note
+grep_file, count_pattern, search_files, extract_log_lines, compare_files,
+find_duplicate_files, find_large_files, find_todos, find_symbols,
+validate_json, analyze_project, run_linter (ruff-only), validate_config
 
-The `edit_file_at_line` tool you're trying to use is **NOT** from this filesystem-mcp repository. It must be provided by:
-- Cursor's built-in MCP tools
-- A different MCP server configuration
-- The MCP protocol definition
+## Docker (deprecated — docker-mcp owns this surface)
 
-If you need line-based editing, use the existing `edit_file` tool which performs string replacement operations.
+container_ops, infra_ops, compose_up, compose_down, compose_ps,
+compose_logs, compose_config, compose_restart
+
+## Monitoring + host (READ_ONLY)
+
+monitor_get_system_status, monitor_get_resource_usage, monitor_get_process_info,
+monitor_get_performance_metrics, monitor_get_memory_info, monitor_get_cpu_info,
+monitor_get_disk_usage, monitor_get_network_info, host_ops (incl. get_help),
+agentic_file_workflow, get_lock_status, test_concurrency_safety, server_shutdown
+
+## Not in this repo
+
+- **Git** (`clone_repo`, `repo_ops`, `git_*`) — moved to `git-github-mcp`
+  (`gitops:git_core` / `github_ops`). `get_help` for `repo_ops` / `git_*` /
+  `category='repository'` returns a `moved` error with the redirect.
+- `edit_file_at_line` — not from this repo (Cursor built-in or another server);
+  use `edit_file` string replacement instead.
