@@ -475,10 +475,12 @@ result = docker_operations("container_logs", container_id="web", tail=100)
 
 Git lives in `git-github-mcp` (`gitops:git_core` / `gitops:github_ops`). No git tools are registered here anymore.
 
-#### Developer Tools — partially live
+#### Developer Tools — live as search_ops
 
-Live now as `search_ops` (read-only, tested): `find_todos`, `find_symbols`, `validate_json`.
-Still roadmap: `analyze_project/imports/dependencies`, `run_linter`, `validate_config`, `check_file_sizes` (= `find_large_files`), `detect_duplicates` (= `find_duplicate_files`).
+`find_todos`, `find_symbols`, `validate_json`, `analyze_project`,
+`run_linter` (ruff-only), `validate_config` are live `search_ops` operations
+(read-only, tested). Still roadmap: `analyze_dependencies`, `analyze_imports`;
+`check_file_sizes`/`detect_duplicates` already exist as `find_large_files`/`find_duplicate_files`.
 Usage: `search_ops(operation='find_todos', path='src', recursive=True)` — not `developer_tool(...)`.
 
 | Command | Description | Key Parameters |
@@ -505,7 +507,7 @@ symbols = search_ops(operation='find_symbols', path='src', search_pattern='auth'
 # Validate JSON (live)
 valid = search_ops(operation='validate_json', path='glama.json')
 
-# Roadmap (not yet): analyze_project, run_linter, validate_config
+# Roadmap (not yet): analyze_dependencies, analyze_imports
 ```
 
 ### Example Usage
