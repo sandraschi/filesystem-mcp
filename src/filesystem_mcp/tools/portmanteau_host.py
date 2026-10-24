@@ -166,150 +166,6 @@ _TOOL_HELP = {
         "operations": {"compose_restart": "path, services(opt)"},
         "examples": {"basic": "compose_restart(path='D:/myproject')"},
     },
-    "repo_ops": {
-        "category": "repository",
-        "description": "Git core repository operations (status, commits, history).",
-        "operations": {
-            "clone_repo": "Clone repository. Params: repo_url, target_dir",
-            "get_repo_status": "Staged/unstaged status. Params: repo_path",
-            "commit_changes": "Commit changes. Params: repo_path, message, add_all(opt), paths(opt)",
-            "read_repo": "Read repo structure. Params: repo_path, max_depth(opt)",
-            "get_repo_info": "General repo metadata. Params: repo_path",
-            "get_commit_history": "Log of commits. Params: repo_path, max_commits(opt), author(opt), since(opt)",
-            "show_commit": "Detail for one commit. Params: repo_path, commit1 (hash)",
-            "diff_changes": "Show differences. Params: repo_path, commit1(opt), commit2(opt)",
-            "blame_file": "Line-by-line modification info. Params: repo_path, file_path",
-            "get_file_history": "History for file. Params: repo_path, file_path",
-            "revert_commit": "Undo a commit. Params: repo_path, commit1 (hash)",
-            "reset_to_commit": "Move HEAD to hash. Params: repo_path, commit1 (hash), force(opt)",
-            "cherry_pick": "Apply hash to current branch. Params: repo_path, commit1 (hash)",
-        },
-        "examples": {
-            "basic": "repo_ops(operation='get_repo_status', repo_path='D:/Dev/repos/myproject')",
-            "intermediate": "repo_ops(operation='commit_changes', repo_path='D:/Dev/repos/myproject', "
-            "message='fix: update config', add_all=True)",
-        },
-    },
-    "git_create_branch": {
-        "category": "repository",
-        "description": "Create a local branch at HEAD (does not switch).",
-        "operations": {"git_create_branch": "repo_path, branch_name"},
-        "examples": {"basic": "git_create_branch(repo_path='D:/Dev/repos/r', branch_name='feature/x')"},
-    },
-    "git_rename_branch": {
-        "category": "repository",
-        "description": "Rename a branch (git branch -m).",
-        "operations": {"git_rename_branch": "repo_path, branch_name (old), target_branch (new)"},
-        "examples": {"basic": "git_rename_branch(repo_path='...', branch_name='old', target_branch='new')"},
-    },
-    "git_switch_branch": {
-        "category": "repository",
-        "description": "Check out an existing branch.",
-        "operations": {"git_switch_branch": "repo_path, branch_name"},
-        "examples": {"basic": "git_switch_branch(repo_path='...', branch_name='main')"},
-    },
-    "git_merge_branch": {
-        "category": "repository",
-        "description": "Merge source_branch into current (or into target_branch if set).",
-        "operations": {"git_merge_branch": "repo_path, source_branch, target_branch(opt)"},
-        "examples": {"basic": "git_merge_branch(repo_path='...', source_branch='feature/x')"},
-    },
-    "git_delete_branch": {
-        "category": "repository",
-        "description": "Delete a local branch; force_delete for -D.",
-        "operations": {"git_delete_branch": "repo_path, branch_name, force_delete"},
-        "examples": {"basic": "git_delete_branch(repo_path='...', branch_name='old', force_delete=False)"},
-    },
-    "git_list_branches": {
-        "category": "repository",
-        "description": "List local branches and active branch.",
-        "operations": {"git_list_branches": "repo_path"},
-        "examples": {"basic": "git_list_branches(repo_path='...')"},
-    },
-    "git_create_tag": {
-        "category": "repository",
-        "description": "Create a tag.",
-        "operations": {"git_create_tag": "repo_path, tag_name, tag_message(opt)"},
-        "examples": {"basic": "git_create_tag(repo_path='...', tag_name='v1.0')"},
-    },
-    "git_list_tags": {
-        "category": "repository",
-        "description": "List tags.",
-        "operations": {"git_list_tags": "repo_path"},
-        "examples": {"basic": "git_list_tags(repo_path='...')"},
-    },
-    "git_delete_tag": {
-        "category": "repository",
-        "description": "Delete a local tag.",
-        "operations": {"git_delete_tag": "repo_path, tag_name"},
-        "examples": {"basic": "git_delete_tag(repo_path='...', tag_name='v1.0')"},
-    },
-    "git_push_changes": {
-        "category": "repository",
-        "description": "Push to remote; force_push overwrites non-FF when True.",
-        "operations": {"git_push_changes": "repo_path, remote_name, push_branch(opt), force_push"},
-        "examples": {"basic": "git_push_changes(repo_path='...', remote_name='origin')"},
-    },
-    "git_pull_changes": {
-        "category": "repository",
-        "description": "Pull from remote.",
-        "operations": {"git_pull_changes": "repo_path, remote_name, pull_branch(opt)"},
-        "examples": {"basic": "git_pull_changes(repo_path='...')"},
-    },
-    "git_fetch_updates": {
-        "category": "repository",
-        "description": "Fetch remote refs (no merge).",
-        "operations": {"git_fetch_updates": "repo_path, remote_name"},
-        "examples": {"basic": "git_fetch_updates(repo_path='...')"},
-    },
-    "git_list_remotes": {
-        "category": "repository",
-        "description": "List remotes.",
-        "operations": {"git_list_remotes": "repo_path"},
-        "examples": {"basic": "git_list_remotes(repo_path='...')"},
-    },
-    "git_add_remote": {
-        "category": "repository",
-        "description": "Add a remote.",
-        "operations": {"git_add_remote": "repo_path, remote_name, remote_url"},
-        "examples": {"basic": "git_add_remote(repo_path='...', remote_name='origin', remote_url='https://...')"},
-    },
-    "git_remove_remote": {
-        "category": "repository",
-        "description": "Remove a remote.",
-        "operations": {"git_remove_remote": "repo_path, remote_name"},
-        "examples": {"basic": "git_remove_remote(repo_path='...', remote_name='old')"},
-    },
-    "git_stash_changes": {
-        "category": "repository",
-        "description": "Stash working tree changes.",
-        "operations": {"git_stash_changes": "repo_path, stash_message(opt)"},
-        "examples": {"basic": "git_stash_changes(repo_path='...')"},
-    },
-    "git_apply_stash": {
-        "category": "repository",
-        "description": "Apply stash by index.",
-        "operations": {"git_apply_stash": "repo_path, stash_index"},
-        "examples": {"basic": "git_apply_stash(repo_path='...', stash_index=0)"},
-    },
-    "git_list_stashes": {
-        "category": "repository",
-        "description": "List stash entries.",
-        "operations": {"git_list_stashes": "repo_path"},
-        "examples": {"basic": "git_list_stashes(repo_path='...')"},
-    },
-    "git_resolve_conflicts": {
-        "category": "repository",
-        "description": "List unmerged paths after a failed merge/rebase.",
-        "operations": {"git_resolve_conflicts": "repo_path"},
-        "examples": {"basic": "git_resolve_conflicts(repo_path='...')"},
-    },
-    "git_rebase_branch": {
-        "category": "repository",
-        "description": "Rebase current branch onto source_branch.",
-        "operations": {"git_rebase_branch": "repo_path, source_branch"},
-        "examples": {"basic": "git_rebase_branch(repo_path='...', source_branch='main')"},
-    },
     "monitor_get_system_status": {
         "category": "system",
         "description": "OS/CPU/memory snapshot; optional disk, network, process sample.",
@@ -420,29 +276,6 @@ _CATEGORIES = {
         "compose_config",
         "compose_restart",
     ],
-    "repository": [
-        "repo_ops",
-        "git_create_branch",
-        "git_rename_branch",
-        "git_switch_branch",
-        "git_merge_branch",
-        "git_delete_branch",
-        "git_list_branches",
-        "git_create_tag",
-        "git_list_tags",
-        "git_delete_tag",
-        "git_push_changes",
-        "git_pull_changes",
-        "git_fetch_updates",
-        "git_list_remotes",
-        "git_add_remote",
-        "git_remove_remote",
-        "git_stash_changes",
-        "git_apply_stash",
-        "git_list_stashes",
-        "git_resolve_conflicts",
-        "git_rebase_branch",
-    ],
     "system": [
         "monitor_get_system_status",
         "monitor_get_resource_usage",
@@ -544,9 +377,19 @@ async def host_ops(
 
 async def _get_help(category, tool_name, level):
     try:
+        _GIT_REDIRECT = (
+            "Git operations moved to git-github-mcp (gitops). "
+            "Use git_ops(operation='status', repo_path='...') / github_ops for GitHub."
+        )
         # ── tool_name drill-down ───────────────────────────────────────────────
         if tool_name:
             tool_key = tool_name.lower().strip()
+            if tool_key in ("repo_ops", "repository") or tool_key.startswith("git_"):
+                return _error_response(
+                    f"{tool_key!r} moved out of filesystem-mcp. {_GIT_REDIRECT}",
+                    "moved",
+                    [_GIT_REDIRECT],
+                )
             info = _TOOL_HELP.get(tool_key)
             if not info:
                 return _error_response(
@@ -575,6 +418,12 @@ async def _get_help(category, tool_name, level):
         # ── category drill-down ────────────────────────────────────────────────
         if category:
             cat_key = category.lower().strip()
+            if cat_key == "repository":
+                return _error_response(
+                    f"Category 'repository' moved out of filesystem-mcp. {_GIT_REDIRECT}",
+                    "moved",
+                    [_GIT_REDIRECT],
+                )
             if cat_key not in _CATEGORIES:
                 return _error_response(
                     f"Unknown category: {category!r}. Valid categories: {', '.join(sorted(_CATEGORIES))}",
