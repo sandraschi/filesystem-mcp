@@ -79,6 +79,9 @@ _TOOL_HELP = {
             "find_duplicate_files": "Hash-based duplicate detection. Params: path, min_size(opt), "
             "hash_algorithm(opt), max_duplicates(opt)",
             "find_large_files": "Locate large files. Params: path, min_size_mb(opt), max_results(opt)",
+            "find_todos": "TODO/FIXME comments. Params: path, recursive(opt), search_pattern(opt regex override)",
+            "find_symbols": "def/class/function/const definitions. Params: path, recursive(opt), search_pattern(opt filter)",
+            "validate_json": "Parse JSON, report structure or first syntax error. Params: path",
         },
         "examples": {
             "basic": "search_ops(operation='grep_file', path='D:/myfile.py', search_pattern='TODO')",

@@ -21,7 +21,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool(annotations=READ_ONLY, version="2.3.0")
+@_get_app().tool(annotations=READ_ONLY, version="2.4.0")
 async def search_ops(
     operation: Literal[
         "grep_file",
@@ -31,6 +31,9 @@ async def search_ops(
         "compare_files",
         "find_duplicate_files",
         "find_large_files",
+        "find_todos",
+        "find_symbols",
+        "validate_json",
     ]
     | None = None,
     path: str | None = None,
@@ -57,7 +60,8 @@ async def search_ops(
     """Content Analysis, Grep, and Comparison operations.
 
     Operations: grep_file, count_pattern, search_files, extract_log_lines,
-    compare_files, find_duplicate_files, find_large_files.
+    compare_files, find_duplicate_files, find_large_files,
+    find_todos, find_symbols, validate_json.
 
     Pattern semantics (read this before picking an operation):
     - grep_file / count_pattern take a CONTENT regex searched inside file text.
@@ -128,6 +132,12 @@ async def search_ops(
             )
         elif operation == "find_large_files":
             return await _find_large_files(path, min_size_mb, recursive, max_results, include_hidden, early_exit)
+        elif operation == "find_todos":
+            return await _find_todos(path, recursive, include_hidden, max_matches, encoding, search_pattern)
+        elif operation == "find_symbols":
+            return await _find_symbols(path, recursive, include_hidden, max_matches, encoding, search_pattern)
+        elif operation == "validate_json":
+            return await _validate_json(path, encoding)
         else:
             return _error_response(f"Unknown operation: {operation}", "unsupported_operation")
     except Exception as e:
@@ -713,3 +723,181 @@ async def _find_large_files(
 
     except Exception as e:
         return _error_response(f"Failed to find large files: {e!s}", "io_error")
+
+
+_TODO_DEFAULT = r"\b(TODO|FIXME|HACK|XXX|BUG)\b\s*:?\s*(.*)"
+
+
+async def _find_todos(
+    target: str,
+    recursive: bool,
+    include_hidden: bool,
+    max_matches: int,
+    encoding: str,
+    override_pattern: str | None,
+) -> dict[str, Any]:
+    """Find TODO/FIXME-style comments. Thin wrapper over the grep machinery."""
+    pattern = override_pattern or _TODO_DEFAULT
+    try:
+        re.compile(pattern)
+    except re.error as e:
+        return _error_response(f"Invalid regex pattern: {e!s}", "invalid_regex")
+    res = await _grep_file(target, pattern, False, max_matches, 0, encoding, recursive, include_hidden)
+    if not res.get("success"):
+        return res
+    result = res.get("result", {})
+    matches = result.get("matches", [])
+    todos = []
+    for m in matches:
+        fp = str(m.get("file") or "")
+        if fp.endswith(".bak") or fp.endswith(".bak.json"):
+            continue
+        content = m.get("content", "")
+        tag = re.search(r"\b(TODO|FIXME|HACK|XXX|BUG)\b", content, re.IGNORECASE)
+        todos.append(
+            {
+                "file": m.get("file"),
+                "line_number": m.get("line_number"),
+                "tag": (tag.group(1).upper() if tag else "TODO"),
+                "text": content.strip()[:300],
+            }
+        )
+    return _success_response(
+        {
+            "pattern": pattern,
+            "todos": todos,
+            "total_matches": len(todos),
+            "max_matches_reached": result.get("max_matches_reached", False),
+            "files_scanned": result.get("files_scanned"),
+            "files_skipped": result.get("files_skipped"),
+        },
+        related_operations=["grep_file", "read_file"],
+    )
+
+
+_SYMBOL_DEF = re.compile(
+    r"^\s*(?:"
+    r"(?:async\s+)?def\s+(?P<pydef>[A-Za-z_][A-Za-z0-9_]*)"
+    r"|class\s+(?P<pyclass>[A-Za-z_][A-Za-z0-9_]*)"
+    r"|function\s+(?P<jsfunc>[A-Za-z_$][A-Za-z0-9_$]*)"
+    r"|(?:export\s+)?(?:async\s+)?(?:const|let|var)\s+(?P<jsconst>[A-Za-z_$][A-Za-z0-9_$]*)\s*="
+    r"|(?:export\s+)?(?:interface|enum|type)\s+(?P<tstype>[A-Za-z_$][A-Za-z0-9_$]*)"
+    r")"
+)
+
+
+async def _find_symbols(
+    target: str,
+    recursive: bool,
+    include_hidden: bool,
+    max_matches: int,
+    encoding: str,
+    filter_substring: str | None,
+) -> dict[str, Any]:
+    """Find def/class/function/const/interface definitions, optionally filtered by substring."""
+    path_obj = _safe_resolve_path(target)
+    if not path_obj.exists():
+        return _error_response(f"Path does not exist: {target}", "not_found")
+    filt = (filter_substring or "").lower()
+
+    def _scan_file(fp: Path) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        if fp.suffix == ".bak" or fp.name.endswith(".bak"):
+            return out
+        try:
+            if fp.stat().st_size > 5 * 1024 * 1024 or _looks_binary(fp):
+                return out
+            text = fp.read_text(encoding=encoding)
+        except (UnicodeDecodeError, OSError):
+            return out
+        for i, line in enumerate(text.splitlines(), start=1):
+            m = _SYMBOL_DEF.match(line)
+            if not m:
+                continue
+            name = next((g for g in m.groups() if g), "")
+            kind = (
+                "def"
+                if m.group("pydef")
+                else "class"
+                if m.group("pyclass")
+                else "function"
+                if m.group("jsfunc")
+                else "const"
+                if m.group("jsconst")
+                else "type"
+            )
+            if filt and filt not in name.lower() and filt not in line.lower():
+                continue
+            out.append({"file": str(fp), "line_number": i, "kind": kind, "name": name, "text": line.strip()[:200]})
+        return out
+
+    async def _scan_dir(root: Path) -> list[dict[str, Any]]:
+        def _walk() -> list[dict[str, Any]]:
+            acc: list[dict[str, Any]] = []
+            walker = os.walk(root) if recursive else [(str(root), [], os.listdir(str(root)))]
+            for dirpath, dirnames, filenames in walker:
+                dirnames[:] = [
+                    d for d in dirnames if d not in _GREP_EXCLUDED_DIRS and (include_hidden or not d.startswith("."))
+                ]
+                for name in filenames:
+                    if len(acc) >= max_matches:
+                        return acc
+                    if not include_hidden and name.startswith("."):
+                        continue
+                    fp = Path(dirpath) / name
+                    acc.extend(_scan_file(fp))
+                    if len(acc) >= max_matches:
+                        return acc[:max_matches]
+            return acc[:max_matches]
+
+        return await asyncio.to_thread(_walk)
+
+    try:
+        if path_obj.is_dir():
+            symbols = await _scan_dir(path_obj)
+        else:
+            symbols = await asyncio.to_thread(_scan_file, path_obj)
+            symbols = symbols[:max_matches]
+        return _success_response(
+            {
+                "symbols": symbols,
+                "total_matches": len(symbols),
+                "max_matches_reached": len(symbols) >= max_matches,
+                "filter": filter_substring,
+                "directory": str(path_obj) if path_obj.is_dir() else None,
+                "file_path": str(path_obj) if path_obj.is_file() else None,
+            },
+            related_operations=["grep_file", "read_file"],
+        )
+    except Exception as e:
+        return _error_response(f"Failed to find symbols: {e!s}", "io_error")
+
+
+async def _validate_json(file_path: str, encoding: str) -> dict[str, Any]:
+    """Parse JSON and report structure summary or the first syntax error."""
+    import json
+
+    try:
+        path_obj = _safe_resolve_path(file_path)
+        if not path_obj.exists() or not path_obj.is_file():
+            return _error_response(f"Invalid file path: {file_path}", "not_found")
+        text = path_obj.read_text(encoding=encoding)
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as e:
+            return _success_response(
+                {"path": str(path_obj), "valid": False, "error": str(e), "line": e.lineno, "column": e.colno}
+            )
+        summary: dict[str, Any] = {"type": type(data).__name__}
+        if isinstance(data, dict):
+            summary["keys"] = sorted(map(str, data.keys()))[:50]
+            summary["key_count"] = len(data)
+        elif isinstance(data, list):
+            summary["length"] = len(data)
+            if data:
+                summary["first_item_type"] = type(data[0]).__name__
+        return _success_response({"path": str(path_obj), "valid": True, "summary": summary})
+    except UnicodeDecodeError as e:
+        return _error_response(f"Cannot decode as {encoding}: {e!s}", "encoding_error")
+    except Exception as e:
+        return _error_response(f"Failed to validate JSON: {e!s}", "io_error")
