@@ -18,7 +18,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-@_get_app().tool(annotations=MUTATING, version="2.2.0")
+@_get_app().tool(annotations=MUTATING, version="2.3.0")
 async def dir_ops(
     operation: Literal[
         "list_directory",
@@ -27,6 +27,7 @@ async def dir_ops(
         "directory_tree",
         "calculate_directory_size",
         "find_empty_directories",
+        "copy_tree",
     ]
     | None = None,
     path: str | None = None,
@@ -40,11 +41,17 @@ async def dir_ops(
     output_format: Literal["text", "json"] = "text",
     human_readable: bool = True,
     max_files: int = 1000,
+    destination_path: str | None = None,
+    engine: Literal["auto", "shutil", "robocopy"] = "auto",
+    mirror: bool = False,
+    dry_run: bool = False,
+    overwrite: bool = False,
+    timeout: int = 300,
 ) -> dict[str, Any]:
     """Directory structure and management operations.
 
     Operations: list_directory, create_directory, remove_directory, directory_tree,
-    calculate_directory_size, find_empty_directories.
+    calculate_directory_size, find_empty_directories, copy_tree.
 
     Args: See Parameters block.
 
@@ -73,6 +80,11 @@ async def dir_ops(
             return await _create_directory(path, create_parents, exist_ok)
         elif operation == "remove_directory":
             return await _remove_directory(path, recursive)
+        elif operation == "copy_tree":
+            if not destination_path:
+                return _clarification_response("destination_path", "destination_path is required for copy_tree")
+            assert path is not None
+            return await _copy_tree(path, destination_path, engine, mirror, dry_run, overwrite, timeout)
         elif operation == "directory_tree":
             return await _directory_tree(path, max_depth, True, pattern, exclude_patterns, "text")
         elif operation == "calculate_directory_size":
@@ -412,3 +424,178 @@ async def _find_empty_directories(directory_path: str, recursive: bool, include_
         )
     except Exception as e:
         return _error_response(f"Failed to find empty directories: {e!s}", "io_error")
+
+
+async def _copy_tree(
+    source: str,
+    destination: str,
+    engine: str,
+    mirror: bool,
+    dry_run: bool,
+    overwrite: bool,
+    timeout: int,
+) -> dict[str, Any]:
+    """Copy a directory tree. shutil is default; robocopy is explicit opt-in on Windows.
+
+    mirror=True maps to robocopy /MIR (deletes dest extras) and is refused
+    unless engine='robocopy'. dry_run maps to robocopy /L or a shutil walk-through.
+    """
+    try:
+        src = _safe_resolve_path(source)
+        dst = _safe_resolve_path(destination)
+    except Exception as e:
+        return _error_response(f"Invalid path: {e!s}", "invalid_arguments")
+    if not src.exists() or not src.is_dir():
+        return _error_response(f"Invalid source directory: {source}", "not_found")
+    if src == dst:
+        return _error_response("Source and destination are the same", "invalid_arguments")
+    try:
+        # Refuse dst-inside-src (would recurse forever) on either engine.
+        dst.relative_to(src)
+        return _error_response(
+            "Destination inside source would recurse forever",
+            "invalid_arguments",
+            ["Choose a destination outside the source tree"],
+        )
+    except ValueError:
+        pass
+
+    requested = (engine or "auto").lower()
+    use_robocopy = requested == "robocopy"
+    if requested not in ("auto", "shutil", "robocopy"):
+        return _error_response(
+            f"Unknown engine: {engine}",
+            "invalid_arguments",
+            ["Use auto (shutil), shutil, or robocopy (Windows opt-in)"],
+        )
+    if mirror and not use_robocopy:
+        return _error_response(
+            "mirror=True requires engine='robocopy' (/MIR deletes dest extras)",
+            "invalid_arguments",
+            ["Re-run with engine='robocopy', mirror=True", "Or drop mirror for an additive copy"],
+        )
+    if use_robocopy:
+        import sys
+
+        if sys.platform != "win32":
+            return _error_response(
+                "engine='robocopy' is Windows-only",
+                "unsupported_platform",
+                ["Use engine='shutil' on this platform"],
+            )
+        if shutil.which("robocopy") is None:
+            return _error_response(
+                "robocopy not found on PATH",
+                "missing_dependency",
+                ["Use engine='shutil' instead"],
+            )
+        return await _copy_tree_robocopy(src, dst, mirror, dry_run, timeout)
+    return await _copy_tree_shutil(src, dst, overwrite, dry_run)
+
+
+async def _copy_tree_shutil(src: Path, dst: Path, overwrite: bool, dry_run: bool) -> dict[str, Any]:
+    """Cross-platform copy via shutil. dry_run walks without writing."""
+    try:
+        total_bytes = 0
+        file_count = 0
+        for root, _, files in os.walk(src):
+            for name in files:
+                try:
+                    total_bytes += os.path.getsize(os.path.join(root, name))
+                    file_count += 1
+                except OSError:
+                    pass
+        if dry_run:
+            return _success_response(
+                {
+                    "source": str(src),
+                    "destination": str(dst),
+                    "engine": "shutil",
+                    "dry_run": True,
+                    "file_count": file_count,
+                    "total_bytes": total_bytes,
+                    "total_human": _format_file_size(total_bytes),
+                }
+            )
+        if dst.exists():
+            if not overwrite:
+                return _error_response(
+                    f"Destination exists: {dst}",
+                    "already_exists",
+                    ["Re-run with overwrite=True to merge into it"],
+                )
+            if not dst.is_dir():
+                return _error_response(f"Destination is not a directory: {dst}", "not_a_directory")
+            await asyncio.to_thread(shutil.copytree, src, dst, dirs_exist_ok=True)
+        else:
+            if dst.parent and not dst.parent.exists():
+                dst.parent.mkdir(parents=True, exist_ok=True)
+            await asyncio.to_thread(shutil.copytree, src, dst)
+        return _success_response(
+            {
+                "source": str(src),
+                "destination": str(dst),
+                "engine": "shutil",
+                "file_count": file_count,
+                "total_bytes": total_bytes,
+                "total_human": _format_file_size(total_bytes),
+                "mirror": False,
+            }
+        )
+    except Exception as e:
+        return _error_response(f"Failed to copy tree: {e!s}", "io_error")
+
+
+async def _copy_tree_robocopy(src: Path, dst: Path, mirror: bool, dry_run: bool, timeout: int) -> dict[str, Any]:
+    """Windows-only robocopy harness. Fixed flag allowlist, no shell=True.
+
+    Exit codes 0-7 are success per robocopy docs; >= 8 is failure.
+    """
+    # Fixed allowlist — never accept freeform flags.
+    cmd = ["robocopy", str(src), str(dst), "/E", "/R:2", "/W:1", "/MT:8", "/NP"]
+    if mirror:
+        # /MIR implies /E; replace /E with /MIR to keep intent explicit.
+        cmd = ["robocopy", str(src), str(dst), "/MIR", "/R:2", "/W:1", "/MT:8", "/NP"]
+    if dry_run:
+        cmd.append("/L")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        except TimeoutError:
+            try:
+                proc.kill()
+            except Exception as kill_err:
+                logger.warning("robocopy kill after timeout failed: %s", kill_err)
+            return _error_response(
+                f"robocopy timed out after {timeout}s",
+                "timeout",
+                ["Retry with a larger timeout", "Or use engine='shutil'"],
+            )
+        code = proc.returncode or 0
+        out = (stdout or b"").decode(errors="replace")
+        err = (stderr or b"").decode(errors="replace")
+        # Keep output bounded — robocopy is chatty.
+        tail = "\n".join(out.splitlines()[-25:])
+        if code >= 8:
+            return _error_response(
+                f"robocopy failed with exit code {code}",
+                "copy_error",
+                ["Check source/dest permissions and long paths", "Or retry with engine='shutil'"],
+                diagnostic_info={"exit_code": code, "stdout_tail": tail, "stderr": err[:2000]},
+            )
+        return _success_response(
+            {
+                "source": str(src),
+                "destination": str(dst),
+                "engine": "robocopy",
+                "mirror": mirror,
+                "dry_run": dry_run,
+                "exit_code": code,
+                "stdout_tail": tail,
+            }
+        )
+    except Exception as e:
+        return _error_response(f"robocopy harness failed: {e!s}", "internal_error")

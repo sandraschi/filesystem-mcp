@@ -57,6 +57,7 @@ _TOOL_HELP = {
             "Params: path, max_depth(opt), pattern(opt), output_format(opt: text|json)",
             "calculate_directory_size": "Get total size. Params: path",
             "find_empty_directories": "Locate empty dirs. Params: path",
+            "copy_tree": "Copy dir tree. Params: path, destination_path, engine(opt: auto|shutil|robocopy), mirror(opt, robocopy-only), dry_run(opt), overwrite(opt), timeout(opt)",
         },
         "examples": {
             "basic": "dir_ops(operation='list_directory', path='D:/Dev/repos')",
