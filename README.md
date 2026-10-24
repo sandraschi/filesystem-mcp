@@ -475,9 +475,11 @@ result = docker_operations("container_logs", container_id="web", tail=100)
 
 Git lives in `git-github-mcp` (`gitops:git_core` / `gitops:github_ops`). No git tools are registered here anymore.
 
-#### Developer Tools — roadmap (not yet implemented)
+#### Developer Tools — partially live
 
-Planned as `search_ops` additions (`find_todos`, `find_symbols`, `validate_json/config`) plus file helpers. Not registered yet — do not advertise as available.
+Live now as `search_ops` (read-only, tested): `find_todos`, `find_symbols`, `validate_json`.
+Still roadmap: `analyze_project/imports/dependencies`, `run_linter`, `validate_config`, `check_file_sizes` (= `find_large_files`), `detect_duplicates` (= `find_duplicate_files`).
+Usage: `search_ops(operation='find_todos', path='src', recursive=True)` — not `developer_tool(...)`.
 
 | Command | Description | Key Parameters |
 |---------|-------------|----------------|
@@ -494,17 +496,16 @@ Planned as `search_ops` additions (`find_todos`, `find_symbols`, `validate_json/
 
 **Usage:**
 ```python
-# Analyze project structure
-result = developer_tool('analyze_project', path='.')
+# Find all TODO comments (live)
+todos = search_ops(operation='find_todos', path='src', recursive=True)
 
-# Find all TODO comments
-todos = developer_tool('find_todos', path='src', recursive=True)
+# Find function definitions (live)
+symbols = search_ops(operation='find_symbols', path='src', search_pattern='auth', recursive=True)
 
-# Run linting with auto-fix
-lint_result = developer_tool('run_linter', path='src/', fix=True)
+# Validate JSON (live)
+valid = search_ops(operation='validate_json', path='glama.json')
 
-# Find function definitions
-symbols = developer_tool('find_symbols', pattern='auth', recursive=True)
+# Roadmap (not yet): analyze_project, run_linter, validate_config
 ```
 
 ### Example Usage
