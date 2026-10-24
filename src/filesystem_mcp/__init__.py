@@ -74,7 +74,7 @@ from fastmcp.server import create_proxy
 @asynccontextmanager
 async def server_lifespan(mcp_instance: FastMCP):
     """Server lifespan for startup and cleanup."""
-    logger.info("Filesystem MCP server starting up", version="2.2.0")
+    logger.info("Filesystem MCP server starting up", version="3.1.0")
     logger.info("FastMCP 3.2+ with concurrency safety enabled")
     yield
     logger.info("Filesystem MCP server shutting down")
@@ -108,7 +108,7 @@ AVAILABLE TOOLS:
 
 Portmanteau tools (file_ops, dir_ops) use an operation enum; Compose and monitoring are atomic per operation.""",
     lifespan=server_lifespan,
-    version="2.2.0",
+    version="3.1.0",
 )
 
 # Alias-normalization middleware: rewrite camelCase tool arguments to the
@@ -128,7 +128,7 @@ async def _api_health(_request: Request) -> Response:
         {
             "status": "healthy",
             "server_name": "filesystem-mcp",
-            "version": "2.2.0",
+            "version": "3.1.0",
         }
     )
 
@@ -253,7 +253,7 @@ def http_app():
                 "success": True,
                 "status": "ok",
                 "server": "filesystem-mcp",
-                "version": "2.2.0",
+                "version": "3.1.0",
                 "uptime_seconds": time.time() - _start,
                 "tool_count": len(await _tool_names()),
                 "providers": {"mcp": "ok"},
@@ -266,7 +266,7 @@ def http_app():
             {
                 "success": True,
                 "server": "filesystem-mcp",
-                "version": "2.2.0",
+                "version": "3.1.0",
                 "capabilities": {
                     "tools": tools,
                     "features": {
@@ -549,7 +549,7 @@ def main():
     """Main entry point for the MCP server with unified transport handling."""
     from .transport import run_server
 
-    logger.info("Starting Filesystem MCP server v2.2.0 (FastMCP 3.2+)")
+    logger.info("Starting Filesystem MCP server v3.1.0 (FastMCP 3.2+)")
     logger.info("Python path", python_path=sys.executable)
     logger.info("Working directory", cwd=str(Path.cwd()))
     logger.info("Concurrency safety: Enabled for all file operations")
