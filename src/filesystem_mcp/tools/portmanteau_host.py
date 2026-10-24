@@ -462,7 +462,7 @@ async def _get_help(category, tool_name, level):
         # ── overview ───────────────────────────────────────────────────────────
         overview: dict[str, Any] = {
             "level": level,
-            "server": "filesystem-mcp v2.2.0",
+            "server": "filesystem-mcp v3.1.0",
             "categories": {},
         }
         for cat, tools in _CATEGORIES.items():
