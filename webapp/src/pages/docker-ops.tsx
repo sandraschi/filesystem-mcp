@@ -42,7 +42,7 @@ export default function DockerOps() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Docker Operations</h1>
-        <button onClick={fetchContainers} className="p-2 hover:bg-accent rounded-md">
+        <button type="button" onClick={fetchContainers} className="p-2 hover:bg-accent rounded-md">
           <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
@@ -85,10 +85,10 @@ export default function DockerOps() {
                   <td className="px-6 py-4">{c.Names?.[0] || c.Name}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="p-1 hover:bg-green-500/10 text-green-500 rounded">
+                      <button type="button" className="p-1 hover:bg-green-500/10 text-green-500 rounded">
                         <Play className="w-4 h-4" />
                       </button>
-                      <button className="p-1 hover:bg-red-500/10 text-red-500 rounded">
+                      <button type="button" className="p-1 hover:bg-red-500/10 text-red-500 rounded">
                         <Square className="w-4 h-4" />
                       </button>
                     </div>

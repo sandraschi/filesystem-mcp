@@ -345,6 +345,7 @@ export default function Chat() {
             ))}
           </select>
           <button
+            type="button"
             data-testid="chat-export"
             onClick={handleExport}
             disabled={messages.length === 0}
@@ -354,6 +355,7 @@ export default function Chat() {
             <Download className="h-4 w-4" />
           </button>
           <button
+            type="button"
             data-testid="chat-clear"
             onClick={handleClear}
             disabled={messages.length === 0}
@@ -450,6 +452,7 @@ export default function Chat() {
                   <div className="space-y-1">
                     {group.prompts.map((p) => (
                       <button
+                        type="button"
                         key={p}
                         onClick={() => setInput(p)}
                         className="block w-full text-left rounded-md border border-border bg-background/60 px-3 py-2 text-sm hover:border-primary/50 hover:bg-accent/50 transition-colors"

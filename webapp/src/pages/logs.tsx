@@ -70,13 +70,18 @@ export default function Logs() {
           <p className="text-muted-foreground mt-2">Real-time server log stream.</p>
         </div>
         <div className="flex gap-2">
-          <button className="p-2 hover:bg-accent rounded-md" title="Filter">
+          <button type="button" className="p-2 hover:bg-accent rounded-md" title="Filter">
             <Filter className="w-5 h-5" />
           </button>
-          <button className="p-2 hover:bg-accent rounded-md" title="Clear Logs" onClick={() => setLogs([])}>
+          <button
+            type="button"
+            className="p-2 hover:bg-accent rounded-md"
+            title="Clear Logs"
+            onClick={() => setLogs([])}
+          >
             <Eraser className="w-5 h-5" />
           </button>
-          <button className="p-2 hover:bg-accent rounded-md" title="Download">
+          <button type="button" className="p-2 hover:bg-accent rounded-md" title="Download">
             <Download className="w-5 h-5" />
           </button>
         </div>

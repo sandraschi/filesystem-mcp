@@ -52,9 +52,9 @@ export default function Help() {
             <h2 className="text-xl font-semibold">Git — moved</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Git lives in <code className="font-mono">git-github-mcp</code> now
-            (<code className="font-mono">gitops:git_core</code> /{" "}
-            <code className="font-mono">github_ops</code>). No git tools are registered here.
+            Git lives in <code className="font-mono">git-github-mcp</code> now (
+            <code className="font-mono">gitops:git_core</code> / <code className="font-mono">github_ops</code>). No git
+            tools are registered here.
           </p>
           <a
             href="https://github.com/sandraschi/git-github-mcp"
@@ -74,8 +74,8 @@ export default function Help() {
             <h2 className="text-xl font-semibold">Docker Management</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Control containers, images, and volumes. View logs and stats in real-time.
-            Deprecated here — <code className="font-mono">docker-mcp</code> owns this surface.
+            Control containers, images, and volumes. View logs and stats in real-time. Deprecated here —{" "}
+            <code className="font-mono">docker-mcp</code> owns this surface.
           </p>
           <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground/80 pl-2">
             <li>list_containers</li>
@@ -92,7 +92,7 @@ export default function Help() {
             <h2 className="text-xl font-semibold">CLI Reference</h2>
           </div>
           <p className="text-sm text-muted-foreground">Complete reference for all MCP tools and their arguments.</p>
-          <button className="flex items-center gap-2 text-sm text-primary hover:underline">
+          <button type="button" className="flex items-center gap-2 text-sm text-primary hover:underline">
             View CLI Docs <ArrowUpRight className="w-3 h-3" />
           </button>
         </div>

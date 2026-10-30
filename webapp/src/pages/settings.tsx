@@ -162,6 +162,7 @@ export default function Settings() {
           </h2>
           <div className="flex flex-col sm:flex-row gap-4">
             <button
+              type="button"
               onClick={() => setTheme("light")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
                 theme === "light" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
@@ -170,6 +171,7 @@ export default function Settings() {
               <Sun className="w-4 h-4" /> Light
             </button>
             <button
+              type="button"
               onClick={() => setTheme("dark")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
                 theme === "dark" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
@@ -178,6 +180,7 @@ export default function Settings() {
               <Moon className="w-4 h-4" /> Dark
             </button>
             <button
+              type="button"
               onClick={() => setTheme("system")}
               className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
                 theme === "system" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
@@ -271,6 +274,7 @@ export default function Settings() {
                 <span>Model Name</span>
                 {(config.provider === "ollama" || config.provider === "lm-studio") && (
                   <button
+                    type="button"
                     onClick={() => fetchModels(config.provider, config.baseUrl)}
                     className="text-xs text-primary flex items-center gap-1 hover:underline"
                     disabled={isLoadingModels}
@@ -319,6 +323,7 @@ export default function Settings() {
         <div className="flex justify-between items-center pt-4">
           <span className="text-green-500 text-sm font-medium">{status}</span>
           <button
+            type="button"
             onClick={handleSave}
             className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors"
           >

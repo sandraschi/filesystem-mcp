@@ -6,9 +6,9 @@ export default function GitOps() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Git Operations — moved</h1>
         <p className="text-muted-foreground mt-2">
-          Git lives in <code className="font-mono">git-github-mcp</code> now
-          (<code className="font-mono">gitops:git_core</code> / <code className="font-mono">github_ops</code>).
-          This page no longer calls the removed <code className="font-mono">repo_ops</code> tool.
+          Git lives in <code className="font-mono">git-github-mcp</code> now (
+          <code className="font-mono">gitops:git_core</code> / <code className="font-mono">github_ops</code>). This page
+          no longer calls the removed <code className="font-mono">repo_ops</code> tool.
         </p>
       </div>
 

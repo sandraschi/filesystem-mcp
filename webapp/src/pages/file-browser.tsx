@@ -132,6 +132,7 @@ export default function FileBrowser() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => fetchDirectory(currentPath)}
             className="p-2 hover:bg-accent rounded-md transition-colors"
             title="Refresh"
@@ -150,6 +151,7 @@ export default function FileBrowser() {
         >
           <div className="p-4 border-b border-border flex items-center gap-2 bg-muted/30">
             <button
+              type="button"
               onClick={handleBack}
               disabled={history.length === 0}
               className="p-1 hover:bg-background rounded disabled:opacity-30"
@@ -171,9 +173,9 @@ export default function FileBrowser() {
 
             {!isConnected && <div className="text-center p-8 text-muted-foreground">Connecting to server...</div>}
 
-            {entries.map((entry, i) => (
+            {entries.map((entry) => (
               <button
-                key={`${entry.name}-${i}`}
+                key={entry.path}
                 type="button"
                 onClick={() => (entry.type === "directory" ? handleNavigate(entry.path) : readFile(entry))}
                 className="flex items-center gap-3 p-2 hover:bg-accent/50 rounded cursor-pointer transition-colors group text-left w-full bg-transparent border-0"
@@ -199,7 +201,7 @@ export default function FileBrowser() {
                 <FileCode className="w-4 h-4" />
                 {selectedFile.name}
               </div>
-              <button onClick={() => setSelectedFile(null)} className="text-xs hover:underline">
+              <button type="button" onClick={() => setSelectedFile(null)} className="text-xs hover:underline">
                 Close
               </button>
             </div>
